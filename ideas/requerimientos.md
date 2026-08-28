@@ -36,7 +36,7 @@ Esto importa porque en los Labs 04/07/09/11/12 se exige implementar **el 100% de
 | DECISIÓN de estado (no una tabla, sino una regla) | **RF018** (evaluación) | Cambia el estado de POSTULACIONES y registra en POSTULACION_HIST; es una transición, compatible con RF013 (consultar historial). |
 
 **Ampliaciones (sin RF nuevo):**
-- **RF002** se amplía para incluir **apoderado** (tabla ADM_APODERADOS).
+- **RF002** se amplía para incluir **apoderado** (tabla ADM_APODERADOS) y **validación de correo electrónico** (envío de enlace de confirmación y marcado de CORREO_VALIDADO = 'S'; columnas de ADM_POSTULANTES).
 - **RF005** se amplía para incluir **institución educativa** de procedencia (tabla ADM_INSTITUCIONES_EDUCATIVAS).
 
 **RNF añadidos:**
@@ -93,19 +93,19 @@ El Lab 02 partió de **5 RNF** (RNF01–RNF05); se añaden **RNF06 y RNF07** por
 - Base completa y trazable para Labs 04/07/09/11/12.
 - Único punto a decidir en equipo: **reparto de los 6 RF nuevos entre los 5 integrantes** (propuesta sugerida en A.9).
 
-### A.9 Distribución sugerida de los RF nuevos (para tu deliberación)
+### A.9 Distribución sugerida de los RF nuevos y RNF nuevos (para tu deliberación)
 
-Esta propuesta mantiene a cada integrante con su mínimo de 3 RF (los RF originales del Lab 02 ya cubren 3 por integrante; los nuevos son extras equilibrados).
+Esta propuesta mantiene a cada integrante con su mínimo de 3 RF (los RF originales del Lab 02 ya cubren 3 por integrante; los nuevos son extras equilibrados). Se asignan también los dos RNF nuevos (RNF06, RNF07) para trazabilidad de exposición.
 
-| Integrante | RF del Lab 02 | RF nuevos (sugeridos) | Total |
-|---|---|---|---|
-| Diego Osorio | RF001–RF003 | RF016, RF021 | 5 |
-| Harold Manza | RF004–RF006 | RF017 | 4 |
-| Richard León | RF007–RF009 | RF018 | 4 |
-| Francis Huamani | RF010–RF012 | RF019 | 4 |
-| Matías Peña | RF013–RF015 | RF020 | 4 |
+| Integrante | RF del Lab 02 | RF nuevos (sugeridos) | RNF nuevos | Total RF |
+|---|---|---|---|---|
+| Diego Osorio | RF001–RF003 | RF016, RF021 | — | 5 |
+| Harold Manza | RF004–RF006 | RF017 | — | 4 |
+| Richard León | RF007–RF009 | RF018 | **RNF07** (trazabilidad de estados, respalda RF013/RF018) | 4 |
+| Francis Huamani | RF010–RF012 | RF019 | **RNF06** (control de acceso por rol, transversal a actores) | 4 |
+| Matías Peña | RF013–RF015 | RF020 | — | 4 |
 
-*La distribución puede ajustarse según preferencias del equipo; el único requisito es que cada integrante tenga 3 RF.*
+*La distribución puede ajustarse según preferencias del equipo; el único requisito es que cada integrante tenga ≥3 RF y los RNF queden con dueño para la exposición.*
 
 ### A.10 Respuesta a la revisión externa (verificada contra el cronograma oficial)
 
@@ -150,7 +150,7 @@ Alternativa (más simple pero más riesgo): recortar el modelo a un subconjunto 
 | Código | Requerimiento |
 |---|---|
 | RF001 | El sistema permitirá al Administrador gestionar las convocatorias académicas (registro, búsqueda, modificación y eliminación). |
-| RF002 | El sistema permitirá al Postulante gestionar su información de usuario, incluidos sus datos personales y, opcionalmente, el apoderado asociado (registro, búsqueda, modificación y eliminación). |
+| RF002 | El sistema permitirá al Postulante gestionar su información de usuario, incluidos sus datos personales y el apoderado asociado (opcional), mediante registro, búsqueda, modificación y eliminación; y adicionalmente, validar su correo electrónico mediante envío de enlace de confirmación y marcado de CORREO_VALIDADO = 'S'. |
 | RF003 | El sistema permitirá al Administrador generar un reporte de pagos por convocatoria (JasperReports). |
 | RF004 | El sistema permitirá al Administrador gestionar las modalidades de ingreso (registro, búsqueda, modificación y eliminación). |
 | RF005 | El sistema permitirá al Postulante gestionar sus antecedentes académicos, incluida la institución educativa de procedencia (registro, búsqueda, modificación y eliminación). |
@@ -162,11 +162,11 @@ Alternativa (más simple pero más riesgo): recortar el modelo a un subconjunto 
 | RF011 | El sistema permitirá al Postulante gestionar sus comprobantes de pago de inscripción (registro, búsqueda, modificación y eliminación). |
 | RF012 | El sistema permitirá al Área de Finanzas gestionar la conciliación manual de pagos (registro, búsqueda, modificación y eliminación). |
 | RF013 | El sistema permitirá al Administrador consultar y administrar el historial de cambios de estado de las postulaciones (auditoría). |
-| RF014 | El sistema permitirá al Área de Admisión gestionar la emisión de carnés de postulante (solo para estado VÁLIDO). |
+| RF014 | El sistema permitirá al Área de Admisión gestionar la emisión de carnés de postulante (solo para postulaciones en estado FINALIZADA). |
 | RF015 | El sistema permitirá al Administrador generar un reporte general de vacantes y postulaciones completadas (JasperReports). |
-| RF016 | El sistema permitirá al Postulante registrar su postulación a una convocatoria abierta seleccionando la modalidad de ingreso y la carrera ofertada, asignando el estado inicial POSTULADO. |
+| RF016 | El sistema permitirá al Postulante registrar su postulación a una convocatoria abierta seleccionando la modalidad de ingreso y la carrera ofertada, asignando el estado inicial BORRADOR. |
 | RF017 | El sistema permitirá al Administrador configurar una convocatoria habilitando sus etapas, las modalidades de ingreso, las carreras con sus vacantes y los requisitos por modalidad. |
-| RF018 | El sistema permitirá al Evaluador revisar el expediente del postulante, validar el cumplimiento de los requisitos documentales y registrar la decisión de evaluación que determina el nuevo estado (VÁLIDO u OBSERVADO). |
+| RF018 | El sistema permitirá al Evaluador revisar el expediente del postulante, validar el cumplimiento de los requisitos documentales y registrar la decisión de evaluación que determina el nuevo estado (OBSERVADA, RECHAZADA o FINALIZADA). |
 | RF019 | El sistema enviará notificaciones automáticas al Postulante (por los medios de notificación configurados) ante cada cambio de estado u observación registrada en su postulación. |
 | RF020 | El sistema permitirá al Administrador gestionar los catálogos de referencia y de configuración (tipos de documento, parentescos, países, facultades, medios de pago, medios de notificación, sedes, etapas y estados de postulación). |
 | RF021 | El sistema permitirá al Administrador gestionar los evaluadores (registro, búsqueda, modificación y eliminación). |
@@ -185,12 +185,29 @@ Alternativa (más simple pero más riesgo): recortar el modelo a un subconjunto 
 | RNF06 | Control de acceso por rol (Administrador, Postulante, Evaluador, Finanzas, Admisión). |
 | RNF07 | Trazabilidad completa del historial de cambios de estado para auditoría. |
 
-### B.3 Modelo de estados de una postulación (respaldo de RF016/018/014)
+### B.3 Modelo de estados de una postulación (respaldado por RF016/018/014)
+
+> **Consistente con el reference Grupo07:** usa los códigos reales de `ADM_ESTADOS_POSTULACION`. Verificado en el reference: el SP `SP_ADM_FINALIZAR_INSCRIPCION` cambia a `CODIGO = 'FINALIZADA'` y `SP_ADM_GENERAR_CARNE` exige estado `FINALIZADA` (el gate real para carné es FINALIZADA, no "VÁLIDO"). El dashboard del reference (Figura 2) muestra **8 estados** de postulación.
 
 ```
-POSTULADO (RF016) → INSCRITO (RF011 + conciliación RF012)
-                  → EN_EVALUACION (RF018 inicia revisión)
-                  → VÁLIDO (RF018 aprueba)      → CARNE_EMITIDO (RF014)
-                  → OBSERVADO (RF018 observa → genera observación RF010)
+BORRADOR (RF016 crea) → CORREO_VALIDADO (RF002 valida correo) → PAGO_PENDIENTE (RF011 + RF012) → DOCUMENTOS_PENDIENTES (RF008) → EN_REVISION (RF018 inicia)
+
+                                                EN_REVISION
+                                                     │
+                              ┌──────────────────────┼──────────────────────┐
+                              ▼                      ▼                      ▼
+                          OBSERVADA              RECHAZADA             FINALIZADA → CARNE (RF014)
+                        (RF010 subsana            (RF018,                (RF018 aprueba todo,
+                        → vuelve a                sin retorno)           gate real del SP)
+                         EN_REVISION)
+
 // cada transición: RF013 registra historial + RNF07 audita + RF019 notifica
 ```
+
+> **Nota de notación:** el diagrama desplegado muestra un único flujo previo (BORRADOR → … → EN_REVISION) que luego **se bifurca** en los tres desenlaces excluyentes de la decisión de evaluación (OBSERVADA, RECHAZADA o FINALIZADA), según RF018. No es una cadena secuencial: una postulación no pasa por los tres en fila — el evaluador elige uno. **RECHAZADA y FINALIZADA son terminales** (sin retorno); **OBSERVADA** regresa a EN_REVISION cuando el postulante subsana la observación (ADM_OBSERVACIONES_DOCS.ESTADO_OBSERVACION = P→S).
+
+---
+
+## Páginas relacionadas
+
+- [[wiki/projects/project1|AdmitU]] · [[wiki/sources/informe-admitu-lab02-prog3|Informe Lab 02]] · [[wiki/sources/proyecto1-referencia-grupo07|Reference Grupo 07]] · [[wiki/analyses/2026-09-02-admitu-analisis-exhaustivo-definitivo|Análisis definitivo]]
