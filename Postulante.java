@@ -1,3 +1,6 @@
+import java.util.List;
+import java.util.ArrayList;
+
 class Postulante extends Persona {
     private EstadoPostulante estado;
     private List<Pago> pagos;

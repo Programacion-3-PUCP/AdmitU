@@ -1,3 +1,7 @@
+import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
+
 class Convocatoria {
     private static int correlativo = 1;
     private int idConvocatoria;

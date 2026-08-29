@@ -1,3 +1,5 @@
+import java.util.Date;
+
 class Pago {
     private static int correlativo = 1;
     private int idPago;
