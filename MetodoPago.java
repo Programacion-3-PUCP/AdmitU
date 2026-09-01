@@ -1,3 +1,0 @@
-enum MetodoPago {
-    TARJETA_CREDITO, TRANSFERENCIA, EFECTIVO
-}
