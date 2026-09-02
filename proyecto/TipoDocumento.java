@@ -1,0 +1,1 @@
+public enum TipoDocumento { DNI,CE,PAS,CPP }

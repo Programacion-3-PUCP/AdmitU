@@ -1,0 +1,1 @@
+public enum TipoNotificacion { VALIDACION, PAGO, OBSERVACION, FINALIZACION, CARNE }

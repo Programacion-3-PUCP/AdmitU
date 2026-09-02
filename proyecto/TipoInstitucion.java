@@ -1,0 +1,1 @@
+public enum TipoInstitucion { COLEGIO, UNIVERSIDAD }

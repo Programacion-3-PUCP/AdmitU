@@ -1,0 +1,1 @@
+public enum TipoObservacion { FALTANTE, ILEGIBLE, VENCIDO, OTRO }

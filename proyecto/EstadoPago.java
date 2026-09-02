@@ -1,0 +1,1 @@
+public enum EstadoPago { GENERADO, PENDIENTE, APROBADO, RECHAZADO, VENCIDO }

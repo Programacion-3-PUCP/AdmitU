@@ -1,0 +1,1 @@
+public enum Parentesco { PADRE,MADRE,TUTOR,OTRO }

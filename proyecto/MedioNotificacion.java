@@ -1,0 +1,1 @@
+public enum MedioNotificacion { EMAIL, SMS, WHATSAPP }
