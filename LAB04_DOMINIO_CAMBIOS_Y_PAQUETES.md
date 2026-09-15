@@ -23,7 +23,7 @@ El código quedó **sin comentarios** a propósito: la explicación está aquí.
 7. Notificaciones ahora son **correo + bandeja del sistema** (chau SMS/WhatsApp),
    con `leída/fechaLectura`.
 8. Se blindaron las listas contra `null` (adiós NPE) y se limpiaron los imports muertos.
-9. `Principal` ahora demuestra el flujo completo punta a punta.
+9. `pe.edu.pucp.main.Principal` ahora demuestra el flujo completo punta a punta.
 10. Falta: compilar, aprobar este doc, **migrar a paquetes** (§7) y el SQL.
 
 ## 2. Glosario mínimo (para estar todos en la misma página)
@@ -44,7 +44,7 @@ El código quedó **sin comentarios** a propósito: la explicación está aquí.
 configuración (modalidades, carreras, requisitos, etapas), personas
 (postulante, apoderado, evaluador), el trámite (postulación, documentos,
 observaciones, carné), pagos, notificaciones y enums de estados/tipos.
-`Principal.java` es un **demo**: arma un caso completo (María se postula a
+`pe.edu.pucp.main.Principal.java` es un **demo**: arma un caso completo (María se postula a
 Sistemas, paga, le observan el DNI, lo subsana) e imprime el resumen.
 Ese demo es la prueba de que el dominio funciona.
 
@@ -136,7 +136,7 @@ Dos trampas del Lab02 que habrían explotado en el Lab04/07:
 Además se quitaron imports sin uso en 6 archivos. Nada de esto cambia el
 comportamiento: solo hace el dominio **apto para persistencia**.
 
-## 9. El demo `Principal`: qué demuestra ahora (sirve como guion de la expo)
+## 9. El demo `pe.edu.pucp.main.Principal`: qué demuestra ahora (sirve como guion de la expo)
 
 1. Catálogos precargados (Perú, facultades, sedes).
 2. Convocatoria ADM-2026 con **2 modalidades con requisitos distintos**
@@ -204,7 +204,7 @@ proyecto/src/pe/edu/pucp/admitu/
 │       ├── TipoNotificacion.java
 │       └── EstadoEnvio.java
 └── app/
-    └── Principal.java                  # * importa de los 5 paquetes (1)
+    └── pe.edu.pucp.main.Principal.java                  # * importa de los 5 paquetes (1)
 ```
 
 > `*` = necesitará líneas `import` (9 archivos). Los otros 31 solo cambian su
@@ -252,7 +252,7 @@ justo lo que enseña la Sesión 04). Las capas futuras (`persistencia`,
 **Aplicarlo (cuando el equipo lo apruebe):** mover con `git mv` a `src/...`,
 agregar la línea `package` + los `import` (mapa ya calculado), compilar con
 `javac -d out $(find src -name "*.java")` y correr
-`java -cp out pe.edu.pucp.admitu.app.Principal` (misma salida que hoy).
+`java -cp out pe.edu.pucp.admitu.app.pe.edu.pucp.main.Principal` (misma salida que hoy).
 
 ## 11. Preguntas frecuentes (con respuesta lista)
 
@@ -272,7 +272,7 @@ agregar la línea `package` + los `import` (mapa ya calculado), compilar con
 ## 12. Checklist del equipo
 
 - [ ] Cada uno compila y corre el demo:
-  `javac proyecto/*.java && java -cp proyecto Principal`
+  `javac proyecto/*.java && java -cp proyecto pe.edu.pucp.main.Principal`
 - [ ] Aprobar este documento (es la defensa ante el JP).
 - [ ] Aprobar el árbol del §10 y migrar.
 - [ ] Redactar el `SCRIPT SQL` espejo (`ACTIVO` solo donde hay `activo`).
