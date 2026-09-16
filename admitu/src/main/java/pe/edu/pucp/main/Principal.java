@@ -205,9 +205,6 @@ public class Principal {
         // baja logica
         contabilidad.setActivo(false);
 
-
-
-
         // mostrar por consola
         System.out.println("=== FLUJO ADMITU ===");
         System.out.println("pe.edu.pucp.admitu.persona.Postulante: " + postulante.getNombres() + " " + postulante.getApellidoPaterno());
