@@ -9,32 +9,25 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>admitu</artifactId>
+    <artifactId>admitu_DAO</artifactId>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
     <dependencies>
+        <dependency>
+            <groupId>pe.edu.pucp.admitu</groupId>
+            <artifactId>admitu_DBManager</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
         <dependency>
             <groupId>pe.edu.pucp.admitu</groupId>
             <artifactId>admitu_domain</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>pe.edu.pucp.admitu</groupId>
-            <artifactId>admitu_BussinesLogic</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-
-        <!-- Source: https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
-        <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <version>26.7.0</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 
