@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class Apoderado extends Persona {
-    private static int siguienteId = 1;
     private Parentesco parentesco;
     private List<Postulante> postulantes;
     private boolean activo;
@@ -13,8 +12,6 @@ public class Apoderado extends Persona {
             , TipoDocumento tipoDocumento, String numeroDocumento, String telefono, Parentesco parentesco
             , List<Postulante> postulantes) {
         super(nombres, apellidoPaterno, apellidoMaterno, correo, tipoDocumento, numeroDocumento, telefono);
-        setId(siguienteId);
-        siguienteId++;
         this.parentesco = parentesco;
         this.postulantes = (postulantes == null) ? new ArrayList<>() : new ArrayList<>(postulantes);
         this.activo = true;

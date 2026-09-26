@@ -1,14 +1,12 @@
 package pe.edu.pucp.admitu.configuracion;
 
 public class OfertaCarrera {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Convocatoria convocatoria;
     private Carrera carrera;
     private int cantidadVacantes;
 
     public OfertaCarrera(Convocatoria convocatoria, Carrera carrera, int cantidadVacantes) {
-        this.id = siguienteId++;
         this.convocatoria = convocatoria;
         this.carrera = carrera;
         this.cantidadVacantes = cantidadVacantes;
@@ -17,6 +15,8 @@ public class OfertaCarrera {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public Convocatoria getConvocatoria() {
         return convocatoria;

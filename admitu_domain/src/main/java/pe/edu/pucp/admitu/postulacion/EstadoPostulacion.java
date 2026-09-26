@@ -1,14 +1,12 @@
 package pe.edu.pucp.admitu.postulacion;
 
 public class EstadoPostulacion {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private String codigo;
     private String nombre;
     private String descripcion;
 
     public EstadoPostulacion(String codigo, String nombre, String descripcion) {
-        this.id = siguienteId++;
         this.codigo = codigo;
         this.nombre = nombre;
         this.descripcion = descripcion;
@@ -17,6 +15,8 @@ public class EstadoPostulacion {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public String getCodigo() {
         return codigo;

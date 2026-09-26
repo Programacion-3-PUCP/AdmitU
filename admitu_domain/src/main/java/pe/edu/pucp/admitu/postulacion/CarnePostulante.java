@@ -5,8 +5,7 @@ import pe.edu.pucp.admitu.configuracion.Sede;
 import java.time.LocalDate;
 
 public class CarnePostulante {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Postulacion postulacion;
     private Sede sede;
     private String codigoCarne;
@@ -18,7 +17,6 @@ public class CarnePostulante {
     public CarnePostulante(Postulacion postulacion, Sede sede, String codigoCarne
             , LocalDate fechaGeneracion, LocalDate fechaInicioVigencia
             , LocalDate fechaFinVigencia, String aulaExamen) {
-        this.id = siguienteId++;
         this.postulacion = postulacion;
         this.sede = sede;
         this.codigoCarne = codigoCarne;
@@ -31,6 +29,8 @@ public class CarnePostulante {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public Sede getSede() {
         return sede;

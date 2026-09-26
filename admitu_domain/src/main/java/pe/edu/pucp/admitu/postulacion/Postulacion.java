@@ -12,8 +12,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class Postulacion {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Postulante postulante;
     private Convocatoria convocatoria;
     private ConvocatoriaModalidad modalidadElegida;
@@ -31,7 +30,6 @@ public class Postulacion {
     private CarnePostulante carne;
 
     public Postulacion(){
-        this.id = siguienteId++;
         this.historial = new ArrayList<>();
         this.pagos = new ArrayList<>();
         this.documentos = new ArrayList<>();
@@ -43,7 +41,6 @@ public class Postulacion {
             , LocalDate fechaEnvio, LocalDate fechaFinalizacion, String codigoInscripcion
             , String observacionGeneral, List<PostulacionHistorial> historial, List<Pago> pagos
             , List<DocumentoPostulacion> documentos, List<Notificacion> notificaciones, CarnePostulante carne) {
-        this.id = siguienteId++;
         this.postulante = postulante;
         this.convocatoria = convocatoria;
         this.modalidadElegida = modalidadElegida;
@@ -64,6 +61,8 @@ public class Postulacion {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public Postulante getPostulante() {
         return postulante;

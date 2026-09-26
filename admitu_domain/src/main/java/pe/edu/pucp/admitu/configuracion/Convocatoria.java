@@ -6,8 +6,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class Convocatoria {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private String codigoConvocatoria;
     private String nombre;
     private String periodo;
@@ -23,7 +22,6 @@ public class Convocatoria {
     private List<ConvocatoriaEtapa> etapas ;
 
     public Convocatoria(){
-        this.id = siguienteId++;
         this.activo = true;
         this.postulantes = new ArrayList<>();
         this.modalidadesHabilitadas = new ArrayList<>();
@@ -35,7 +33,6 @@ public class Convocatoria {
             , LocalDate fechaInicio, LocalDate fechaFin, EstadoConvocatoria estado
             , String descripcion, List<Postulante> postulantes, List<ConvocatoriaModalidad> modalidadesHabilitadas
             , List<OfertaCarrera> carrerasOfrecidas, List<ConvocatoriaEtapa> etapas) {
-        this.id = siguienteId++;
         this.codigoConvocatoria = codigoConvocatoria;
         this.nombre = nombre;
         this.periodo = periodo;
@@ -53,6 +50,8 @@ public class Convocatoria {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public String getCodigoConvocatoria() {
         return codigoConvocatoria;

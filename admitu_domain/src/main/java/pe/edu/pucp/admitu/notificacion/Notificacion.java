@@ -6,8 +6,7 @@ import pe.edu.pucp.admitu.postulacion.Postulacion;
 import java.time.LocalDate;
 
 public class Notificacion {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Postulacion postulacion;
     private DocumentoObservacion observacionOrigen;
     private MedioNotificacion medioNotificacion;
@@ -26,7 +25,6 @@ public class Notificacion {
             , MedioNotificacion medioNotificacion, TipoNotificacion tipoNotificacion
             , String destinatario, String asunto, String mensaje, LocalDate fechaProgramada
             , LocalDate fechaEnvio, EstadoEnvio estadoEnvio) {
-        this.id = siguienteId++;
         this.postulacion = postulacion;
         this.observacionOrigen = observacionOrigen;
         this.medioNotificacion = medioNotificacion;
@@ -44,6 +42,8 @@ public class Notificacion {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public Postulacion getPostulacion() {
         return postulacion;

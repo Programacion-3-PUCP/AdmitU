@@ -3,8 +3,8 @@ package pe.edu.pucp.admitu.configuracion;
 import java.time.LocalDate;
 
 public class ConvocatoriaEtapa {
-    private static int siguienteId = 1;
-    private final int id;
+
+    private int id;
     private Convocatoria convocatoria;
     private Etapa etapa;
     private LocalDate fechaInicio;
@@ -12,7 +12,7 @@ public class ConvocatoriaEtapa {
 
     public ConvocatoriaEtapa(Convocatoria convocatoria, Etapa etapa
             , LocalDate fechaInicio, LocalDate fechaFin) {
-        this.id = siguienteId++;
+
         this.convocatoria = convocatoria;
         this.etapa = etapa;
         this.fechaInicio = fechaInicio;
@@ -22,6 +22,8 @@ public class ConvocatoriaEtapa {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public Convocatoria getConvocatoria() {
         return convocatoria;

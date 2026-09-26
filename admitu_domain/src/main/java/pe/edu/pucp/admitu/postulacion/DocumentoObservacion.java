@@ -5,8 +5,7 @@ import pe.edu.pucp.admitu.persona.Evaluador;
 import java.time.LocalDate;
 
 public class DocumentoObservacion {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private DocumentoPostulacion documento;
     private Evaluador evaluador;
     private TipoObservacion tipoObservacion;
@@ -19,7 +18,6 @@ public class DocumentoObservacion {
     public DocumentoObservacion(DocumentoPostulacion documento, Evaluador evaluador
             , TipoObservacion tipoObservacion, String descripcion, LocalDate fechaObservacion
             , EstadoObservacion estadoObservacion, LocalDate fechaSubsanacion, String comentarioSubsanacion) {
-        this.id = siguienteId++;
         this.documento = documento;
         this.evaluador = evaluador;
         this.tipoObservacion = tipoObservacion;
@@ -33,6 +31,8 @@ public class DocumentoObservacion {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public DocumentoPostulacion getDocumento() {
         return documento;

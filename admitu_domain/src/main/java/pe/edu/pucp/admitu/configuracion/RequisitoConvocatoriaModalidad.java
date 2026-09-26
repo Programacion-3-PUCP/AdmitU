@@ -1,8 +1,7 @@
 package pe.edu.pucp.admitu.configuracion;
 
 public class RequisitoConvocatoriaModalidad {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private ConvocatoriaModalidad convocatoriaModalidad;
     private Requisito requisito;
     private boolean obligatorio;
@@ -10,7 +9,6 @@ public class RequisitoConvocatoriaModalidad {
 
     public RequisitoConvocatoriaModalidad(ConvocatoriaModalidad convocatoriaModalidad
             , Requisito requisito, boolean obligatorio, Integer ordenPresentacion) {
-        this.id = siguienteId++;
         this.convocatoriaModalidad = convocatoriaModalidad;
         this.requisito = requisito;
         this.obligatorio = obligatorio;
@@ -20,6 +18,8 @@ public class RequisitoConvocatoriaModalidad {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public ConvocatoriaModalidad getConvocatoriaModalidad() {
         return convocatoriaModalidad;

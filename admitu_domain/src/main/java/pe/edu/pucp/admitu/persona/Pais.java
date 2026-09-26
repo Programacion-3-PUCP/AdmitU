@@ -1,13 +1,11 @@
 package pe.edu.pucp.admitu.persona;
 
 public class Pais {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private String codigoIso2;
     private String nombre;
 
     public Pais(String codigoIso2, String nombre) {
-        this.id = siguienteId++;
         this.codigoIso2 = codigoIso2;
         this.nombre = nombre;
     }
@@ -15,6 +13,8 @@ public class Pais {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public String getCodigoIso2() {
         return codigoIso2;

@@ -5,8 +5,7 @@ import pe.edu.pucp.admitu.postulacion.Postulacion;
 import java.time.LocalDate;
 
 public class Pago {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Postulacion postulacion;
     private MedioPago medioPago;
     private double monto;
@@ -20,7 +19,6 @@ public class Pago {
     public Pago(Postulacion postulacion, MedioPago medioPago, double monto
             , LocalDate fechaGeneracion, LocalDate fechaPago, String codigoPago
             , String referenciaPasarela, EstadoPago estadoPago, String rutaVoucher) {
-        this.id = siguienteId++;
         this.postulacion = postulacion;
         this.medioPago = medioPago;
         this.monto = monto;
@@ -35,6 +33,8 @@ public class Pago {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public Postulacion getPostulacion() {
         return postulacion;

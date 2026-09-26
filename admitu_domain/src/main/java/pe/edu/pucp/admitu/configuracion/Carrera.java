@@ -1,15 +1,14 @@
 package pe.edu.pucp.admitu.configuracion;
 
 public class Carrera {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Facultad facultad;
     private String codigoCarrera;
     private String nombre;
     private boolean activo;
 
-    public Carrera(Facultad facultad, String codigoCarrera, String nombre) {
-        this.id = siguienteId++;
+    public Carrera( Facultad facultad, String codigoCarrera, String nombre) {
+
         this.facultad = facultad;
         this.codigoCarrera = codigoCarrera;
         this.nombre = nombre;
@@ -19,6 +18,8 @@ public class Carrera {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public Facultad getFacultad() {
         return facultad;

@@ -1,8 +1,7 @@
 package pe.edu.pucp.admitu.persona;
 
 public class AntecedenteAcademico {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Postulante postulante;
     private InstitucionEducativa institucion;
     private int anioInicio;
@@ -12,7 +11,6 @@ public class AntecedenteAcademico {
 
     public AntecedenteAcademico(Postulante postulante, InstitucionEducativa institucion
             , int anioInicio, int anioFin, String descripcion) {
-        this.id = siguienteId++;
         this.postulante = postulante;
         this.institucion = institucion;
         this.anioInicio = anioInicio;
@@ -24,6 +22,8 @@ public class AntecedenteAcademico {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public Postulante getPostulante() {
         return postulante;

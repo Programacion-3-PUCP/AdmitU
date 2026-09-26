@@ -4,8 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class ConvocatoriaModalidad {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Convocatoria convocatoria;
     private Modalidad modalidad;
     private double costoInscripcion;
@@ -14,7 +13,6 @@ public class ConvocatoriaModalidad {
 
     public ConvocatoriaModalidad(Convocatoria convocatoria, Modalidad modalidad, double costoInscripcion
             , String observacion, List<RequisitoConvocatoriaModalidad> requisitos) {
-        this.id = siguienteId++;
         this.convocatoria = convocatoria;
         this.modalidad = modalidad;
         this.costoInscripcion = costoInscripcion;
@@ -25,6 +23,8 @@ public class ConvocatoriaModalidad {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public Convocatoria getConvocatoria() {
         return convocatoria;

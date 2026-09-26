@@ -1,14 +1,12 @@
 package pe.edu.pucp.admitu.configuracion;
 
 public class Sede {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private String codigo;
     private String nombre;
     private String direccion;
 
     public Sede(String codigo, String nombre, String direccion) {
-        this.id = siguienteId++;
         this.codigo = codigo;
         this.nombre = nombre;
         this.direccion = direccion;
@@ -17,6 +15,8 @@ public class Sede {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public String getCodigo() {
         return codigo;

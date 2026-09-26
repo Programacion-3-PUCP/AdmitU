@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class Postulante extends Persona {
-    private static int siguienteId = 1;
     private Apoderado apoderado;
     private LocalDate fechaNacimiento;
     private boolean tieneDiscapacidad;
@@ -23,8 +22,7 @@ public class Postulante extends Persona {
             , boolean correoValidado, LocalDate fechaValidacionCorreo, List<AntecedenteAcademico> antecedentes
             , List<Postulacion> postulaciones) {
         super(nombres, apellidoPaterno, apellidoMaterno, correo, tipoDocumento, numeroDocumento, telefono);
-        setId(siguienteId);
-        siguienteId++;
+
         this.apoderado = apoderado;
         this.fechaNacimiento = fechaNacimiento;
         this.tieneDiscapacidad = tieneDiscapacidad;

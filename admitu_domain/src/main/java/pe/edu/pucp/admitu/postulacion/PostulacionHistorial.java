@@ -3,8 +3,7 @@ package pe.edu.pucp.admitu.postulacion;
 import java.time.LocalDate;
 
 public class PostulacionHistorial {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Postulacion postulacion;
     private EstadoPostulacion estadoAnterior;
     private EstadoPostulacion estadoActual;
@@ -15,7 +14,6 @@ public class PostulacionHistorial {
     public PostulacionHistorial(Postulacion postulacion, EstadoPostulacion estadoAnterior
             , EstadoPostulacion estadoActual, LocalDate fechaCambio, String responsableCambio
             , String motivoCambio) {
-        this.id = siguienteId++;
         this.postulacion = postulacion;
         this.estadoAnterior = estadoAnterior;
         this.estadoActual = estadoActual;
@@ -27,6 +25,8 @@ public class PostulacionHistorial {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public Postulacion getPostulacion() {
         return postulacion;

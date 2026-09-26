@@ -1,8 +1,7 @@
 package pe.edu.pucp.admitu.configuracion;
 
 public class Requisito {
-    private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private String codigoRequisito;
     private String nombre;
     private String descripcion;
@@ -12,7 +11,6 @@ public class Requisito {
 
     public Requisito(String codigoRequisito, String nombre, String descripcion
             , TipoArchivo tipoArchivoRequerido, int tamanioMaximoBytes ) {
-        this.id = siguienteId++;
         this.codigoRequisito = codigoRequisito;
         this.nombre = nombre;
         this.descripcion = descripcion;
@@ -24,6 +22,8 @@ public class Requisito {
     public int getId() {
         return id;
     }
+
+    public void setId(int id) {this.id = id;}
 
     public String getCodigoRequisito() {
         return codigoRequisito;
