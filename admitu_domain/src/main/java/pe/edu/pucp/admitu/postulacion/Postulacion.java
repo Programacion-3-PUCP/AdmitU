@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 public class Postulacion {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Postulante postulante;
     private Convocatoria convocatoria;
     private ConvocatoriaModalidad modalidadElegida;
@@ -63,6 +63,11 @@ public class Postulacion {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public Postulante getPostulante() {

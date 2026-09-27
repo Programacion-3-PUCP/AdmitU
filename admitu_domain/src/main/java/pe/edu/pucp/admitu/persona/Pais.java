@@ -5,11 +5,13 @@ public class Pais {
     private final int id;
     private String codigoIso2;
     private String nombre;
+    private boolean activo;
 
     public Pais(String codigoIso2, String nombre) {
         this.id = siguienteId++;
         this.codigoIso2 = codigoIso2;
         this.nombre = nombre;
+        this.activo = true;
     }
 
     public int getId() {
@@ -30,5 +32,13 @@ public class Pais {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
+    }
+
+    public boolean isActivo() {
+        return activo;
+    }
+
+    public void setActivo(boolean activo) {
+        this.activo = activo;
     }
 }

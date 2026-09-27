@@ -2,7 +2,7 @@ package pe.edu.pucp.admitu.postulacion;
 
 public class EstadoPostulacion {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private String codigo;
     private String nombre;
     private String descripcion;
@@ -16,6 +16,11 @@ public class EstadoPostulacion {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public String getCodigo() {

@@ -1,224 +1,153 @@
 package pe.edu.pucp.main;
 
-import pe.edu.pucp.admitu.configuracion.*;
-import pe.edu.pucp.admitu.notificacion.EstadoEnvio;
-import pe.edu.pucp.admitu.notificacion.MedioNotificacion;
-import pe.edu.pucp.admitu.notificacion.Notificacion;
-import pe.edu.pucp.admitu.notificacion.TipoNotificacion;
+import pe.edu.pucp.admitu.configuracion.bo.CarreraBOImpl;
+import pe.edu.pucp.admitu.configuracion.bo.ConvocatoriaBOImpl;
+import pe.edu.pucp.admitu.configuracion.bo.FacultadBOImpl;
+import pe.edu.pucp.admitu.configuracion.boi.ICarreraBO;
+import pe.edu.pucp.admitu.configuracion.boi.IConvocatoriaBO;
+import pe.edu.pucp.admitu.configuracion.boi.IFacultadBO;
+import pe.edu.pucp.admitu.configuracion.Carrera;
+import pe.edu.pucp.admitu.configuracion.Convocatoria;
+import pe.edu.pucp.admitu.configuracion.ConvocatoriaModalidad;
+import pe.edu.pucp.admitu.configuracion.EstadoConvocatoria;
+import pe.edu.pucp.admitu.configuracion.Facultad;
+import pe.edu.pucp.admitu.configuracion.OfertaCarrera;
 import pe.edu.pucp.admitu.pago.EstadoPago;
 import pe.edu.pucp.admitu.pago.MedioPago;
 import pe.edu.pucp.admitu.pago.Pago;
-import pe.edu.pucp.admitu.persona.*;
-import pe.edu.pucp.admitu.postulacion.*;
+import pe.edu.pucp.admitu.pago.bo.PagoBOImpl;
+import pe.edu.pucp.admitu.pago.boi.IPagoBO;
+import pe.edu.pucp.admitu.persona.Postulante;
+import pe.edu.pucp.admitu.persona.TipoDocumento;
+import pe.edu.pucp.admitu.persona.bo.PostulanteBOImpl;
+import pe.edu.pucp.admitu.persona.boi.IPostulanteBO;
+import pe.edu.pucp.admitu.postulacion.EstadoPostulacion;
+import pe.edu.pucp.admitu.postulacion.Postulacion;
+import pe.edu.pucp.admitu.postulacion.bo.PostulacionBOImpl;
+import pe.edu.pucp.admitu.postulacion.boi.IPostulacionBO;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Principal {
     public static void main(String[] args) {
-        // pais
-        Pais peru = new Pais("PE", "Peru");
+        // suf para no chocar con los unique cuando se corre varias veces
+        String suf = String.valueOf(System.currentTimeMillis() % 100000);
+        System.out.println("Demo Lab06 - AdmitU");
 
-        // facultades
-        Facultad ing = new Facultad("FING", "Ingenieria");
-        Facultad admin = new Facultad("FADM", "Administracion");
+        IFacultadBO facultadBO = new FacultadBOImpl();
+        ICarreraBO carreraBO = new CarreraBOImpl();
+        IConvocatoriaBO convocatoriaBO = new ConvocatoriaBOImpl();
+        IPostulanteBO postulanteBO = new PostulanteBOImpl();
+        IPostulacionBO postulacionBO = new PostulacionBOImpl();
+        IPagoBO pagoBO = new PagoBOImpl();
 
-        // carreras
-        Carrera sistemas = new Carrera(ing, "C01", "Ingenieria de Sistemas");
-        Carrera civil = new Carrera(ing, "C02", "Ingenieria Civil");
-        Carrera contabilidad = new Carrera(admin, "C03", "Contabilidad");
+        try {
+            // facultad
+            Facultad fac = new Facultad("FL6-" + suf, "Facultad Lab06 " + suf);
+            facultadBO.insertar(fac);
+            System.out.println("Facultad registrada: " + fac.getId());
+            System.out.println("Total facultades: " + facultadBO.listarTodos().size());
+            System.out.println("Buscar facultad: " + facultadBO.buscarPorId(fac.getId()).getNombre());
 
-        // sedes
-        Sede lima = new Sede("S01", "Lima", "Av. Universitaria 1801");
-        Sede arequipa = new Sede("S02", "Arequipa", "Av. La Paz 600");
+            fac.setNombre("Facultad Lab06 MOD " + suf);
+            facultadBO.modificar(fac);
+            System.out.println("Facultad modificada: " + facultadBO.buscarPorId(fac.getId()).getNombre());
 
-        // modalidades
-        Modalidad ordinario = new Modalidad("MO", "Ordinario", "Examen de admision general", false, false);
-        Modalidad cepre = new Modalidad("CP", "CEPRU", "Centro Preuniversitario", true, false);
+            facultadBO.eliminar(fac.getId());
+            System.out.println("Facultad eliminada, activo=" + facultadBO.buscarPorId(fac.getId()).isActivo());
 
-        // etapas
-        Etapa inscripcion = new Etapa(LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 30), "E1", "Inscripcion", "Periodo de registro");
-        Etapa examen = new Etapa(LocalDate.of(2026, 4, 12), LocalDate.of(2026, 4, 12), "E2", "Examen", "Aplicacion de la prueba");
+            // carrera, uso la facultad 1 que ya existe en la bd
+            Carrera car = new Carrera(facultadBO.buscarPorId(1), "CL6-" + suf, "Carrera Lab06 " + suf);
+            carreraBO.insertar(car);
+            System.out.println("Carrera registrada: " + car.getId());
 
-        // colegio
-        InstitucionEducativa colegio = new InstitucionEducativa(peru, "COL-101", "Colegio Nacional Mixto", TipoInstitucion.COLEGIO);
+            car.setNombre("Carrera Lab06 MOD " + suf);
+            carreraBO.modificar(car);
+            System.out.println("Carrera modificada: " + carreraBO.buscarPorId(car.getId()).getNombre());
+            System.out.println("Total carreras: " + carreraBO.listarTodos().size());
 
-        // requisitos
-        Requisito docIdentidad = new Requisito("R01", "Documento de identidad", "Copia del DNI vigente", TipoArchivo.IMAGEN, 5242880);
-        Requisito foto = new Requisito("R02", "Foto tamano carnet", "Foto a color fondo blanco", TipoArchivo.IMAGEN, 2097152);
-        Requisito certNotas = new Requisito("R03", "Certificado de notas", "Certificado del colegio", TipoArchivo.PDF, 5242880);
+            carreraBO.eliminar(car.getId());
+            System.out.println("Carrera eliminada: " + car.getId());
 
-        // medio de pago
-        MedioPago tarjeta = MedioPago.TARJETA;
+            // convocatoria
+            Convocatoria conv = new Convocatoria();
+            conv.setCodigoConvocatoria("CV6-" + suf);
+            conv.setNombre("Convocatoria Lab06 " + suf);
+            conv.setPeriodo("2026-2");
+            conv.setFechaInicio(LocalDate.of(2026, 10, 1));
+            conv.setFechaFin(LocalDate.of(2026, 11, 30));
+            conv.setEstado(EstadoConvocatoria.PUBLICADA);
+            conv.setDescripcion("Demo Lab06");
+            convocatoriaBO.insertar(conv);
+            System.out.println("Convocatoria registrada: " + conv.getId());
 
-        // estados
-        EstadoPostulacion borrador = new EstadoPostulacion("BORRADOR", "Borrador", "pe.edu.pucp.admitu.postulacion.Postulacion en edicion");
-        EstadoPostulacion completada = new EstadoPostulacion("COMPLETADA", "Completada", "Lista para enviar");
-        EstadoPostulacion enProceso = new EstadoPostulacion("EN_PROCESO", "En Proceso", "Bajo evaluacion");
+            conv.setDescripcion("Demo Lab06 MOD");
+            convocatoriaBO.modificar(conv);
+            System.out.println("Convocatoria modificada: " + convocatoriaBO.buscarPorId(conv.getId()).getDescripcion());
+            System.out.println("Total convocatorias: " + convocatoriaBO.listarTodos().size());
 
-        // convocatoria
-        List<Postulante> postulantesIniciales = new ArrayList<>();
-        List<ConvocatoriaModalidad> modalidades = new ArrayList<>();
-        List<OfertaCarrera> ofertas = new ArrayList<>();
-        List<ConvocatoriaEtapa> etapas = new ArrayList<>();
+            // postulante
+            Postulante post = new Postulante("Lab06", "Paterno" + suf, "Materno", "lab06." + suf + "@pucp.edu.pe",
+                TipoDocumento.DNI, "70" + suf + "11", "999" + suf,
+                null, LocalDate.of(2005, 5, 10), false, null, false, null, null, null);
+            postulanteBO.insertar(post);
+            System.out.println("Postulante registrado: " + post.getId());
 
-        Convocatoria convocatoria = new Convocatoria("ADM-2026", "Admision 2026", "2026-1",
-                LocalDate.of(2026, 3, 1), LocalDate.of(2026, 4, 30), EstadoConvocatoria.PUBLICADA,
-                "Proceso de admision ordinario", postulantesIniciales, modalidades, ofertas, etapas);
+            post.setTelefono("988000111");
+            postulanteBO.modificar(post);
+            System.out.println("Telefono nuevo: " + postulanteBO.buscarPorId(post.getId()).getTelefono());
 
-        // modalidades de la convocatoria
-        ConvocatoriaModalidad convOrdinaria = new ConvocatoriaModalidad(convocatoria, ordinario, 150.00, "Sin descuento", new ArrayList<>());
-        ConvocatoriaModalidad convCepre = new ConvocatoriaModalidad(convocatoria, cepre, 120.00, "Descuento cepru", new ArrayList<>());
+            // postulacion, se usan los ids 1 que ya estan en la bd
+            ConvocatoriaModalidad modRef = new ConvocatoriaModalidad();
+            modRef.setId(1);
+            OfertaCarrera ofeRef = new OfertaCarrera();
+            ofeRef.setId(1);
+            EstadoPostulacion estRef = new EstadoPostulacion("TMP", "TMP", null);
+            estRef.setId(1);
 
-        RequisitoConvocatoriaModalidad reqDni = new RequisitoConvocatoriaModalidad(convOrdinaria, docIdentidad, true, 1);
-        RequisitoConvocatoriaModalidad reqFoto = new RequisitoConvocatoriaModalidad(convOrdinaria, foto, true, 2);
-        RequisitoConvocatoriaModalidad reqNotas = new RequisitoConvocatoriaModalidad(convCepre, certNotas, false, 3);
-        List<RequisitoConvocatoriaModalidad> reqsOrd = new ArrayList<>();
-        reqsOrd.add(reqDni);
-        reqsOrd.add(reqFoto);
-        convOrdinaria.setRequisitos(reqsOrd);
+            Postulacion postulacion = new Postulacion();
+            postulacion.setPostulante(post);
+            postulacion.setConvocatoria(conv);
+            postulacion.setModalidadElegida(modRef);
+            postulacion.setCarreraElegida(ofeRef);
+            postulacion.setEstadoActual(estRef);
+            postulacion.setCodigoInscripcion("INS-L06-" + suf);
+            postulacion.setObservacionGeneral("Demo Lab06");
+            postulacionBO.insertar(postulacion);
+            System.out.println("Postulacion registrada: " + postulacion.getId());
 
-        List<RequisitoConvocatoriaModalidad> reqsCepre = new ArrayList<>();
-        reqsCepre.add(reqNotas);
-        convCepre.setRequisitos(reqsCepre);
-        modalidades.add(convOrdinaria);
-        modalidades.add(convCepre);
-        convocatoria.setModalidadesHabilitadas(modalidades);
+            EstadoPostulacion est2 = new EstadoPostulacion("TMP", "TMP", null);
+            est2.setId(2);
+            postulacion.setEstadoActual(est2);
+            postulacion.setObservacionGeneral("Demo Lab06 MOD");
+            postulacionBO.modificar(postulacion);
+            System.out.println("Postulacion modificada: " + postulacionBO.buscarPorId(postulacion.getId()).getObservacionGeneral());
 
-        // carreras ofrecidas
-        OfertaCarrera ofSistemas = new OfertaCarrera(convocatoria, sistemas, 50);
-        OfertaCarrera ofCivil = new OfertaCarrera(convocatoria, civil, 30);
-        ofertas.add(ofSistemas);
-        ofertas.add(ofCivil);
-        convocatoria.setCarrerasOfrecidas(ofertas);
+            // pago por transferencia con voucher
+            Pago pago = new Pago(postulacion, MedioPago.TRANSFERENCIA, 350.00,
+                LocalDate.now(), null, "PAG-L06-" + suf, "REF-L06-" + suf,
+                EstadoPago.PENDIENTE, "/vouchers/lab06-" + suf + ".pdf");
+            pagoBO.insertar(pago);
+            System.out.println("Pago registrado: " + pago.getId() + " " + pago.getMedioPago());
 
-        // etapas de la convocatoria
-        ConvocatoriaEtapa ceInscripcion = new ConvocatoriaEtapa(convocatoria, inscripcion, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 30));
-        ConvocatoriaEtapa ceExamen = new ConvocatoriaEtapa(convocatoria, examen, LocalDate.of(2026, 4, 12), LocalDate.of(2026, 4, 12));
-        etapas.add(ceInscripcion);
-        etapas.add(ceExamen);
-        convocatoria.setEtapas(etapas);
+            pago.setEstadoPago(EstadoPago.APROBADO);
+            pago.setReferenciaPasarela("REF-L06-APROB-" + suf);
+            pagoBO.modificar(pago);
+            System.out.println("Pago aprobado: " + pagoBO.buscarPorId(pago.getId()).getEstadoPago());
+            System.out.println("Total pagos: " + pagoBO.listarTodos().size());
 
-        // apoderado y postulante
-        Apoderado apoderado = new Apoderado("Carlos", "Gomez", "Ruiz", "carlos.gomez@mail.com",
-                TipoDocumento.DNI, "40112233", "999111222", Parentesco.PADRE, new ArrayList<>());
+            pagoBO.eliminar(pago.getId());
+            System.out.println("Pago eliminado: " + pagoBO.buscarPorId(pago.getId()).getEstadoPago());
 
-        Postulante postulante = new Postulante("Maria", "Perez", "Lopez", "maria.perez@mail.com",
-                TipoDocumento.DNI, "70223344", "988776655", apoderado, LocalDate.of(2006, 5, 14),
-                false, null, true, LocalDate.of(2026, 2, 20), new ArrayList<>(), new ArrayList<>());
+            // limpieza de lo que se registro en la demo
+            postulacionBO.eliminar(postulacion.getId());
+            postulanteBO.eliminar(post.getId());
+            convocatoriaBO.eliminar(conv.getId());
 
-        Apoderado apoderado2 = new Apoderado("Luis", "Rojas", "Delgado", "luis.rojas@mail.com",
-                TipoDocumento.DNI, "40556677", "922333444", Parentesco.TUTOR, new ArrayList<>());
-        List<Postulante> apP = new ArrayList<>();
-        apP.add(postulante);
-        apoderado2.setPostulantes(apP);
-
-        // evaluador
-        Evaluador evaluador = new Evaluador("Ana", "Torres", "Vega", "ana.torres@admis.univ.edu.pe",
-                TipoDocumento.DNI, "41122334", "911444555", "Jefa de Evaluadores");
-
-        // postulacion
-        List<PostulacionHistorial> historial = new ArrayList<>();
-        List<Pago> pagos = new ArrayList<>();
-        List<DocumentoPostulacion> documentos = new ArrayList<>();
-        List<Notificacion> notificaciones = new ArrayList<>();
-
-        Postulacion postulacion = new Postulacion(postulante, convocatoria, convOrdinaria, ofSistemas,
-                borrador, LocalDate.of(2026, 3, 5), null, null, "INS-2026-0001",
-                "pe.edu.pucp.admitu.postulacion.Postulacion inicial", historial, pagos, documentos, notificaciones, null);
-
-        // historial
-        PostulacionHistorial h1 = new PostulacionHistorial(postulacion, borrador, completada,
-                LocalDate.of(2026, 3, 6), "Sistema", "El postulante completo los datos");
-        historial.add(h1);
-        postulacion.setHistorial(historial);
-        postulacion.setEstadoActual(completada);
-
-        // pago
-        Pago pago = new Pago(postulacion, tarjeta, 150.00,
-                LocalDate.of(2026, 3, 6), LocalDate.of(2026, 3, 6), "PAG-2026-0001", "TF-88231",
-                EstadoPago.APROBADO, "/docs/voucher.pdf");
-        pagos.add(pago);
-        postulacion.setPagos(pagos);
-
-        // envio a evaluacion
-        postulacion.setFechaEnvio(LocalDate.of(2026, 3, 7));
-        postulacion.setEstadoActual(enProceso);
-
-        // carne
-        CarnePostulante carne = new CarnePostulante(postulacion, lima, "CAR-001",
-                LocalDate.of(2026, 3, 10), LocalDate.of(2026, 4, 12), LocalDate.of(2026, 4, 12), "Aula 302");
-        postulacion.setCarne(carne);
-
-        // documento
-        DocumentoPostulacion docDni = new DocumentoPostulacion(postulacion, docIdentidad, 1,
-                "dni_maria.jpg", TipoArchivo.IMAGEN, 102400L, "/docs/dni_maria.jpg",
-                LocalDate.of(2026, 3, 7), EstadoDocumento.PENDIENTE, null, null, new ArrayList<>());
-        documentos.add(docDni);
-        postulacion.setDocumentos(documentos);
-
-        // observacion del documento
-        DocumentoObservacion obs = new DocumentoObservacion(docDni, evaluador, TipoObservacion.ILEGIBLE,
-                "La foto del DNI se ve borrosa", LocalDate.of(2026, 3, 8),
-                EstadoObservacion.PENDIENTE, null, null);
-        List<DocumentoObservacion> obsList = new ArrayList<>();
-        obsList.add(obs);
-        docDni.setObservaciones(obsList);
-        docDni.setEstadoDocumento(EstadoDocumento.OBSERVADO);
-
-        // notificaciones
-        Notificacion notif = new Notificacion(postulacion, obs, MedioNotificacion.CORREO,
-                TipoNotificacion.OBSERVACION, "maria.perez@mail.com", "Documento observado",
-                "Su DNI fue observado, vuelva a cargarlo", LocalDate.of(2026, 3, 8),
-                LocalDate.of(2026, 3, 8), EstadoEnvio.ENVIADA);
-        notificaciones.add(notif);
-        Notificacion notifBandeja = new Notificacion(postulacion, obs, MedioNotificacion.BANDEJA_SISTEMA,
-                TipoNotificacion.OBSERVACION, "maria.perez@mail.com", "Documento observado",
-                "Revise su bandeja: DNI observado", LocalDate.of(2026, 3, 8),
-                LocalDate.of(2026, 3, 8), EstadoEnvio.ENVIADA);
-        notifBandeja.setLeida(true);
-        notifBandeja.setFechaLectura(LocalDate.of(2026, 3, 9));
-        notificaciones.add(notifBandeja);
-        postulacion.setNotificaciones(notificaciones);
-
-        // se subsana lo observado
-        obs.setEstadoObservacion(EstadoObservacion.SUBSANADA);
-        obs.setFechaSubsanacion(LocalDate.of(2026, 3, 9));
-        obs.setComentarioSubsanacion("Reemplazado por foto legible");
-        docDni.setEstadoDocumento(EstadoDocumento.APROBADO);
-        docDni.setFechaEvaluacion(LocalDate.of(2026, 3, 9));
-        docDni.setComentarioEvaluacion("Documento corregido y aceptado");
-
-        // datos finales
-        AntecedenteAcademico antColegio = new AntecedenteAcademico(postulante, colegio, 2021, 2025, "Secundaria completa");
-        List<AntecedenteAcademico> ants = new ArrayList<>();
-        ants.add(antColegio);
-        postulante.setAntecedentes(ants);
-        List<Postulacion> postulaciones = new ArrayList<>();
-        postulaciones.add(postulacion);
-        postulante.setPostulaciones(postulaciones);
-        List<Postulante> postulantesConv = new ArrayList<>();
-        postulantesConv.add(postulante);
-        convocatoria.setPostulantes(postulantesConv);
-
-        // baja logica
-        contabilidad.setActivo(false);
-
-        // mostrar por consola
-        System.out.println("=== FLUJO ADMITU ===");
-        System.out.println("pe.edu.pucp.admitu.persona.Postulante: " + postulante.getNombres() + " " + postulante.getApellidoPaterno());
-        System.out.println("pe.edu.pucp.admitu.configuracion.Convocatoria: " + convocatoria.getNombre() + " (" + convocatoria.getPeriodo() + ") activo=" + convocatoria.isActivo());
-        System.out.println("pe.edu.pucp.admitu.configuracion.Modalidad: " + postulacion.getModalidadElegida().getModalidad().getNombre());
-        System.out.println("pe.edu.pucp.admitu.configuracion.Carrera: " + postulacion.getCarreraElegida().getCarrera().getNombre());
-        System.out.println("Estado: " + postulacion.getEstadoActual().getNombre());
-        System.out.println("Inscripcion: " + postulacion.getCodigoInscripcion());
-        System.out.println("pe.edu.pucp.admitu.pago.Pago: S/ " + pago.getMonto() + " [" + pago.getEstadoPago() + "] ref=" + pago.getReferenciaPasarela());
-        System.out.println("Documentos: " + postulacion.getDocumentos().size() + " (DNI: " + docDni.getEstadoDocumento() + ")");
-        System.out.println("Antecedentes: " + postulante.getAntecedentes().size() + " (" + antColegio.getInstitucion().getNombre() + ")");
-        System.out.println("Modalidades habilitadas: " + convocatoria.getModalidadesHabilitadas().size() + " | Sedes: " + lima.getNombre() + ", " + arequipa.getNombre());
-        System.out.println("Notificaciones: " + postulacion.getNotificaciones().size() + " (bandeja leida=" + notifBandeja.isLeida() + ")");
-        System.out.println("Carne: " + carne.getCodigoCarne() + " en " + carne.getSede().getNombre() + " (" + carne.getAulaExamen() + ")");
-        System.out.println("Baja logica Contabilidad activo=" + contabilidad.isActivo());
+            System.out.println("Demo terminada");
+        } catch (Exception ex) {
+            System.out.println("Error en la demo: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 }

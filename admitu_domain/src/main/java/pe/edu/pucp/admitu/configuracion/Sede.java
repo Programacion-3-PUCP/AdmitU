@@ -6,12 +6,14 @@ public class Sede {
     private String codigo;
     private String nombre;
     private String direccion;
+    private boolean activo;
 
     public Sede(String codigo, String nombre, String direccion) {
         this.id = siguienteId++;
         this.codigo = codigo;
         this.nombre = nombre;
         this.direccion = direccion;
+        this.activo = true;
     }
 
     public int getId() {
@@ -40,6 +42,14 @@ public class Sede {
 
     public void setDireccion(String direccion) {
         this.direccion = direccion;
+    }
+
+    public boolean isActivo() {
+        return activo;
+    }
+
+    public void setActivo(boolean activo) {
+        this.activo = activo;
     }
 
 }

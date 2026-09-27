@@ -39,6 +39,12 @@ public class Postulante extends Persona {
         return apoderado;
     }
 
+    @Override
+    public void setId(int id) {
+        super.setId(id);
+        if (id >= siguienteId) siguienteId = id + 1;
+    }
+
     public void setApoderado(Apoderado apoderado) {
         this.apoderado = apoderado;
     }
