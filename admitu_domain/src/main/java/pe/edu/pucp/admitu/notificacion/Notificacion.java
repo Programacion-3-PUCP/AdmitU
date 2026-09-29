@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 public class Notificacion {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Postulacion postulacion;
     private DocumentoObservacion observacionOrigen;
     private MedioNotificacion medioNotificacion;
@@ -43,6 +43,11 @@ public class Notificacion {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public Postulacion getPostulacion() {

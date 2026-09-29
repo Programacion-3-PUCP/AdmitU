@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 public class Etapa {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
     private String codigoEtapa;
@@ -25,6 +25,11 @@ public class Etapa {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public LocalDate getFechaInicio() {

@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 public class PostulacionHistorial {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Postulacion postulacion;
     private EstadoPostulacion estadoAnterior;
     private EstadoPostulacion estadoActual;
@@ -26,6 +26,11 @@ public class PostulacionHistorial {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public Postulacion getPostulacion() {

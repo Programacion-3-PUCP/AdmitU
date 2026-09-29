@@ -2,7 +2,7 @@ package pe.edu.pucp.admitu.persona;
 
 public class Pais {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private String codigoIso2;
     private String nombre;
     private boolean activo;
@@ -16,6 +16,11 @@ public class Pais {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public String getCodigoIso2() {

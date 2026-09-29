@@ -2,7 +2,7 @@ package pe.edu.pucp.admitu.configuracion;
 
 public class Modalidad {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private String codigoModalidad;
     private String nombre;
     private String descripcion;
@@ -23,6 +23,11 @@ public class Modalidad {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public String getCodigoModalidad() {

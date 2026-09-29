@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 public class DocumentoPostulacion {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Postulacion postulacion;
     private Requisito requisitoAplicable;
     private int numeroVersion;
@@ -44,6 +44,11 @@ public class DocumentoPostulacion {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public Postulacion getPostulacion() {

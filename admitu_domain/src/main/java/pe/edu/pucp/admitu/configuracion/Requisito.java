@@ -2,7 +2,7 @@ package pe.edu.pucp.admitu.configuracion;
 
 public class Requisito {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private String codigoRequisito;
     private String nombre;
     private String descripcion;
@@ -23,6 +23,11 @@ public class Requisito {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public String getCodigoRequisito() {

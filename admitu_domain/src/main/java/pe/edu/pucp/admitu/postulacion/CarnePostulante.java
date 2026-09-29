@@ -6,7 +6,7 @@ import java.time.LocalDate;
 
 public class CarnePostulante {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Postulacion postulacion;
     private Sede sede;
     private String codigoCarne;
@@ -30,6 +30,11 @@ public class CarnePostulante {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public Sede getSede() {

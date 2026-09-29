@@ -18,16 +18,17 @@ todo con `CallableStatement` (procedimientos almacenados), nada con `Statement`.
    `TransactionContext`, `IDAO`, `IBaseBO` (solo cambia el package).
 5. Se crearon **3 módulos nuevos**: `admitu_dbmanager`, `admitu_dao`,
    `admitu_business_logic` (ese es el nombre exacto, igual que `softprog_business_logic`).
-6. Se agregaron **30 procedimientos** al mismo `admitu_db.sql` (5 por cada una de
-   las 6 entidades, todo con `CallableStatement`).
-7. Las 6 entidades de la demo son: **Facultad, Carrera, Convocatoria, Postulante,
-   Postulación y Pago**.
-8. Se corrigió lo del Lab04: `BANCO` pasó a ser `TRANSFERENCIA` y se agregó
+6. Las capas están completas para **las 25 entidades concretas**: 25 DAO + 25 Impl
+   y 25 BO + 25 Impl, todo con `CallableStatement`.
+7. Se agregaron **125 procedimientos** al mismo `admitu_db.sql` (5 por entidad:
+   insertar, modificar, eliminar, buscar por id y listar todos).
+8. Las 6 entidades de la **demo** son: **Facultad, Carrera, Convocatoria,
+   Postulante, Postulación y Pago**.
+9. Se corrigió lo del Lab04: `BANCO` pasó a ser `TRANSFERENCIA` y se agregó
    `activo` a `Pais`, `Facultad` y `Sede`.
-9. El `Principal` ahora corre contra la base de datos de verdad (RDS), ya no
-   es demo en memoria.
-10. Falta: correr el script en el RDS, compilar con `mvn clean install` y correr
-    el `Principal` (§8).
+10. **Verificado**: el script corrió en el RDS (27 tablas + 125 procedures), todo
+    compila, el `Principal` corre con salida 0 y una prueba funcional de las
+    capas nuevas dio **84/84 OK** sin fallos.
 
 ## 2. Glosario mínimo (para estar todos en la misma página)
 
@@ -44,13 +45,13 @@ todo con `CallableStatement` (procedimientos almacenados), nada con `Statement`.
 
 | # | Lo que pide el comunicado del Lab06 | Dónde está cumplido |
 |---|---|---|
-| 1 | Capa de persistencia (DAO) al 100% | Módulo `admitu_dao`: `IDAO` genérico + 6 DAO (`FacultadDAO`, `CarreraDAO`, `ConvocatoriaDAO`, `PostulanteDAO`, `PostulacionDAO`, `PagoDAO`) con sus 6 Impl todo-`CallableStatement` |
-| 2 | Capa de lógica de negocio (business) al 100% | Módulo `admitu_business_logic`: `IBaseBO` genérico + 6 BO (`FacultadBOImpl`, `CarreraBOImpl`, `ConvocatoriaBOImpl`, `PostulanteBOImpl`, `PostulacionBOImpl`, `PagoBOImpl`) con validaciones |
+| 1 | Capa de persistencia (DAO) al 100% | Módulo `admitu_dao`: `IDAO` genérico + **25 DAO** con sus **25 Impl** todo-`CallableStatement` (las 25 entidades concretas del dominio) |
+| 2 | Capa de lógica de negocio (business) al 100% | Módulo `admitu_business_logic`: `IBaseBO` genérico + **25 BO** con sus **25 Impl** y validaciones por entidad |
 | 3 | Artefactos previos corregidos | `BANCO` → `TRANSFERENCIA` y `activo` en `Pais/Facultad/Sede` (§5) |
 | 4 | Main que evidencie el CRUD de 6 entidades | `admitu/.../main/Principal.java` hace insertar → buscar → modificar → eliminar de las 6 contra el RDS |
 | 5 | Misma estructura del proyecto de clase | 5 módulos igual que SoftProg: `domain`, `dbmanager`, `dao`, `business_logic`, ejecución. `DBManager`, `TransactionContext`, `IDAO`, `IBaseBO` copiados del profe |
 
-## 4. Archivos nuevos (28 Java + 1 properties + 3 pom)
+## 4. Archivos nuevos (100 Java + 1 properties + 3 pom)
 
 ### Módulo `admitu_dbmanager` (conexión, copiado del profe)
 
@@ -73,6 +74,19 @@ todo con `CallableStatement` (procedimientos almacenados), nada con `Statement`.
 | `.../persona/dao/PostulanteDAO.java` | Interfaz, solo extiende `IDAO<Postulante>` |
 | `.../postulacion/dao/PostulacionDAO.java` | Interfaz, solo extiende `IDAO<Postulacion>` |
 | `.../pago/dao/PagoDAO.java` | Interfaz, solo extiende `IDAO<Pago>` |
+
+Los 19 DAO pares restantes siguen exactamente el mismo molde (interfaz que solo
+extiende `IDAO<T>` + `Impl` con los 5 `CallableStatement`):
+
+| Paquete | DAO + Impl nuevos |
+|---|---|
+| `configuracion` | `Sede`, `Etapa`, `Requisito`, `Modalidad`, `OfertaCarrera`, `ConvocatoriaEtapa`, `ConvocatoriaModalidad`, `RequisitoConvocatoriaModalidad` |
+| `persona` | `Pais`, `InstitucionEducativa`, `Apoderado`, `Evaluador`, `AntecedenteAcademico` |
+| `postulacion` | `EstadoPostulacion`, `PostulacionHistorial`, `DocumentoPostulacion`, `DocumentoObservacion`, `CarnePostulante` |
+| `notificacion` | `Notificacion` |
+
+| Archivo (de los 25) | Qué es |
+|---|---|
 | `.../configuracion/impl/FacultadImpl.java` | CRUD con `{call INSERTAR/MODIFICAR/ELIMINAR/LISTAR_FACULTAD...}` |
 | `.../configuracion/impl/CarreraImpl.java` | CRUD con procedures de carrera (trae el nombre de la facultad con JOIN) |
 | `.../configuracion/impl/ConvocatoriaImpl.java` | CRUD con procedures de convocatoria (convierte `LocalDate` ↔ `Date` y enum `EstadoConvocatoria`) |
@@ -83,8 +97,8 @@ todo con `CallableStatement` (procedimientos almacenados), nada con `Statement`.
 Regla que se siguió (igual que el profe): el `insertar` usa `TransactionContext`
 (transacción) y el resto (`modificar/eliminar/buscar/listar`) usa `DBManager`
 directo. El `eliminar` es baja lógica (`activo = 0`, o `estado = 'RECHAZADO'`
-en pago). Solo `Postulante` y `Postulación` borran físico porque sus tablas no
-tienen columna `activo`.
+en pago) en las tablas que tienen columna `activo`; borra físico donde no la
+tienen (`estado_postulacion`, tablas pivote y las hijas de postulación).
 
 ### Módulo `admitu_business_logic` (reglas de negocio)
 
@@ -105,7 +119,32 @@ tienen columna `activo`.
 | `.../postulacion/bo/PostulacionBOImpl.java` | Valida postulante, convocatoria, modalidad, oferta, estado y código de inscripción |
 | `.../pago/bo/PagoBOImpl.java` | Valida postulación, medio, monto ≥ 0, código y que la TRANSFERENCIA traiga voucher |
 
-## 5. Archivos modificados (12 del dominio + 3 pom + Principal + SQL)
+Los 19 BO pares restantes (interfaz `boi` + `*BOImpl`) aplican el mismo patrón
+con las reglas propias de su entidad:
+
+| BO | Validación principal |
+|---|---|
+| `PaisBOImpl` | ISO2 de 2 caracteres, nombre obligatorio |
+| `SedeBOImpl` | código y nombre obligatorios, dirección ≤ 200 |
+| `EtapaBOImpl` | código/nombre obligatorios, fecha inicio ≤ fecha fin |
+| `RequisitoBOImpl` | tipo de archivo y tamaño máximo > 0 |
+| `ModalidadBOImpl` | código/nombre obligatorios |
+| `EstadoPostulacionBOImpl` | código y nombre obligatorios |
+| `InstitucionEducativaBOImpl` | país válido, tipo de institución obligatorio |
+| `OfertaCarreraBOImpl` | convocatoria y carrera válidas, vacantes ≥ 0 |
+| `ConvocatoriaEtapaBOImpl` | convocatoria y etapa válidas, fechas coherentes |
+| `ConvocatoriaModalidadBOImpl` | convocatoria y modalidad válidas, costo ≥ 0 |
+| `RequisitoConvocatoriaModalidadBOImpl` | rel. válida y orden > 0 si es obligatorio |
+| `ApoderadoBOImpl` | datos de persona + parentesco obligatorio |
+| `EvaluadorBOImpl` | datos de persona + cargo obligatorio |
+| `AntecedenteAcademicoBOImpl` | postulante e institución válidos, anios coherentes y no futuros |
+| `PostulacionHistorialBOImpl` | postulación y estado actual válidos, fecha y motivo obligatorios |
+| `DocumentoPostulacionBOImpl` | requisito válido, versión > 0, tamaño > 0, carga no futura |
+| `DocumentoObservacionBOImpl` | documento y evaluador válidos, fecha de observación obligatoria |
+| `CarnePostulanteBOImpl` | postulación y sede válidas, código y vigencia coherentes |
+| `NotificacionBOImpl` | postulación válida, medio/tipo/estado obligatorios, no leída sin fecha |
+
+## 5. Archivos modificados (24 del dominio + 3 pom + Principal + SQL)
 
 ### Correcciones del Lab04 (las que pidió el JP)
 
@@ -121,18 +160,16 @@ tienen columna `activo`.
 ### Ajustes del dominio para que el DAO pueda guardar/leer IDs de la BD
 
 Antes el `id` era `final` y se generaba solo en memoria; ahora la BD devuelve el
-id y hay que guardarlo en el objeto (igual que el `setIdArea` del profe):
+id y hay que guardarlo en el objeto (igual que el `setIdArea` del profe).
+Quedan **24 entidades con `id` no final y `setId` que actualiza el correlativo**:
 
-| Archivo | Cambio |
+| Ya lo tenían del Lab04 | Se les agregó en este lab (14) |
 |---|---|
-| `.../configuracion/Carrera.java` | `id` ya no es `final` + `setId` que actualiza el correlativo |
-| `.../configuracion/Convocatoria.java` | Lo mismo + ya tenía constructor vacío |
-| `.../configuracion/ConvocatoriaModalidad.java` | Lo mismo + constructor vacío nuevo (lo usa el DAO y el demo) |
-| `.../configuracion/OfertaCarrera.java` | Lo mismo + constructor vacío nuevo |
-| `.../postulacion/EstadoPostulacion.java` | Lo mismo (`id` no final + `setId`) |
-| `.../postulacion/Postulacion.java` | Lo mismo |
-| `.../pago/Pago.java` | Lo mismo |
-| `.../persona/Postulante.java` | `setId` ahora también actualiza su correlativo |
+| `Carrera`, `Convocatoria`, `ConvocatoriaModalidad`, `OfertaCarrera`, `EstadoPostulacion`, `Postulacion`, `Pago`, `Postulante`, `Persona` | `ConvocatoriaEtapa`, `Etapa`, `Modalidad`, `Requisito`, `RequisitoConvocatoriaModalidad`, `Sede`, `Notificacion`, `AntecedenteAcademico`, `InstitucionEducativa`, `Pais`, `CarnePostulante`, `DocumentoObservacion`, `DocumentoPostulacion`, `PostulacionHistorial` |
+
+Además se agregaron constructores vacíos donde el DAO los necesita
+(`ConvocatoriaModalidad`, `OfertaCarrera`) y setters puntuales usadas por los
+`mapear` de los DAO.
 
 No cambia el comportamiento en memoria: los ids siguen autogenerándose igual;
 solo que ahora el DAO puede pisarlos con el id real de la BD.
@@ -145,10 +182,11 @@ solo que ahora el DAO puede pisarlos con el id real de la BD.
 | `admitu/pom.xml` | Agregadas dependencias a `admitu_business_logic` y `mysql-connector-j:26.7.0` (la misma versión del profe) |
 | `admitu/.../main/Principal.java` | Reescrito: antes demo en memoria, ahora CRUD de las 6 entidades vía BO contra el RDS (ver §7). Usa sufijo por timestamp para no chocar con los UNIQUE al correrlo varias veces |
 
-### `admitu_db.sql` (pasó de 514 a 849 líneas, sigue siendo 1 solo archivo)
+### `admitu_db.sql` (pasó de 514 a 2060 líneas, sigue siendo 1 solo archivo)
 
-Se anexaron al final, sin tocar lo anterior: `DROP PROCEDURE IF EXISTS` de las
-30 + bloque `DELIMITER $` con los 30 procedures + `DELIMITER ;`:
+Se anexaron al final, sin tocar lo anterior: `DROP PROCEDURE IF EXISTS` de los
+**125** + bloque `DELIMITER $` con los **125 procedures** + `DELIMITER ;`
+(5 por cada una de las 25 entidades concretas):
 
 | Procedures | Qué hacen |
 |---|---|
@@ -156,8 +194,12 @@ Se anexaron al final, sin tocar lo anterior: `DROP PROCEDURE IF EXISTS` de las
 | `..._CARRERA...` (5) | CRUD carrera con JOIN a facultad |
 | `..._CONVOCATORIA...` (5) | CRUD convocatoria |
 | `..._POSTULANTE...` (5) | Inserta en `persona` + `postulante` y devuelve el id (como el `INSERTAR_EMPLEADO` del profe) |
-| `..._POSTULACION...` (5) | CRUD postulación (eliminar borra primero los pagos hijos, luego historial + postulación, para no chocar con el FK `fk_pago_postulacion`) |
+| `..._POSTULACION...` (5) | CRUD postulación (eliminar borra primero toda la cadena hija: notificaciones, observaciones, documentos, carne, pagos e historial, antes de la postulación) |
 | `..._PAGO...` (5) | CRUD pago (eliminar = `estado = 'RECHAZADO'`) |
+| `..._PAIS/SEDE/ETAPA/REQUISITO/MODALIDAD/ESTADO_POSTULACION...` (30) | CRUD de catálogos (baja lógica donde hay `activo`) |
+| `..._INSTITUCION_EDUCATIVA/ANTECEDENTE_ACADEMICO/APODERADO/EVALUADOR...` (20) | Instituciones, antecedentes y personas; apoderado/evaluador escriben en `persona` + su tabla |
+| `..._OFERTA_CARRERA/CONVOCATORIA_ETAPA/CONVOCATORIA_MODALIDAD/REQUISITO_CONVOCATORIA_MODALIDAD...` (20) | Tablas de configuración de la convocatoria, con JOIN para traer los datos del padre |
+| `..._POSTULACION_HISTORIAL/DOCUMENTO_POSTULACION/DOCUMENTO_OBSERVACION/CARNE_POSTULANTE/NOTIFICACION...` (25) | Ciclo de vida de la postulación (eliminar encadena hijos para respetar los FK `RESTRICT`) |
 
 ## 6. Por qué las 6 entidades de la demo son esas
 
@@ -190,16 +232,22 @@ Cada paso imprime en consola (`Facultad registrada: ...`, `Pago aprobado: ...`),
 así en la expo se corre el `main` y se verifica cada línea con un `SELECT` en
 el Workbench.
 
-## 8. Checklist del equipo (qué falta hacer, en orden)
+## 8. Checklist del equipo
 
-- [ ] Correr `admitu_db.sql` completo en el RDS (`databaseleon.../admitu_db`) y
-  verificar 27 tablas + 30 procedures (`SHOW PROCEDURE STATUS`).
-- [ ] En IntelliJ: `mvn clean install` (compila los 5 módulos en orden).
-- [ ] Correr `pe.edu.pucp.main.Principal` y verificar que termina en
-  `Demo terminada` sin errores.
-- [ ] Verificar en el Workbench: facultad `FL6-*` con `activo = 0`, pago
-  `PAG-L06-*` y postulación demo ya borrados por la limpieza (el `RECHAZADO`
-  del pago solo se ve en la consola a mitad de la demo).
-- [ ] Repartir la expo: 1 integrante por entidad (6) o por capa
-  (DAO / BO / procedures / demo).
-- [ ] Llevar a la expo el Workbench abierto (tablas + procedures a la vista).
+Lo técnico ya está verificado en esta entrega:
+
+- [x] `admitu_db.sql` corrido completo en el RDS (`databaseleon.../admitu_db`):
+  **27 tablas y 125 procedures** (`information_schema.ROUTINES`).
+- [x] Compilación completa de los 5 módulos sin errores.
+- [x] `pe.edu.pucp.main.Principal` corre y termina en `Demo terminada` (salida 0).
+- [x] Prueba funcional de las 25 capas vía BO: **84/84 casos OK** (inserciones,
+  mapeo de IDs relacionados, búsquedas, modificaciones, borrados en cascada y
+  validaciones de negocio).
+
+Lo que falta antes de la expo:
+
+- [ ] Repartir la expo: 1 integrante por capa (DAO / BO / procedures / demo) o
+  por grupo de entidades.
+- [ ] Llevar el Workbench abierto con las tablas y `SHOW PROCEDURE STATUS`
+  (125 filas) a la vista.
+- [ ] Ensayar quién explica qué, ya que la cobertura es de 25 entidades y no de 6.

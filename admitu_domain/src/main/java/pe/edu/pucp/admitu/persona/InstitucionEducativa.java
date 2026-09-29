@@ -2,7 +2,7 @@ package pe.edu.pucp.admitu.persona;
 
 public class InstitucionEducativa {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Pais pais;
     private String codigoExterno;
     private String nombre;
@@ -21,6 +21,11 @@ public class InstitucionEducativa {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public Pais getPais() {

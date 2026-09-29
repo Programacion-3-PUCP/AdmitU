@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 public class ConvocatoriaEtapa {
     private static int siguienteId = 1;
-    private final int id;
+    private int id;
     private Convocatoria convocatoria;
     private Etapa etapa;
     private LocalDate fechaInicio;
@@ -21,6 +21,11 @@ public class ConvocatoriaEtapa {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+        if (id >= siguienteId) siguienteId = id + 1;
     }
 
     public Convocatoria getConvocatoria() {
