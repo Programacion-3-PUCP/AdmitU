@@ -1,8 +1,9 @@
 package pe.edu.pucp.admitu.postulacion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.configuracion.Requisito;
+import pe.edu.pucp.admitu.configuracion.RequisitoConvocatoriaModalidad;
+import pe.edu.pucp.admitu.configuracion.ConvocatoriaModalidad;
 import pe.edu.pucp.admitu.configuracion.TipoArchivo;
 import pe.edu.pucp.admitu.postulacion.DocumentoPostulacion;
 import pe.edu.pucp.admitu.postulacion.EstadoDocumento;
@@ -46,8 +47,8 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
     @Override
     public int modificar(DocumentoPostulacion documento) {
         String sql = "{call MODIFICAR_DOCUMENTO_POSTULACION(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", documento.getId());
             cs.setInt("_postulacion_id", documento.getPostulacion().getId());
             cs.setInt("_requisito_id", documento.getRequisitoAplicable().getId());
@@ -70,8 +71,8 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
     @Override
     public int eliminar(int idDocumento) {
         String sql = "{call ELIMINAR_DOCUMENTO_POSTULACION(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idDocumento);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -87,7 +88,13 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             rs.getString("descripcion_requisito"), rs.getString("tipo_archivo_requisito") != null ? TipoArchivo.valueOf(rs.getString("tipo_archivo_requisito")) : null,
             rs.getInt("tamanio_maximo_requisito"));
         requisito.setId(rs.getInt("requisito_id"));
-        DocumentoPostulacion documento = new DocumentoPostulacion(postulacion, requisito, rs.getInt("numero_version"),
+        ConvocatoriaModalidad modalidad = new ConvocatoriaModalidad();
+        modalidad.setId(rs.getInt("convocatoria_modalidad_id"));
+        RequisitoConvocatoriaModalidad asignacion =
+                new RequisitoConvocatoriaModalidad(modalidad, requisito,
+                        rs.getBoolean("obligatorio"), rs.getInt("orden_presentacion"));
+        asignacion.setId(rs.getInt("requisito_aplicable_id"));
+        DocumentoPostulacion documento = new DocumentoPostulacion(postulacion, asignacion, rs.getInt("numero_version"),
             rs.getString("nombre_archivo"), rs.getString("tipo_archivo") != null ? TipoArchivo.valueOf(rs.getString("tipo_archivo")) : null,
             rs.getLong("tamanio_archivo"), rs.getString("ruta_archivo"),
             rs.getDate("fecha_carga") != null ? rs.getDate("fecha_carga").toLocalDate() : null,
@@ -102,8 +109,8 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
     public DocumentoPostulacion buscarPorId(int idDocumento) {
         DocumentoPostulacion documento = null;
         String sql = "{call LISTAR_DOCUMENTO_POSTULACION_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idDocumento);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) documento = mapear(rs);
@@ -117,13 +124,12 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
 
     @Override
     public List<DocumentoPostulacion> listarTodos() {
-        List<DocumentoPostulacion> documentos = null;
+        List<DocumentoPostulacion> documentos = new ArrayList<>();
         String sql = "{call LISTAR_DOCUMENTOS_POSTULACION_TODOS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (documentos == null) documentos = new ArrayList<>();
                 documentos.add(mapear(rs));
             }
             return documentos;

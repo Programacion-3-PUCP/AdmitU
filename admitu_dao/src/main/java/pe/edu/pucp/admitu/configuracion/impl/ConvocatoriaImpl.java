@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.configuracion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.configuracion.dao.ConvocatoriaDAO;
 import pe.edu.pucp.admitu.configuracion.Convocatoria;
@@ -39,8 +38,8 @@ public class ConvocatoriaImpl implements ConvocatoriaDAO {
     @Override
     public int modificar(Convocatoria conv) {
         String sql = "{call MODIFICAR_CONVOCATORIA(?, ?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", conv.getId());
             cs.setString("_codigo", conv.getCodigoConvocatoria());
             cs.setString("_nombre", conv.getNombre());
@@ -59,8 +58,8 @@ public class ConvocatoriaImpl implements ConvocatoriaDAO {
     @Override
     public int eliminar(int idConv) {
         String sql = "{call ELIMINAR_CONVOCATORIA(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idConv);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -73,8 +72,8 @@ public class ConvocatoriaImpl implements ConvocatoriaDAO {
     public Convocatoria buscarPorId(int idConv) {
         Convocatoria conv = null;
         String sql = "{call LISTAR_CONVOCATORIA_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idConv);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
@@ -99,13 +98,12 @@ public class ConvocatoriaImpl implements ConvocatoriaDAO {
 
     @Override
     public List<Convocatoria> listarTodos() {
-        List<Convocatoria> lista = null;
+        List<Convocatoria> lista = new ArrayList<>();
         String sql = "{call LISTAR_CONVOCATORIAS_TODAS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (lista == null) lista = new ArrayList<>();
                 Convocatoria conv = new Convocatoria();
                 conv.setId(rs.getInt("id"));
                 conv.setCodigoConvocatoria(rs.getString("codigo_convocatoria"));

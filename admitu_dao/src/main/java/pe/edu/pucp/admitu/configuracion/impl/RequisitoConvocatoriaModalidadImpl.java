@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.configuracion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.configuracion.ConvocatoriaModalidad;
 import pe.edu.pucp.admitu.configuracion.Requisito;
@@ -39,8 +38,8 @@ public class RequisitoConvocatoriaModalidadImpl implements RequisitoConvocatoria
     @Override
     public int modificar(RequisitoConvocatoriaModalidad relacion) {
         String sql = "{call MODIFICAR_REQUISITO_CONVOCATORIA_MODALIDAD(?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", relacion.getId());
             cs.setInt("_convocatoria_modalidad_id", relacion.getConvocatoriaModalidad().getId());
             cs.setInt("_requisito_id", relacion.getRequisito().getId());
@@ -57,8 +56,8 @@ public class RequisitoConvocatoriaModalidadImpl implements RequisitoConvocatoria
     @Override
     public int eliminar(int idRelacion) {
         String sql = "{call ELIMINAR_REQUISITO_CONVOCATORIA_MODALIDAD(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idRelacion);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -85,8 +84,8 @@ public class RequisitoConvocatoriaModalidadImpl implements RequisitoConvocatoria
     public RequisitoConvocatoriaModalidad buscarPorId(int idRelacion) {
         RequisitoConvocatoriaModalidad relacion = null;
         String sql = "{call LISTAR_REQUISITO_CONVOCATORIA_MODALIDAD_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idRelacion);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) relacion = mapear(rs);
@@ -100,13 +99,12 @@ public class RequisitoConvocatoriaModalidadImpl implements RequisitoConvocatoria
 
     @Override
     public List<RequisitoConvocatoriaModalidad> listarTodos() {
-        List<RequisitoConvocatoriaModalidad> relaciones = null;
+        List<RequisitoConvocatoriaModalidad> relaciones = new ArrayList<>();
         String sql = "{call LISTAR_REQUISITOS_CONVOCATORIA_MODALIDAD_TODOS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (relaciones == null) relaciones = new ArrayList<>();
                 relaciones.add(mapear(rs));
             }
             return relaciones;

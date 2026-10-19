@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.configuracion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.configuracion.boi.IConvocatoriaBO;
 import pe.edu.pucp.admitu.configuracion.dao.ConvocatoriaDAO;
 import pe.edu.pucp.admitu.configuracion.impl.ConvocatoriaImpl;
@@ -30,44 +31,39 @@ public class ConvocatoriaBOImpl implements IConvocatoriaBO {
                 && c.getFechaInicio().isAfter(c.getFechaFin()))
             throw new RuntimeException("La fecha de inicio no puede ser posterior a la fecha fin");
         if (c.getEstado() == null) throw new RuntimeException("La convocatoria no tiene estado");
+        Validaciones.codigo(c.getCodigoConvocatoria(), "Código de convocatoria", 20);
+        Validaciones.texto(c.getPeriodo(), "Periodo", 20);
+        Validaciones.rango(c.getFechaInicio(), c.getFechaFin(), "convocatoria", true);
+        Validaciones.longitud(c.getDescripcion(), "Descripción", 255);
     }
 
     @Override
     public int insertar(Convocatoria c) {
         validar(c);
-        try {
-            int r = daoConvocatoria.insertar(c);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoConvocatoria.insertar(c));
     }
 
     @Override
     public int modificar(Convocatoria c) {
         validar(c);
         if (c.getId() <= 0) throw new RuntimeException("Id de convocatoria no valido");
-        return daoConvocatoria.modificar(c);
+        return TransactionContext.ejecutar(() -> daoConvocatoria.modificar(c));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de convocatoria no valido");
-        return daoConvocatoria.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoConvocatoria.eliminar(id));
     }
 
     @Override
     public List<Convocatoria> listarTodos() {
-        return daoConvocatoria.listarTodos();
+        return TransactionContext.ejecutar(() -> daoConvocatoria.listarTodos());
     }
 
     @Override
     public Convocatoria buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de convocatoria no valido");
-        return daoConvocatoria.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoConvocatoria.buscarPorId(id));
     }
 }

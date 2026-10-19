@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.postulacion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.postulacion.EstadoPostulacion;
 import pe.edu.pucp.admitu.postulacion.dao.EstadoPostulacionDAO;
@@ -34,8 +33,8 @@ public class EstadoPostulacionImpl implements EstadoPostulacionDAO {
     @Override
     public int modificar(EstadoPostulacion estado) {
         String sql = "{call MODIFICAR_ESTADO_POSTULACION(?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", estado.getId());
             cs.setString("_codigo", estado.getCodigo());
             cs.setString("_nombre", estado.getNombre());
@@ -50,8 +49,8 @@ public class EstadoPostulacionImpl implements EstadoPostulacionDAO {
     @Override
     public int eliminar(int idEstado) {
         String sql = "{call ELIMINAR_ESTADO_POSTULACION(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idEstado);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -71,8 +70,8 @@ public class EstadoPostulacionImpl implements EstadoPostulacionDAO {
     public EstadoPostulacion buscarPorId(int idEstado) {
         EstadoPostulacion estado = null;
         String sql = "{call LISTAR_ESTADO_POSTULACION_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idEstado);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) estado = mapear(rs);
@@ -86,13 +85,12 @@ public class EstadoPostulacionImpl implements EstadoPostulacionDAO {
 
     @Override
     public List<EstadoPostulacion> listarTodos() {
-        List<EstadoPostulacion> estados = null;
+        List<EstadoPostulacion> estados = new ArrayList<>();
         String sql = "{call LISTAR_ESTADOS_POSTULACION_TODOS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (estados == null) estados = new ArrayList<>();
                 estados.add(mapear(rs));
             }
             return estados;

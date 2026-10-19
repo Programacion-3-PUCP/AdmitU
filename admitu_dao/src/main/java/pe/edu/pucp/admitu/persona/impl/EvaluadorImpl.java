@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.persona.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.persona.Evaluador;
 import pe.edu.pucp.admitu.persona.TipoDocumento;
@@ -40,13 +39,14 @@ public class EvaluadorImpl implements EvaluadorDAO {
     @Override
     public int modificar(Evaluador evaluador) {
         String sql = "{call MODIFICAR_EVALUADOR(?, ?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", evaluador.getId());
             cs.setString("_nombres", evaluador.getNombres());
             cs.setString("_ape_paterno", evaluador.getApellidoPaterno());
             cs.setString("_ape_materno", evaluador.getApellidoMaterno());
             cs.setString("_correo", evaluador.getCorreo());
+            cs.setString("_num_doc", evaluador.getNumeroDocumento());
             cs.setString("_telefono", evaluador.getTelefono());
             cs.setString("_cargo", evaluador.getCargo());
             return cs.executeUpdate();
@@ -59,8 +59,8 @@ public class EvaluadorImpl implements EvaluadorDAO {
     @Override
     public int eliminar(int idEvaluador) {
         String sql = "{call ELIMINAR_EVALUADOR(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idEvaluador);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -83,8 +83,8 @@ public class EvaluadorImpl implements EvaluadorDAO {
     public Evaluador buscarPorId(int idEvaluador) {
         Evaluador evaluador = null;
         String sql = "{call LISTAR_EVALUADOR_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idEvaluador);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) evaluador = mapear(rs);
@@ -98,13 +98,12 @@ public class EvaluadorImpl implements EvaluadorDAO {
 
     @Override
     public List<Evaluador> listarTodos() {
-        List<Evaluador> evaluadores = null;
+        List<Evaluador> evaluadores = new ArrayList<>();
         String sql = "{call LISTAR_EVALUADORES_TODOS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (evaluadores == null) evaluadores = new ArrayList<>();
                 evaluadores.add(mapear(rs));
             }
             return evaluadores;

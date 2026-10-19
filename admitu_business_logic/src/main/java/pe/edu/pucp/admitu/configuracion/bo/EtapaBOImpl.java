@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.configuracion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.configuracion.Etapa;
 import pe.edu.pucp.admitu.configuracion.boi.IEtapaBO;
 import pe.edu.pucp.admitu.configuracion.dao.EtapaDAO;
@@ -30,44 +31,37 @@ public class EtapaBOImpl implements IEtapaBO {
             throw new RuntimeException("La descripcion no debe exceder 255 caracteres");
         if (e.getFechaInicio() != null && e.getFechaFin() != null && e.getFechaInicio().isAfter(e.getFechaFin()))
             throw new RuntimeException("La fecha de inicio no puede ser posterior a la fecha de fin");
+        Validaciones.codigo(e.getCodigoEtapa(), "Código de etapa", 20);
+        Validaciones.rango(e.getFechaInicio(), e.getFechaFin(), "etapa", false);
     }
 
     @Override
     public int insertar(Etapa e) {
         validar(e);
-        try {
-            int r = daoEtapa.insertar(e);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoEtapa.insertar(e));
     }
 
     @Override
     public int modificar(Etapa e) {
         validar(e);
         if (e.getId() <= 0) throw new RuntimeException("Id de etapa no valido");
-        return daoEtapa.modificar(e);
+        return TransactionContext.ejecutar(() -> daoEtapa.modificar(e));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de etapa no valido");
-        return daoEtapa.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoEtapa.eliminar(id));
     }
 
     @Override
     public List<Etapa> listarTodos() {
-        return daoEtapa.listarTodos();
+        return TransactionContext.ejecutar(() -> daoEtapa.listarTodos());
     }
 
     @Override
     public Etapa buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de etapa no valido");
-        return daoEtapa.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoEtapa.buscarPorId(id));
     }
 }

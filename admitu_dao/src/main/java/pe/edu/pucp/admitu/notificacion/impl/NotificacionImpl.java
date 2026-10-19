@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.notificacion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.notificacion.EstadoEnvio;
 import pe.edu.pucp.admitu.notificacion.MedioNotificacion;
@@ -49,8 +48,8 @@ public class NotificacionImpl implements NotificacionDAO {
     @Override
     public int modificar(Notificacion notificacion) {
         String sql = "{call MODIFICAR_NOTIFICACION(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", notificacion.getId());
             cs.setInt("_postulacion_id", notificacion.getPostulacion().getId());
             if (notificacion.getObservacionOrigen() == null) cs.setNull("_observacion_origen_id", Types.INTEGER);
@@ -75,8 +74,8 @@ public class NotificacionImpl implements NotificacionDAO {
     @Override
     public int eliminar(int idNotificacion) {
         String sql = "{call ELIMINAR_NOTIFICACION(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idNotificacion);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -111,8 +110,8 @@ public class NotificacionImpl implements NotificacionDAO {
     public Notificacion buscarPorId(int idNotificacion) {
         Notificacion notificacion = null;
         String sql = "{call LISTAR_NOTIFICACION_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idNotificacion);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) notificacion = mapear(rs);
@@ -126,13 +125,12 @@ public class NotificacionImpl implements NotificacionDAO {
 
     @Override
     public List<Notificacion> listarTodos() {
-        List<Notificacion> notificaciones = null;
+        List<Notificacion> notificaciones = new ArrayList<>();
         String sql = "{call LISTAR_NOTIFICACIONES_TODAS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (notificaciones == null) notificaciones = new ArrayList<>();
                 notificaciones.add(mapear(rs));
             }
             return notificaciones;

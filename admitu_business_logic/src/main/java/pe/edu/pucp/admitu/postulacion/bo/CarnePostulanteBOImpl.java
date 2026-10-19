@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.postulacion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.postulacion.CarnePostulante;
 import pe.edu.pucp.admitu.postulacion.boi.ICarnePostulanteBO;
 import pe.edu.pucp.admitu.postulacion.dao.CarnePostulanteDAO;
@@ -31,44 +32,38 @@ public class CarnePostulanteBOImpl implements ICarnePostulanteBO {
             throw new RuntimeException("La fecha de inicio de vigencia no puede ser posterior al fin");
         if (c.getAulaExamen() != null && c.getAulaExamen().length() > 20)
             throw new RuntimeException("El aula de examen no debe exceder 20 caracteres");
+        Validaciones.codigo(c.getCodigoCarne(), "Código de carné", 30);
+        Validaciones.rango(c.getFechaInicioVigencia(), c.getFechaFinVigencia(), "vigencia del carné", true);
+        Validaciones.longitud(c.getAulaExamen(), "Aula", 30);
     }
 
     @Override
     public int insertar(CarnePostulante c) {
         validar(c);
-        try {
-            int r = daoCarne.insertar(c);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoCarne.insertar(c));
     }
 
     @Override
     public int modificar(CarnePostulante c) {
         validar(c);
         if (c.getId() <= 0) throw new RuntimeException("Id de carne no valido");
-        return daoCarne.modificar(c);
+        return TransactionContext.ejecutar(() -> daoCarne.modificar(c));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de carne no valido");
-        return daoCarne.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoCarne.eliminar(id));
     }
 
     @Override
     public List<CarnePostulante> listarTodos() {
-        return daoCarne.listarTodos();
+        return TransactionContext.ejecutar(() -> daoCarne.listarTodos());
     }
 
     @Override
     public CarnePostulante buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de carne no valido");
-        return daoCarne.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoCarne.buscarPorId(id));
     }
 }

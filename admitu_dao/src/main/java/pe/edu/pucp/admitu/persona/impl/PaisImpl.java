@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.persona.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.persona.Pais;
 import pe.edu.pucp.admitu.persona.dao.PaisDAO;
@@ -33,8 +32,8 @@ public class PaisImpl implements PaisDAO {
     @Override
     public int modificar(Pais pais) {
         String sql = "{call MODIFICAR_PAIS(?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", pais.getId());
             cs.setString("_codigo_iso2", pais.getCodigoIso2());
             cs.setString("_nombre", pais.getNombre());
@@ -48,8 +47,8 @@ public class PaisImpl implements PaisDAO {
     @Override
     public int eliminar(int idPais) {
         String sql = "{call ELIMINAR_PAIS(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idPais);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -69,8 +68,8 @@ public class PaisImpl implements PaisDAO {
     public Pais buscarPorId(int idPais) {
         Pais pais = null;
         String sql = "{call LISTAR_PAIS_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idPais);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) pais = mapear(rs);
@@ -84,13 +83,12 @@ public class PaisImpl implements PaisDAO {
 
     @Override
     public List<Pais> listarTodos() {
-        List<Pais> paises = null;
+        List<Pais> paises = new ArrayList<>();
         String sql = "{call LISTAR_PAISES_TODOS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (paises == null) paises = new ArrayList<>();
                 paises.add(mapear(rs));
             }
             return paises;

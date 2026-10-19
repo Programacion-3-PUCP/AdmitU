@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.persona.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.persona.AntecedenteAcademico;
 import pe.edu.pucp.admitu.persona.boi.IAntecedenteAcademicoBO;
 import pe.edu.pucp.admitu.persona.dao.AntecedenteAcademicoDAO;
@@ -32,44 +33,36 @@ public class AntecedenteAcademicoBOImpl implements IAntecedenteAcademicoBO {
             throw new RuntimeException("El anio de fin no puede ser anterior al anio de inicio");
         if (a.getDescripcion() != null && a.getDescripcion().length() > 500)
             throw new RuntimeException("La descripcion no debe exceder 500 caracteres");
+        Validaciones.longitud(a.getDescripcion(), "Descripción", 255);
     }
 
     @Override
     public int insertar(AntecedenteAcademico a) {
         validar(a);
-        try {
-            int r = daoAntecedente.insertar(a);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoAntecedente.insertar(a));
     }
 
     @Override
     public int modificar(AntecedenteAcademico a) {
         validar(a);
         if (a.getId() <= 0) throw new RuntimeException("Id de antecedente academico no valido");
-        return daoAntecedente.modificar(a);
+        return TransactionContext.ejecutar(() -> daoAntecedente.modificar(a));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de antecedente academico no valido");
-        return daoAntecedente.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoAntecedente.eliminar(id));
     }
 
     @Override
     public List<AntecedenteAcademico> listarTodos() {
-        return daoAntecedente.listarTodos();
+        return TransactionContext.ejecutar(() -> daoAntecedente.listarTodos());
     }
 
     @Override
     public AntecedenteAcademico buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de antecedente academico no valido");
-        return daoAntecedente.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoAntecedente.buscarPorId(id));
     }
 }

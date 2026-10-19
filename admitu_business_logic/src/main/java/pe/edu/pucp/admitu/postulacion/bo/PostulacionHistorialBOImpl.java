@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.postulacion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.postulacion.PostulacionHistorial;
 import pe.edu.pucp.admitu.postulacion.boi.IPostulacionHistorialBO;
 import pe.edu.pucp.admitu.postulacion.dao.PostulacionHistorialDAO;
@@ -32,44 +33,39 @@ public class PostulacionHistorialBOImpl implements IPostulacionHistorialBO {
             throw new RuntimeException("El motivo del cambio no puede estar vacio");
         if (h.getMotivoCambio().length() > 255)
             throw new RuntimeException("El motivo no debe exceder 255 caracteres");
+        Validaciones.texto(h.getResponsableCambio(), "Responsable", 150);
+        Validaciones.noFutura(h.getFechaCambio(), "Fecha de cambio");
+        if (h.getEstadoAnterior() != null && h.getEstadoAnterior().getId() == h.getEstadoActual().getId())
+            throw new IllegalArgumentException("El estado anterior y actual son iguales");
     }
 
     @Override
     public int insertar(PostulacionHistorial h) {
         validar(h);
-        try {
-            int r = daoHistorial.insertar(h);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoHistorial.insertar(h));
     }
 
     @Override
     public int modificar(PostulacionHistorial h) {
         validar(h);
         if (h.getId() <= 0) throw new RuntimeException("Id de historial no valido");
-        return daoHistorial.modificar(h);
+        return TransactionContext.ejecutar(() -> daoHistorial.modificar(h));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de historial no valido");
-        return daoHistorial.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoHistorial.eliminar(id));
     }
 
     @Override
     public List<PostulacionHistorial> listarTodos() {
-        return daoHistorial.listarTodos();
+        return TransactionContext.ejecutar(() -> daoHistorial.listarTodos());
     }
 
     @Override
     public PostulacionHistorial buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de historial no valido");
-        return daoHistorial.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoHistorial.buscarPorId(id));
     }
 }

@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.postulacion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.postulacion.DocumentoPostulacion;
 import pe.edu.pucp.admitu.postulacion.boi.IDocumentoPostulacionBO;
 import pe.edu.pucp.admitu.postulacion.dao.DocumentoPostulacionDAO;
@@ -43,44 +44,58 @@ public class DocumentoPostulacionBOImpl implements IDocumentoPostulacionBO {
             throw new RuntimeException("El documento no tiene estado");
         if (d.getComentarioEvaluacion() != null && d.getComentarioEvaluacion().length() > 500)
             throw new RuntimeException("El comentario no debe exceder 500 caracteres");
+                if (d.getRequisitoAplicable().getRequisito() == null)
+            throw new IllegalArgumentException("Debe definirse el requisito documental aplicable");
+        Validaciones.texto(d.getNombreArchivo(), "Nombre de archivo", 150);
+        Validaciones.texto(d.getRutaArchivo(), "Ruta del archivo", 255);
+        Validaciones.longitud(d.getComentarioEvaluacion(), "Comentario de evaluación", 255);
+        if (d.getFechaEvaluacion() != null && d.getFechaCarga() != null
+                && d.getFechaEvaluacion().isBefore(d.getFechaCarga()))
+            throw new IllegalArgumentException("La evaluación no puede ser anterior a la carga");
+        Validaciones.noFutura(d.getFechaEvaluacion(), "Fecha de evaluación");
+        if (d.getTipoArchivo().name().equals("PDF") && !d.getNombreArchivo().toLowerCase().endsWith(".pdf"))
+            throw new IllegalArgumentException("El documento PDF debe tener extensión .pdf");
+        if (d.getTipoArchivo().name().equals("IMAGEN")
+                && !(d.getNombreArchivo().toLowerCase().endsWith(".jpg")
+                  || d.getNombreArchivo().toLowerCase().endsWith(".jpeg")
+                  || d.getNombreArchivo().toLowerCase().endsWith(".png")))
+            throw new IllegalArgumentException("La imagen debe ser JPG o PNG");
+        if (d.getRequisitoAplicable().getRequisito().getTamanioMaximoBytes() > 0
+                && d.getTamanioArchivo() > d.getRequisitoAplicable().getRequisito().getTamanioMaximoBytes())
+            throw new IllegalArgumentException("El archivo supera el límite del requisito");
+        if (d.getRequisitoAplicable().getRequisito().getTipoArchivoRequerido() != null
+                && !d.getRequisitoAplicable().getRequisito().getTipoArchivoRequerido().name().equals("CUALQUIERA")
+                && d.getTipoArchivo() != d.getRequisitoAplicable().getRequisito().getTipoArchivoRequerido())
+            throw new IllegalArgumentException("Formato no admitido para el requisito");
     }
 
     @Override
     public int insertar(DocumentoPostulacion d) {
         validar(d);
-        try {
-            int r = daoDocumento.insertar(d);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoDocumento.insertar(d));
     }
 
     @Override
     public int modificar(DocumentoPostulacion d) {
         validar(d);
         if (d.getId() <= 0) throw new RuntimeException("Id de documento no valido");
-        return daoDocumento.modificar(d);
+        return TransactionContext.ejecutar(() -> daoDocumento.modificar(d));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de documento no valido");
-        return daoDocumento.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoDocumento.eliminar(id));
     }
 
     @Override
     public List<DocumentoPostulacion> listarTodos() {
-        return daoDocumento.listarTodos();
+        return TransactionContext.ejecutar(() -> daoDocumento.listarTodos());
     }
 
     @Override
     public DocumentoPostulacion buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de documento no valido");
-        return daoDocumento.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoDocumento.buscarPorId(id));
     }
 }

@@ -1,6 +1,6 @@
 package pe.edu.pucp.admitu.postulacion;
 
-import pe.edu.pucp.admitu.configuracion.Requisito;
+import pe.edu.pucp.admitu.configuracion.RequisitoConvocatoriaModalidad;
 import pe.edu.pucp.admitu.configuracion.TipoArchivo;
 
 import java.time.LocalDate;
@@ -11,7 +11,7 @@ public class DocumentoPostulacion {
     private static int siguienteId = 1;
     private int id;
     private Postulacion postulacion;
-    private Requisito requisitoAplicable;
+    private RequisitoConvocatoriaModalidad requisitoAplicable;
     private int numeroVersion;
     private String nombreArchivo;
     private TipoArchivo tipoArchivo;
@@ -23,7 +23,7 @@ public class DocumentoPostulacion {
     private String comentarioEvaluacion;
     private List<DocumentoObservacion> observaciones;
 
-    public DocumentoPostulacion(Postulacion postulacion, Requisito requisitoAplicable, int numeroVersion
+    public DocumentoPostulacion(Postulacion postulacion, RequisitoConvocatoriaModalidad requisitoAplicable, int numeroVersion
             , String nombreArchivo, TipoArchivo tipoArchivo, long tamanioArchivo, String rutaArchivo
             , LocalDate fechaCarga, EstadoDocumento estadoDocumento, LocalDate fechaEvaluacion
             , String comentarioEvaluacion, List<DocumentoObservacion> observaciones) {
@@ -59,11 +59,11 @@ public class DocumentoPostulacion {
         this.postulacion = postulacion;
     }
 
-    public Requisito getRequisitoAplicable() {
+    public RequisitoConvocatoriaModalidad getRequisitoAplicable() {
         return requisitoAplicable;
     }
 
-    public void setRequisitoAplicable(Requisito requisitoAplicable) {
+    public void setRequisitoAplicable(RequisitoConvocatoriaModalidad requisitoAplicable) {
         this.requisitoAplicable = requisitoAplicable;
     }
 

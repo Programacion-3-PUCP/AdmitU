@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.configuracion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.configuracion.ConvocatoriaEtapa;
 import pe.edu.pucp.admitu.configuracion.boi.IConvocatoriaEtapaBO;
 import pe.edu.pucp.admitu.configuracion.dao.ConvocatoriaEtapaDAO;
@@ -24,44 +25,36 @@ public class ConvocatoriaEtapaBOImpl implements IConvocatoriaEtapaBO {
             throw new RuntimeException("La relacion debe pertenecer a una etapa valida");
         if (r.getFechaInicio() != null && r.getFechaFin() != null && r.getFechaInicio().isAfter(r.getFechaFin()))
             throw new RuntimeException("La fecha de inicio no puede ser posterior a la fecha de fin");
+        Validaciones.rango(r.getFechaInicio(), r.getFechaFin(), "convocatoria-etapa", false);
     }
 
     @Override
     public int insertar(ConvocatoriaEtapa r) {
         validar(r);
-        try {
-            int resultado = daoConvocatoriaEtapa.insertar(r);
-            TransactionContext.commit();
-            return resultado;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoConvocatoriaEtapa.insertar(r));
     }
 
     @Override
     public int modificar(ConvocatoriaEtapa r) {
         validar(r);
         if (r.getId() <= 0) throw new RuntimeException("Id de relacion no valido");
-        return daoConvocatoriaEtapa.modificar(r);
+        return TransactionContext.ejecutar(() -> daoConvocatoriaEtapa.modificar(r));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de relacion no valido");
-        return daoConvocatoriaEtapa.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoConvocatoriaEtapa.eliminar(id));
     }
 
     @Override
     public List<ConvocatoriaEtapa> listarTodos() {
-        return daoConvocatoriaEtapa.listarTodos();
+        return TransactionContext.ejecutar(() -> daoConvocatoriaEtapa.listarTodos());
     }
 
     @Override
     public ConvocatoriaEtapa buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de relacion no valido");
-        return daoConvocatoriaEtapa.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoConvocatoriaEtapa.buscarPorId(id));
     }
 }

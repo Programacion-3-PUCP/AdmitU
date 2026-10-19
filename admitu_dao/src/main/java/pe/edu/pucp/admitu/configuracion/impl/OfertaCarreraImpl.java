@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.configuracion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.configuracion.dao.OfertaCarreraDAO;
 
@@ -33,8 +32,8 @@ public class OfertaCarreraImpl implements OfertaCarreraDAO {
     @Override
     public int modificar(pe.edu.pucp.admitu.configuracion.OfertaCarrera oferta) {
         String sql = "{call MODIFICAR_OFERTA_CARRERA(?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", oferta.getId());
             cs.setInt("_convocatoria_id", oferta.getConvocatoria().getId());
             cs.setInt("_carrera_id", oferta.getCarrera().getId());
@@ -49,8 +48,8 @@ public class OfertaCarreraImpl implements OfertaCarreraDAO {
     @Override
     public int eliminar(int idOferta) {
         String sql = "{call ELIMINAR_OFERTA_CARRERA(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idOferta);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -77,8 +76,8 @@ public class OfertaCarreraImpl implements OfertaCarreraDAO {
     public pe.edu.pucp.admitu.configuracion.OfertaCarrera buscarPorId(int idOferta) {
         pe.edu.pucp.admitu.configuracion.OfertaCarrera oferta = null;
         String sql = "{call LISTAR_OFERTA_CARRERA_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idOferta);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) oferta = mapear(rs);
@@ -92,13 +91,12 @@ public class OfertaCarreraImpl implements OfertaCarreraDAO {
 
     @Override
     public java.util.List<pe.edu.pucp.admitu.configuracion.OfertaCarrera> listarTodos() {
-        java.util.List<pe.edu.pucp.admitu.configuracion.OfertaCarrera> ofertas = null;
+        java.util.List<pe.edu.pucp.admitu.configuracion.OfertaCarrera> ofertas = new java.util.ArrayList<>();
         String sql = "{call LISTAR_OFERTAS_CARRERA_TODAS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (ofertas == null) ofertas = new ArrayList<>();
                 ofertas.add(mapear(rs));
             }
             return ofertas;

@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.configuracion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.configuracion.Requisito;
 import pe.edu.pucp.admitu.configuracion.dao.RequisitoDAO;
@@ -36,8 +35,8 @@ public class RequisitoImpl implements RequisitoDAO {
     @Override
     public int modificar(Requisito requisito) {
         String sql = "{call MODIFICAR_REQUISITO(?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", requisito.getId());
             cs.setString("_codigo_requisito", requisito.getCodigoRequisito());
             cs.setString("_nombre", requisito.getNombre());
@@ -54,8 +53,8 @@ public class RequisitoImpl implements RequisitoDAO {
     @Override
     public int eliminar(int idRequisito) {
         String sql = "{call ELIMINAR_REQUISITO(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idRequisito);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -77,8 +76,8 @@ public class RequisitoImpl implements RequisitoDAO {
     public Requisito buscarPorId(int idRequisito) {
         Requisito requisito = null;
         String sql = "{call LISTAR_REQUISITO_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idRequisito);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) requisito = mapear(rs);
@@ -92,13 +91,12 @@ public class RequisitoImpl implements RequisitoDAO {
 
     @Override
     public List<Requisito> listarTodos() {
-        List<Requisito> requisitos = null;
+        List<Requisito> requisitos = new ArrayList<>();
         String sql = "{call LISTAR_REQUISITOS_TODOS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (requisitos == null) requisitos = new ArrayList<>();
                 requisitos.add(mapear(rs));
             }
             return requisitos;

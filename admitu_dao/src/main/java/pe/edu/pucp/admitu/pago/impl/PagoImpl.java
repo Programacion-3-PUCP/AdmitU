@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.pago.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.pago.dao.PagoDAO;
 import pe.edu.pucp.admitu.pago.EstadoPago;
@@ -41,8 +40,8 @@ public class PagoImpl implements PagoDAO {
     @Override
     public int modificar(Pago pago) {
         String sql = "{call MODIFICAR_PAGO(?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", pago.getId());
             cs.setString("_estado", pago.getEstadoPago().name());
             cs.setString("_referencia", pago.getReferenciaPasarela());
@@ -56,8 +55,8 @@ public class PagoImpl implements PagoDAO {
     @Override
     public int eliminar(int idPago) {
         String sql = "{call ELIMINAR_PAGO(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idPago);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -82,8 +81,8 @@ public class PagoImpl implements PagoDAO {
     @Override
     public Pago buscarPorId(int idPago) {
         String sql = "{call LISTAR_PAGO_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idPago);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) return mapear(rs);
@@ -97,19 +96,30 @@ public class PagoImpl implements PagoDAO {
 
     @Override
     public List<Pago> listarTodos() {
-        List<Pago> lista = null;
+        List<Pago> lista = new ArrayList<>();
         String sql = "{call LISTAR_PAGOS_TODOS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (lista == null) lista = new ArrayList<>();
                 lista.add(mapear(rs));
             }
             return lista;
         } catch (Exception ex) {
             System.out.println("ERROR AL LISTAR PAGOS: " + ex.getMessage());
             throw new RuntimeException(ex);
+        }
+    }
+    @Override
+    public boolean existeAprobadoPorPostulacion(int postulacionId) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall("{call EXISTE_PAGO_APROBADO_POSTULACION(?)}")) {
+            cs.setInt(1, postulacionId);
+            try (ResultSet rs = cs.executeQuery()) {
+                return rs.next() && rs.getBoolean("tiene_pago_aprobado");
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo verificar el estado de los pagos", ex);
         }
     }
 }

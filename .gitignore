@@ -37,3 +37,10 @@ build/
 
 ### Mac OS ###
 .DS_Store
+# Datos y compilados que no deben subirse
+**/target/
+.idea/
+**/db.local.properties
+.env
+
+**/db.properties

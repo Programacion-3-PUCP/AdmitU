@@ -1,12 +1,14 @@
 package pe.edu.pucp.admitu.persona.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.persona.boi.IPostulanteBO;
 import pe.edu.pucp.admitu.persona.dao.PostulanteDAO;
 import pe.edu.pucp.admitu.persona.impl.PostulanteImpl;
 import pe.edu.pucp.admitu.persona.Postulante;
 
 import java.util.List;
+import java.time.LocalDate;
 
 public class PostulanteBOImpl implements IPostulanteBO {
 
@@ -32,44 +34,49 @@ public class PostulanteBOImpl implements IPostulanteBO {
             throw new RuntimeException("El postulante no tiene numero de documento");
         if (p.getFechaNacimiento() == null)
             throw new RuntimeException("El postulante no tiene fecha de nacimiento");
+        if (p.getApoderado() != null && p.getApoderado().getId() <= 0)
+            throw new IllegalArgumentException("El apoderado debe existir antes de asociarlo");
+        Validaciones.persona(p.getNombres(), p.getApellidoPaterno(), p.getApellidoMaterno(),
+                p.getCorreo(), p.getTipoDocumento(), p.getNumeroDocumento(), p.getTelefono());
+        Validaciones.noFutura(p.getFechaNacimiento(), "Fecha de nacimiento");
+        if (p.getFechaNacimiento().isBefore(LocalDate.now().minusYears(110)))
+            throw new IllegalArgumentException("Fecha de nacimiento fuera de rango");
+        if (p.isTieneDiscapacidad())
+            Validaciones.texto(p.getNumeroCarnetConadis(), "Número CONADIS", 30);
+        else if (p.getNumeroCarnetConadis() != null && !p.getNumeroCarnetConadis().isBlank())
+            throw new IllegalArgumentException("No corresponde un carné CONADIS");
+        if (p.isCorreoValidado() && p.getFechaValidacionCorreo() == null)
+            throw new IllegalArgumentException("Falta fecha de validación del correo");
+        Validaciones.noFutura(p.getFechaValidacionCorreo(), "Validación de correo");
     }
 
     @Override
     public int insertar(Postulante p) {
         validar(p);
-        try {
-            int r = daoPostulante.insertar(p);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoPostulante.insertar(p));
     }
 
     @Override
     public int modificar(Postulante p) {
         validar(p);
         if (p.getId() <= 0) throw new RuntimeException("Id de postulante no valido");
-        return daoPostulante.modificar(p);
+        return TransactionContext.ejecutar(() -> daoPostulante.modificar(p));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de postulante no valido");
-        return daoPostulante.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoPostulante.eliminar(id));
     }
 
     @Override
     public List<Postulante> listarTodos() {
-        return daoPostulante.listarTodos();
+        return TransactionContext.ejecutar(() -> daoPostulante.listarTodos());
     }
 
     @Override
     public Postulante buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de postulante no valido");
-        return daoPostulante.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoPostulante.buscarPorId(id));
     }
 }

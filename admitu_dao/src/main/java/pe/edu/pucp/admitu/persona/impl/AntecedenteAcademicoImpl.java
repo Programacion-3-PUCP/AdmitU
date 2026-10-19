@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.persona.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.persona.AntecedenteAcademico;
 import pe.edu.pucp.admitu.persona.InstitucionEducativa;
@@ -41,8 +40,8 @@ public class AntecedenteAcademicoImpl implements AntecedenteAcademicoDAO {
     @Override
     public int modificar(AntecedenteAcademico antecedente) {
         String sql = "{call MODIFICAR_ANTECEDENTE_ACADEMICO(?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", antecedente.getId());
             cs.setInt("_postulante_id", antecedente.getPostulante().getId());
             cs.setInt("_institucion_id", antecedente.getInstitucion().getId());
@@ -59,8 +58,8 @@ public class AntecedenteAcademicoImpl implements AntecedenteAcademicoDAO {
     @Override
     public int eliminar(int idAntecedente) {
         String sql = "{call ELIMINAR_ANTECEDENTE_ACADEMICO(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idAntecedente);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -89,8 +88,8 @@ public class AntecedenteAcademicoImpl implements AntecedenteAcademicoDAO {
     public AntecedenteAcademico buscarPorId(int idAntecedente) {
         AntecedenteAcademico antecedente = null;
         String sql = "{call LISTAR_ANTECEDENTE_ACADEMICO_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idAntecedente);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) antecedente = mapear(rs);
@@ -104,13 +103,12 @@ public class AntecedenteAcademicoImpl implements AntecedenteAcademicoDAO {
 
     @Override
     public List<AntecedenteAcademico> listarTodos() {
-        List<AntecedenteAcademico> antecedentes = null;
+        List<AntecedenteAcademico> antecedentes = new ArrayList<>();
         String sql = "{call LISTAR_ANTECEDENTES_ACADEMICOS_TODOS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (antecedentes == null) antecedentes = new ArrayList<>();
                 antecedentes.add(mapear(rs));
             }
             return antecedentes;

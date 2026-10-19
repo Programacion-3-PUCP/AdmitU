@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.configuracion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.configuracion.Sede;
 import pe.edu.pucp.admitu.configuracion.dao.SedeDAO;
@@ -34,8 +33,8 @@ public class SedeImpl implements SedeDAO {
     @Override
     public int modificar(Sede sede) {
         String sql = "{call MODIFICAR_SEDE(?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", sede.getId());
             cs.setString("_codigo", sede.getCodigo());
             cs.setString("_nombre", sede.getNombre());
@@ -50,8 +49,8 @@ public class SedeImpl implements SedeDAO {
     @Override
     public int eliminar(int idSede) {
         String sql = "{call ELIMINAR_SEDE(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idSede);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -71,8 +70,8 @@ public class SedeImpl implements SedeDAO {
     public Sede buscarPorId(int idSede) {
         Sede sede = null;
         String sql = "{call LISTAR_SEDE_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idSede);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) sede = mapear(rs);
@@ -86,13 +85,12 @@ public class SedeImpl implements SedeDAO {
 
     @Override
     public List<Sede> listarTodos() {
-        List<Sede> sedes = null;
+        List<Sede> sedes = new ArrayList<>();
         String sql = "{call LISTAR_SEDES_TODAS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (sedes == null) sedes = new ArrayList<>();
                 sedes.add(mapear(rs));
             }
             return sedes;

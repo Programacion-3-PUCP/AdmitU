@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.configuracion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.configuracion.boi.ICarreraBO;
 import pe.edu.pucp.admitu.configuracion.dao.CarreraDAO;
 import pe.edu.pucp.admitu.configuracion.impl.CarreraImpl;
@@ -28,44 +29,37 @@ public class CarreraBOImpl implements ICarreraBO {
             throw new RuntimeException("El nombre de carrera no puede estar vacio");
         if (c.getNombre().length() > 150)
             throw new RuntimeException("El nombre no debe exceder 150 caracteres");
+        Validaciones.codigo(c.getCodigoCarrera(), "Código de carrera", 20);
+        Validaciones.texto(c.getNombre(), "Carrera", 150);
     }
 
     @Override
     public int insertar(Carrera c) {
         validar(c);
-        try {
-            int r = daoCarrera.insertar(c);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoCarrera.insertar(c));
     }
 
     @Override
     public int modificar(Carrera c) {
         validar(c);
         if (c.getId() <= 0) throw new RuntimeException("Id de carrera no valido");
-        return daoCarrera.modificar(c);
+        return TransactionContext.ejecutar(() -> daoCarrera.modificar(c));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de carrera no valido");
-        return daoCarrera.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoCarrera.eliminar(id));
     }
 
     @Override
     public List<Carrera> listarTodos() {
-        return daoCarrera.listarTodos();
+        return TransactionContext.ejecutar(() -> daoCarrera.listarTodos());
     }
 
     @Override
     public Carrera buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de carrera no valido");
-        return daoCarrera.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoCarrera.buscarPorId(id));
     }
 }

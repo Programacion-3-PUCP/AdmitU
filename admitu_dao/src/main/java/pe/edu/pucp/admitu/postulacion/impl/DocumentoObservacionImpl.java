@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.postulacion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.persona.Evaluador;
 import pe.edu.pucp.admitu.persona.TipoDocumento;
@@ -44,8 +43,8 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
     @Override
     public int modificar(DocumentoObservacion observacion) {
         String sql = "{call MODIFICAR_DOCUMENTO_OBSERVACION(?, ?, ?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", observacion.getId());
             cs.setInt("_documento_id", observacion.getDocumento().getId());
             cs.setInt("_evaluador_id", observacion.getEvaluador().getId());
@@ -65,8 +64,8 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
     @Override
     public int eliminar(int idObservacion) {
         String sql = "{call ELIMINAR_DOCUMENTO_OBSERVACION(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idObservacion);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -101,8 +100,8 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
     public DocumentoObservacion buscarPorId(int idObservacion) {
         DocumentoObservacion observacion = null;
         String sql = "{call LISTAR_DOCUMENTO_OBSERVACION_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idObservacion);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) observacion = mapear(rs);
@@ -116,13 +115,12 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
 
     @Override
     public List<DocumentoObservacion> listarTodos() {
-        List<DocumentoObservacion> observaciones = null;
+        List<DocumentoObservacion> observaciones = new ArrayList<>();
         String sql = "{call LISTAR_DOCUMENTOS_OBSERVACION_TODOS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (observaciones == null) observaciones = new ArrayList<>();
                 observaciones.add(mapear(rs));
             }
             return observaciones;

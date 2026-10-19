@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.configuracion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.configuracion.Convocatoria;
 import pe.edu.pucp.admitu.configuracion.ConvocatoriaModalidad;
@@ -37,8 +36,8 @@ public class ConvocatoriaModalidadImpl implements ConvocatoriaModalidadDAO {
     @Override
     public int modificar(ConvocatoriaModalidad relacion) {
         String sql = "{call MODIFICAR_CONVOCATORIA_MODALIDAD(?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", relacion.getId());
             cs.setInt("_convocatoria_id", relacion.getConvocatoria().getId());
             cs.setInt("_modalidad_id", relacion.getModalidad().getId());
@@ -54,8 +53,8 @@ public class ConvocatoriaModalidadImpl implements ConvocatoriaModalidadDAO {
     @Override
     public int eliminar(int idRelacion) {
         String sql = "{call ELIMINAR_CONVOCATORIA_MODALIDAD(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idRelacion);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -80,8 +79,8 @@ public class ConvocatoriaModalidadImpl implements ConvocatoriaModalidadDAO {
     public ConvocatoriaModalidad buscarPorId(int idRelacion) {
         ConvocatoriaModalidad relacion = null;
         String sql = "{call LISTAR_CONVOCATORIA_MODALIDAD_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idRelacion);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) relacion = mapear(rs);
@@ -95,13 +94,12 @@ public class ConvocatoriaModalidadImpl implements ConvocatoriaModalidadDAO {
 
     @Override
     public List<ConvocatoriaModalidad> listarTodos() {
-        List<ConvocatoriaModalidad> relaciones = null;
+        List<ConvocatoriaModalidad> relaciones = new ArrayList<>();
         String sql = "{call LISTAR_CONVOCATORIAS_MODALIDAD_TODAS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (relaciones == null) relaciones = new ArrayList<>();
                 relaciones.add(mapear(rs));
             }
             return relaciones;

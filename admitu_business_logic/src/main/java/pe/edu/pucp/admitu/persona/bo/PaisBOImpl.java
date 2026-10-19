@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.persona.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.persona.Pais;
 import pe.edu.pucp.admitu.persona.boi.IPaisBO;
 import pe.edu.pucp.admitu.persona.dao.PaisDAO;
@@ -26,44 +27,37 @@ public class PaisBOImpl implements IPaisBO {
             throw new RuntimeException("El nombre del pais no puede estar vacio");
         if (p.getNombre().length() > 100)
             throw new RuntimeException("El nombre no debe exceder 100 caracteres");
+                if (!p.getCodigoIso2().matches("[A-Za-z]{2}"))
+            throw new IllegalArgumentException("El código ISO2 debe tener dos letras");
     }
 
     @Override
     public int insertar(Pais p) {
         validar(p);
-        try {
-            int r = daoPais.insertar(p);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoPais.insertar(p));
     }
 
     @Override
     public int modificar(Pais p) {
         validar(p);
         if (p.getId() <= 0) throw new RuntimeException("Id de pais no valido");
-        return daoPais.modificar(p);
+        return TransactionContext.ejecutar(() -> daoPais.modificar(p));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de pais no valido");
-        return daoPais.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoPais.eliminar(id));
     }
 
     @Override
     public List<Pais> listarTodos() {
-        return daoPais.listarTodos();
+        return TransactionContext.ejecutar(() -> daoPais.listarTodos());
     }
 
     @Override
     public Pais buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de pais no valido");
-        return daoPais.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoPais.buscarPorId(id));
     }
 }

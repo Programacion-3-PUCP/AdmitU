@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.persona.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.persona.Evaluador;
 import pe.edu.pucp.admitu.persona.boi.IEvaluadorBO;
 import pe.edu.pucp.admitu.persona.dao.EvaluadorDAO;
@@ -42,44 +43,37 @@ public class EvaluadorBOImpl implements IEvaluadorBO {
             throw new RuntimeException("El cargo del evaluador no puede estar vacio");
         if (e.getCargo().length() > 100)
             throw new RuntimeException("El cargo no debe exceder 100 caracteres");
+        Validaciones.persona(e.getNombres(), e.getApellidoPaterno(), e.getApellidoMaterno(),
+                e.getCorreo(), e.getTipoDocumento(), e.getNumeroDocumento(), e.getTelefono());
     }
 
     @Override
     public int insertar(Evaluador e) {
         validar(e);
-        try {
-            int r = daoEvaluador.insertar(e);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoEvaluador.insertar(e));
     }
 
     @Override
     public int modificar(Evaluador e) {
         validar(e);
         if (e.getId() <= 0) throw new RuntimeException("Id de evaluador no valido");
-        return daoEvaluador.modificar(e);
+        return TransactionContext.ejecutar(() -> daoEvaluador.modificar(e));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de evaluador no valido");
-        return daoEvaluador.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoEvaluador.eliminar(id));
     }
 
     @Override
     public List<Evaluador> listarTodos() {
-        return daoEvaluador.listarTodos();
+        return TransactionContext.ejecutar(() -> daoEvaluador.listarTodos());
     }
 
     @Override
     public Evaluador buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de evaluador no valido");
-        return daoEvaluador.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoEvaluador.buscarPorId(id));
     }
 }

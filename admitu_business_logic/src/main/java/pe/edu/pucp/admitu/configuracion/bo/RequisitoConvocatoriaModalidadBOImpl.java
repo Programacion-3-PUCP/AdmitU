@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.configuracion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.configuracion.RequisitoConvocatoriaModalidad;
 import pe.edu.pucp.admitu.configuracion.boi.IRequisitoConvocatoriaModalidadBO;
 import pe.edu.pucp.admitu.configuracion.dao.RequisitoConvocatoriaModalidadDAO;
@@ -26,44 +27,36 @@ public class RequisitoConvocatoriaModalidadBOImpl implements IRequisitoConvocato
             throw new RuntimeException("Un requisito obligatorio necesita orden de presentacion");
         if (r.getOrdenPresentacion() != null && r.getOrdenPresentacion() <= 0)
             throw new RuntimeException("El orden de presentacion debe ser mayor que cero");
+                if (r.getOrdenPresentacion() != null) Validaciones.positivo(r.getOrdenPresentacion(), "Orden de presentación");
     }
 
     @Override
     public int insertar(RequisitoConvocatoriaModalidad r) {
         validar(r);
-        try {
-            int resultado = daoRelacion.insertar(r);
-            TransactionContext.commit();
-            return resultado;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoRelacion.insertar(r));
     }
 
     @Override
     public int modificar(RequisitoConvocatoriaModalidad r) {
         validar(r);
         if (r.getId() <= 0) throw new RuntimeException("Id de relacion no valido");
-        return daoRelacion.modificar(r);
+        return TransactionContext.ejecutar(() -> daoRelacion.modificar(r));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de relacion no valido");
-        return daoRelacion.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoRelacion.eliminar(id));
     }
 
     @Override
     public List<RequisitoConvocatoriaModalidad> listarTodos() {
-        return daoRelacion.listarTodos();
+        return TransactionContext.ejecutar(() -> daoRelacion.listarTodos());
     }
 
     @Override
     public RequisitoConvocatoriaModalidad buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de relacion no valido");
-        return daoRelacion.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoRelacion.buscarPorId(id));
     }
 }

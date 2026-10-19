@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.configuracion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.configuracion.Etapa;
 import pe.edu.pucp.admitu.configuracion.dao.EtapaDAO;
@@ -36,8 +35,8 @@ public class EtapaImpl implements EtapaDAO {
     @Override
     public int modificar(Etapa etapa) {
         String sql = "{call MODIFICAR_ETAPA(?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", etapa.getId());
             cs.setDate("_fecha_inicio", etapa.getFechaInicio() != null ? Date.valueOf(etapa.getFechaInicio()) : null);
             cs.setDate("_fecha_fin", etapa.getFechaFin() != null ? Date.valueOf(etapa.getFechaFin()) : null);
@@ -54,8 +53,8 @@ public class EtapaImpl implements EtapaDAO {
     @Override
     public int eliminar(int idEtapa) {
         String sql = "{call ELIMINAR_ETAPA(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idEtapa);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -78,8 +77,8 @@ public class EtapaImpl implements EtapaDAO {
     public Etapa buscarPorId(int idEtapa) {
         Etapa etapa = null;
         String sql = "{call LISTAR_ETAPA_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idEtapa);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) etapa = mapear(rs);
@@ -93,13 +92,12 @@ public class EtapaImpl implements EtapaDAO {
 
     @Override
     public List<Etapa> listarTodos() {
-        List<Etapa> etapas = null;
+        List<Etapa> etapas = new ArrayList<>();
         String sql = "{call LISTAR_ETAPAS_TODAS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (etapas == null) etapas = new ArrayList<>();
                 etapas.add(mapear(rs));
             }
             return etapas;

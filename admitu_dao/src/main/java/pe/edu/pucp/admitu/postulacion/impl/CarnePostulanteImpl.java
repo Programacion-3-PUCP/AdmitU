@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.postulacion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.configuracion.Sede;
 import pe.edu.pucp.admitu.postulacion.CarnePostulante;
@@ -40,8 +39,8 @@ public class CarnePostulanteImpl implements CarnePostulanteDAO {
     @Override
     public int modificar(CarnePostulante carne) {
         String sql = "{call MODIFICAR_CARNE_POSTULANTE(?, ?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", carne.getId());
             cs.setInt("_postulacion_id", carne.getPostulacion().getId());
             cs.setInt("_sede_id", carne.getSede().getId());
@@ -60,8 +59,8 @@ public class CarnePostulanteImpl implements CarnePostulanteDAO {
     @Override
     public int eliminar(int idCarne) {
         String sql = "{call ELIMINAR_CARNE_POSTULANTE(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idCarne);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -88,8 +87,8 @@ public class CarnePostulanteImpl implements CarnePostulanteDAO {
     public CarnePostulante buscarPorId(int idCarne) {
         CarnePostulante carne = null;
         String sql = "{call LISTAR_CARNE_POSTULANTE_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idCarne);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) carne = mapear(rs);
@@ -103,13 +102,12 @@ public class CarnePostulanteImpl implements CarnePostulanteDAO {
 
     @Override
     public List<CarnePostulante> listarTodos() {
-        List<CarnePostulante> carnes = null;
+        List<CarnePostulante> carnes = new ArrayList<>();
         String sql = "{call LISTAR_CARNES_POSTULANTE_TODOS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (carnes == null) carnes = new ArrayList<>();
                 carnes.add(mapear(rs));
             }
             return carnes;

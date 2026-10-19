@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.configuracion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.configuracion.Requisito;
 import pe.edu.pucp.admitu.configuracion.boi.IRequisitoBO;
 import pe.edu.pucp.admitu.configuracion.dao.RequisitoDAO;
@@ -32,44 +33,36 @@ public class RequisitoBOImpl implements IRequisitoBO {
             throw new RuntimeException("El requisito no tiene tipo de archivo");
         if (r.getTamanioMaximoBytes() <= 0)
             throw new RuntimeException("El tamanio maximo debe ser mayor que cero");
+        Validaciones.codigo(r.getCodigoRequisito(), "Código de requisito", 20);
     }
 
     @Override
     public int insertar(Requisito r) {
         validar(r);
-        try {
-            int resultado = daoRequisito.insertar(r);
-            TransactionContext.commit();
-            return resultado;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoRequisito.insertar(r));
     }
 
     @Override
     public int modificar(Requisito r) {
         validar(r);
         if (r.getId() <= 0) throw new RuntimeException("Id de requisito no valido");
-        return daoRequisito.modificar(r);
+        return TransactionContext.ejecutar(() -> daoRequisito.modificar(r));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de requisito no valido");
-        return daoRequisito.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoRequisito.eliminar(id));
     }
 
     @Override
     public List<Requisito> listarTodos() {
-        return daoRequisito.listarTodos();
+        return TransactionContext.ejecutar(() -> daoRequisito.listarTodos());
     }
 
     @Override
     public Requisito buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de requisito no valido");
-        return daoRequisito.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoRequisito.buscarPorId(id));
     }
 }

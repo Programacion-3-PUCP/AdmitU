@@ -1,6 +1,5 @@
 package pe.edu.pucp.admitu.configuracion.impl;
 
-import pe.edu.pucp.admitu.config.DBManager;
 import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.configuracion.dao.CarreraDAO;
 import pe.edu.pucp.admitu.configuracion.Carrera;
@@ -35,8 +34,8 @@ public class CarreraImpl implements CarreraDAO {
     @Override
     public int modificar(Carrera carrera) {
         String sql = "{call MODIFICAR_CARRERA(?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", carrera.getId());
             cs.setInt("_facultad_id", carrera.getFacultad().getId());
             cs.setString("_codigo", carrera.getCodigoCarrera());
@@ -51,8 +50,8 @@ public class CarreraImpl implements CarreraDAO {
     @Override
     public int eliminar(int idCarrera) {
         String sql = "{call ELIMINAR_CARRERA(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idCarrera);
             return cs.executeUpdate();
         } catch (Exception ex) {
@@ -65,8 +64,8 @@ public class CarreraImpl implements CarreraDAO {
     public Carrera buscarPorId(int idCarrera) {
         Carrera carrera = null;
         String sql = "{call LISTAR_CARRERA_X_ID(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idCarrera);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
@@ -86,13 +85,12 @@ public class CarreraImpl implements CarreraDAO {
 
     @Override
     public List<Carrera> listarTodos() {
-        List<Carrera> carreras = null;
+        List<Carrera> carreras = new ArrayList<>();
         String sql = "{call LISTAR_CARRERAS_TODAS()}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql);
+        Connection con = TransactionContext.getConnection();
+        try (CallableStatement cs = con.prepareCall(sql);
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                if (carreras == null) carreras = new ArrayList<>();
                 Facultad f = new Facultad("TMP", rs.getString("nombre_facultad"));
                 f.setId(rs.getInt("facultad_id"));
                 Carrera c = new Carrera(f, rs.getString("codigo_carrera"), rs.getString("nombre"));

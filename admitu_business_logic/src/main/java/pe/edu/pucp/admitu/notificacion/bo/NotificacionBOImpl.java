@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.notificacion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.notificacion.Notificacion;
 import pe.edu.pucp.admitu.notificacion.boi.INotificacionBO;
 import pe.edu.pucp.admitu.notificacion.dao.NotificacionDAO;
@@ -35,8 +36,6 @@ public class NotificacionBOImpl implements INotificacionBO {
             throw new RuntimeException("El asunto no debe exceder 200 caracteres");
         if (n.getMensaje() == null || n.getMensaje().trim().isEmpty())
             throw new RuntimeException("El mensaje no puede estar vacio");
-        if (n.getFechaProgramada() != null && n.getFechaProgramada().isBefore(LocalDate.now()))
-            throw new RuntimeException("La fecha programada no puede ser pasada");
         if (n.getFechaEnvio() != null && n.getFechaProgramada() != null
             && n.getFechaEnvio().isBefore(n.getFechaProgramada()))
             throw new RuntimeException("La fecha de envio no puede ser anterior a la fecha programada");
@@ -44,44 +43,44 @@ public class NotificacionBOImpl implements INotificacionBO {
             throw new RuntimeException("La notificacion no tiene estado de envio");
         if (n.isLeida() && n.getFechaLectura() == null)
             throw new RuntimeException("Una notificacion leida necesita fecha de lectura");
+        if (n.getEstadoEnvio().name().equals("ENVIADA") && n.getFechaEnvio() == null)
+            throw new IllegalArgumentException("Una notificación enviada debe tener fecha de envío");
+        Validaciones.texto(n.getAsunto(), "Asunto", 150);
+        Validaciones.longitud(n.getDestinatario(), "Destinatario", 150);
+        if (n.getMedioNotificacion().name().equals("CORREO")) Validaciones.correo(n.getDestinatario());
+        Validaciones.noFutura(n.getFechaEnvio(), "Fecha de envío");
+        if (n.getFechaLectura() != null && n.getFechaEnvio() != null
+                && n.getFechaLectura().isBefore(n.getFechaEnvio()))
+            throw new IllegalArgumentException("La lectura no puede anteceder al envío");
     }
 
     @Override
     public int insertar(Notificacion n) {
         validar(n);
-        try {
-            int r = daoNotificacion.insertar(n);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoNotificacion.insertar(n));
     }
 
     @Override
     public int modificar(Notificacion n) {
         validar(n);
         if (n.getId() <= 0) throw new RuntimeException("Id de notificacion no valido");
-        return daoNotificacion.modificar(n);
+        return TransactionContext.ejecutar(() -> daoNotificacion.modificar(n));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de notificacion no valido");
-        return daoNotificacion.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoNotificacion.eliminar(id));
     }
 
     @Override
     public List<Notificacion> listarTodos() {
-        return daoNotificacion.listarTodos();
+        return TransactionContext.ejecutar(() -> daoNotificacion.listarTodos());
     }
 
     @Override
     public Notificacion buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de notificacion no valido");
-        return daoNotificacion.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoNotificacion.buscarPorId(id));
     }
 }

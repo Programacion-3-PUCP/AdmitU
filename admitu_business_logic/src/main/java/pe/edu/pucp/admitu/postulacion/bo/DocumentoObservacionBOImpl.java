@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.postulacion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.postulacion.DocumentoObservacion;
 import pe.edu.pucp.admitu.postulacion.boi.IDocumentoObservacionBO;
 import pe.edu.pucp.admitu.postulacion.dao.DocumentoObservacionDAO;
@@ -40,44 +41,38 @@ public class DocumentoObservacionBOImpl implements IDocumentoObservacionBO {
             throw new RuntimeException("La fecha de subsanacion no puede ser anterior a la observacion");
         if (o.getComentarioSubsanacion() != null && o.getComentarioSubsanacion().length() > 500)
             throw new RuntimeException("El comentario de subsanacion no debe exceder 500 caracteres");
+        Validaciones.longitud(o.getDescripcion(), "Descripción de observación", 255);
+        Validaciones.longitud(o.getComentarioSubsanacion(), "Comentario de subsanación", 255);
+        Validaciones.noFutura(o.getFechaSubsanacion(), "Fecha de subsanación");
     }
 
     @Override
     public int insertar(DocumentoObservacion o) {
         validar(o);
-        try {
-            int r = daoObservacion.insertar(o);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoObservacion.insertar(o));
     }
 
     @Override
     public int modificar(DocumentoObservacion o) {
         validar(o);
         if (o.getId() <= 0) throw new RuntimeException("Id de observacion no valido");
-        return daoObservacion.modificar(o);
+        return TransactionContext.ejecutar(() -> daoObservacion.modificar(o));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de observacion no valido");
-        return daoObservacion.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoObservacion.eliminar(id));
     }
 
     @Override
     public List<DocumentoObservacion> listarTodos() {
-        return daoObservacion.listarTodos();
+        return TransactionContext.ejecutar(() -> daoObservacion.listarTodos());
     }
 
     @Override
     public DocumentoObservacion buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de observacion no valido");
-        return daoObservacion.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoObservacion.buscarPorId(id));
     }
 }

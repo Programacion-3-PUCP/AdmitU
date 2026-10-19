@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.postulacion.bo;
 
 import pe.edu.pucp.admitu.config.TransactionContext;
+import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.postulacion.EstadoPostulacion;
 import pe.edu.pucp.admitu.postulacion.boi.IEstadoPostulacionBO;
 import pe.edu.pucp.admitu.postulacion.dao.EstadoPostulacionDAO;
@@ -28,44 +29,36 @@ public class EstadoPostulacionBOImpl implements IEstadoPostulacionBO {
             throw new RuntimeException("El nombre no debe exceder 100 caracteres");
         if (e.getDescripcion() != null && e.getDescripcion().length() > 255)
             throw new RuntimeException("La descripcion no debe exceder 255 caracteres");
+        Validaciones.codigo(e.getCodigo(), "Código de estado", 20);
     }
 
     @Override
     public int insertar(EstadoPostulacion e) {
         validar(e);
-        try {
-            int r = daoEstado.insertar(e);
-            TransactionContext.commit();
-            return r;
-        } catch (Exception ex) {
-            TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
-        } finally {
-            TransactionContext.close();
-        }
+        return TransactionContext.ejecutar(() -> daoEstado.insertar(e));
     }
 
     @Override
     public int modificar(EstadoPostulacion e) {
         validar(e);
         if (e.getId() <= 0) throw new RuntimeException("Id de estado de postulacion no valido");
-        return daoEstado.modificar(e);
+        return TransactionContext.ejecutar(() -> daoEstado.modificar(e));
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de estado de postulacion no valido");
-        return daoEstado.eliminar(id);
+        return TransactionContext.ejecutar(() -> daoEstado.eliminar(id));
     }
 
     @Override
     public List<EstadoPostulacion> listarTodos() {
-        return daoEstado.listarTodos();
+        return TransactionContext.ejecutar(() -> daoEstado.listarTodos());
     }
 
     @Override
     public EstadoPostulacion buscarPorId(int id) {
         if (id <= 0) throw new RuntimeException("Id de estado de postulacion no valido");
-        return daoEstado.buscarPorId(id);
+        return TransactionContext.ejecutar(() -> daoEstado.buscarPorId(id));
     }
 }
