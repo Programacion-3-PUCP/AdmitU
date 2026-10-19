@@ -1,0 +1,67 @@
+@page "/postulaciones"
+@inject IAdmitUService Servicio
+
+<PageTitle>Postulaciones | AdmitU</PageTitle>
+<div class="page-title">
+    <div><div class="breadcrumb-text">AdmitU / Postulaciones</div><h1>Postulaciones</h1><p>Consulta de inscripciones por postulante y convocatoria.</p></div>
+</div>
+<Aviso Mensaje="@error" EsError="true" />
+<section class="panel-card">
+    <div class="toolbar">
+        <div><strong>Registro de postulaciones</strong><div class="table-meta">@Filtrados.Count registro(s)</div></div>
+        <div class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" value="@texto" @oninput="Buscar" class="form-control" placeholder="Buscar por inscripción o postulante" aria-label="Buscar postulaciones" /></div>
+    </div>
+    @if (cargando)
+    {
+        <div class="empty-state">Cargando postulaciones...</div>
+    }
+    else if (Filtrados.Count == 0)
+    {
+        <div class="empty-state">No se encontraron postulaciones.</div>
+    }
+    else
+    {
+        <div class="table-container">
+            <QuickGrid Items="@Filtrados.AsQueryable()" Pagination="@paginacion" Class="grid-table">
+                <PropertyColumn Property="@(x => x.CodigoInscripcion)" Title="Código" />
+                <TemplateColumn Title="Postulante" Context="item">@NombrePostulante(item.PostulanteId)</TemplateColumn>
+                <TemplateColumn Title="Convocatoria" Context="item">@NombreConvocatoria(item.ConvocatoriaId)</TemplateColumn>
+                <TemplateColumn Title="Registro" Context="item">@(item.FechaRegistro?.ToString("dd/MM/yyyy") ?? "—")</TemplateColumn>
+                <TemplateColumn Title="Estado" Context="item"><EstadoEtiqueta Estado="@item.EstadoActualNombre" /></TemplateColumn>
+            </QuickGrid>
+            <Paginador State="@paginacion" TotalItems="@Filtrados.Count" />
+        </div>
+    }
+</section>
+<p class="field-note mt-3">La creación de postulaciones requiere los catálogos de convocatoria-modalidad y oferta-carrera. Sus contratos REST están pendientes; aquí solo se consulta información.</p>
+
+@code {
+    private List<PostulacionDto> datos = [];
+    private List<PostulanteDto> postulantes = [];
+    private List<ConvocatoriaDto> convocatorias = [];
+    private PaginationState paginacion = new() { ItemsPerPage = 8 };
+    private string texto = "";
+    private string? error;
+    private bool cargando = true;
+    private string NombrePostulante(int id) => postulantes.Find(x => x.Id == id) is { } x ? $"{x.Nombres} {x.ApellidoPaterno}" : $"ID {id}";
+    private string NombreConvocatoria(int id) => convocatorias.Find(x => x.Id == id)?.Nombre ?? $"ID {id}";
+    private List<PostulacionDto> Filtrados => datos.Where(x => string.IsNullOrWhiteSpace(texto) || x.CodigoInscripcion.Contains(texto, StringComparison.OrdinalIgnoreCase) || NombrePostulante(x.PostulanteId).Contains(texto, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            datos = await Servicio.ListarPostulacionesAsync();
+            postulantes = await Servicio.ListarPostulantesAsync();
+            convocatorias = await Servicio.ListarConvocatoriasAsync();
+        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { cargando = false; }
+    }
+
+    private async Task Buscar(ChangeEventArgs e)
+    {
+        texto = e.Value?.ToString() ?? "";
+        await paginacion.SetCurrentPageIndexAsync(0);
+    }
+}

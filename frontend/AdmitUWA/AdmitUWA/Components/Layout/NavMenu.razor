@@ -1,0 +1,45 @@
+<div class="sidebar-wrap @(abierto ? "sidebar-open" : "")">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-symbol"><i class="fa-solid fa-university"></i></div>
+            <div>
+                <strong>admit<span>U</span></strong>
+                <small>Gestión de admisiones</small>
+            </div>
+        </div>
+        <div class="sidebar-menu">
+            <p class="nav-section">PRINCIPAL</p>
+            <ul class="mynav list-unstyled">
+                <li><NavLink href="/" Match="NavLinkMatch.All" @onclick="Cerrar"><i class="fa-solid fa-chart-line"></i> Resumen</NavLink></li>
+                <li><NavLink href="/postulantes" @onclick="Cerrar"><i class="fa-solid fa-users"></i> Postulantes</NavLink></li>
+                <li><NavLink href="/postulaciones" @onclick="Cerrar"><i class="fa-solid fa-file-signature"></i> Postulaciones</NavLink></li>
+                <li><NavLink href="/pagos" @onclick="Cerrar"><i class="fa-solid fa-credit-card"></i> Pagos</NavLink></li>
+                <li><NavLink href="/documentos" @onclick="Cerrar"><i class="fa-solid fa-folder-open"></i> Documentos</NavLink></li>
+            </ul>
+            <p class="nav-section mt-4">CONFIGURACIÓN</p>
+            <ul class="mynav list-unstyled">
+                <li><NavLink href="/facultades" @onclick="Cerrar"><i class="fa-solid fa-building-columns"></i> Facultades</NavLink></li>
+                <li><NavLink href="/carreras" @onclick="Cerrar"><i class="fa-solid fa-book-open-reader"></i> Carreras</NavLink></li>
+                <li><NavLink href="/convocatorias" @onclick="Cerrar"><i class="fa-solid fa-calendar-days"></i> Convocatorias</NavLink></li>
+                <li><NavLink href="/modalidades" @onclick="Cerrar"><i class="fa-solid fa-list-check"></i> Modalidades</NavLink></li>
+            </ul>
+        </div>
+        <div class="sidebar-bottom">
+            <div class="help-icon"><i class="fa-solid fa-circle-question"></i></div>
+            <div><strong>AdmitUWA</strong><small>Versión académica</small></div>
+        </div>
+    </aside>
+</div>
+<button class="mobile-menu-button" type="button" aria-label="Abrir o cerrar menú" @onclick="AlternarMenu">
+    <i class="fa-solid fa-bars"></i>
+</button>
+@if (abierto)
+{
+    <button class="mobile-overlay" type="button" aria-label="Cerrar menú" @onclick="Cerrar"></button>
+}
+
+@code {
+    private bool abierto;
+    private void AlternarMenu() => abierto = !abierto;
+    private void Cerrar() => abierto = false;
+}

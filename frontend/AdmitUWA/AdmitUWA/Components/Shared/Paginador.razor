@@ -1,0 +1,42 @@
+@using Microsoft.AspNetCore.Components.QuickGrid
+
+<div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2 pagination-row">
+    <span>Página @(State.CurrentPageIndex + 1) de @TotalPaginas</span>
+    <div>
+        <button type="button" class="btn btn-outline-primary me-2"
+                disabled="@(State.CurrentPageIndex == 0)"
+                @onclick="PaginaAnterior">
+            <i class="fa-solid fa-chevron-left me-1"></i> Anterior
+        </button>
+        <button type="button" class="btn btn-outline-primary"
+                disabled="@(State.CurrentPageIndex + 1 >= TotalPaginas)"
+                @onclick="PaginaSiguiente">
+            Siguiente <i class="fa-solid fa-chevron-right ms-1"></i>
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public PaginationState State { get; set; } = default!;
+
+    [Parameter]
+    public int TotalItems { get; set; }
+
+    private int TotalPaginas =>
+        TotalItems == 0
+            ? 1
+            : (int)Math.Ceiling((double)TotalItems / State.ItemsPerPage);
+
+    private async Task PaginaAnterior()
+    {
+        if (State.CurrentPageIndex > 0)
+            await State.SetCurrentPageIndexAsync(State.CurrentPageIndex - 1);
+    }
+
+    private async Task PaginaSiguiente()
+    {
+        if (State.CurrentPageIndex + 1 < TotalPaginas)
+            await State.SetCurrentPageIndexAsync(State.CurrentPageIndex + 1);
+    }
+}

@@ -1,0 +1,125 @@
+@page "/convocatorias"
+@inject IAdmitUService Servicio
+@inject NavigationManager Navegacion
+
+<PageTitle>Convocatorias | AdmitU</PageTitle>
+<div class="page-title">
+    <div>
+        <div class="breadcrumb-text">AdmitU / Convocatorias</div>
+        <h1>Convocatorias</h1>
+        <p>Períodos y estados de los procesos de admisión.</p>
+    </div>
+    <a class="btn btn-primary" href="/convocatorias/nuevo"><i class="fa-solid fa-plus me-2"></i>Nuevo registro</a>
+</div>
+
+<Aviso Mensaje="@mensaje" EsError="@hayError" />
+
+<section class="panel-card">
+    <div class="toolbar">
+        <div>
+            <strong>Listado de convocatorias</strong>
+            <div class="table-meta">@Filtrados.Count registro(s) encontrados</div>
+        </div>
+        <div class="search-field">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" class="form-control" value="@texto" @oninput="Buscar" placeholder="Buscar por nombre o código" aria-label="Buscar registros" />
+        </div>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i>Cargando registros...</div>
+    }
+    else if (Filtrados.Count == 0)
+    {
+        <div class="empty-state"><i class="fa-solid fa-magnifying-glass"></i>No se encontraron registros.</div>
+    }
+    else
+    {
+        <div class="table-container">
+            <QuickGrid Items="@Filtrados.AsQueryable()" Pagination="@paginacion" Class="grid-table">
+                <PropertyColumn Property="@(x => x.CodigoConvocatoria)" Title="Código" Sortable="true" />
+                <PropertyColumn Property="@(x => x.Nombre)" Title="Convocatoria" Sortable="true" />
+                <PropertyColumn Property="@(x => x.Periodo)" Title="Período" Sortable="true" />
+                <TemplateColumn Title="Vigencia" Context="item">@(Periodo(item.FechaInicio, item.FechaFin))</TemplateColumn>
+                <TemplateColumn Title="Estado" Context="item">
+                    <EstadoEtiqueta Estado="@(item.Activo ? "ACTIVO" : "INACTIVO")" />
+                </TemplateColumn>
+                <TemplateColumn Title="Acciones" Context="item">
+                    <div class="action-group">
+                        <button type="button" title="Editar" aria-label="Editar" class="icon-btn" @onclick="() => Editar(item.Id)"><i class="fa-solid fa-pen"></i></button>
+                        <button type="button" title="Desactivar" aria-label="Desactivar" class="icon-btn icon-btn-danger" disabled="@(!item.Activo)" @onclick="() => pendiente = item.Id"><i class="fa-solid fa-ban"></i></button>
+                    </div>
+                </TemplateColumn>
+            </QuickGrid>
+            <Paginador State="@paginacion" TotalItems="@Filtrados.Count" />
+        </div>
+    }
+</section>
+
+<ConfirmarAccion Visible="@(pendiente is not null)"
+    Titulo="Desactivar convocatoria"
+    Descripcion="La entidad dejará de estar activa; se preservará su historial."
+    TextoConfirmar="Desactivar"
+    OnConfirmar="ConfirmarAsync"
+    OnCancelar="() => pendiente = null" />
+
+@code {
+    private List<ConvocatoriaDto> registros = [];
+    private PaginationState paginacion = new() { ItemsPerPage = 8 };
+    private string texto = "";
+    private string? mensaje;
+    private bool hayError;
+    private bool cargando = true;
+    private int? pendiente;
+    private static string Periodo(DateOnly? inicio, DateOnly? fin) =>
+        $"{inicio?.ToString("dd/MM/yyyy") ?? "—"} - {fin?.ToString("dd/MM/yyyy") ?? "—"}";
+
+    private List<ConvocatoriaDto> Filtrados => registros.Where(x =>
+        string.IsNullOrWhiteSpace(texto) || x.CodigoConvocatoria.Contains(texto, StringComparison.OrdinalIgnoreCase) || x.Nombre.Contains(texto, StringComparison.OrdinalIgnoreCase) || x.Periodo.Contains(texto, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    protected override async Task OnInitializedAsync() => await CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        try
+        {
+            hayError = false;
+            registros = await Servicio.ListarConvocatoriasAsync();
+
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"No se pudieron cargar los registros: {ex.Message}";
+            hayError = true;
+        }
+        finally { cargando = false; }
+    }
+
+    private void Editar(int id) => Navegacion.NavigateTo($"/convocatorias/editar/{id}");
+
+    private async Task Buscar(ChangeEventArgs args)
+    {
+        texto = args.Value?.ToString() ?? "";
+        await paginacion.SetCurrentPageIndexAsync(0);
+    }
+
+    private async Task ConfirmarAsync()
+    {
+        if (pendiente is null) return;
+        try
+        {
+            await Servicio.DesactivarConvocatoriaAsync(pendiente.Value);
+            mensaje = "Operación completada.";
+            hayError = false;
+            await CargarAsync();
+            await paginacion.SetCurrentPageIndexAsync(0);
+        }
+        catch (Exception ex)
+        {
+            mensaje = ex.Message;
+            hayError = true;
+        }
+        finally { pendiente = null; }
+    }
+}

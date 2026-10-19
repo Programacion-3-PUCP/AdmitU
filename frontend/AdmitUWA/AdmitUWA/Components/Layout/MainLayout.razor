@@ -1,0 +1,39 @@
+@inherits LayoutComponentBase
+@inject IConfiguration Configuracion
+
+<div class="app-shell">
+    <NavMenu />
+    <div class="main-area">
+        <header class="topbar">
+            <div class="topbar-title">
+                <span class="topbar-icon"><i class="fa-solid fa-graduation-cap"></i></span>
+                <div>
+                    <strong>AdmitU</strong>
+                    <small>Plataforma de gestión de admisiones</small>
+                </div>
+            </div>
+            <div class="topbar-actions">
+                @if (Configuracion.GetValue<bool>("AdmitU:ModoDemostracion"))
+                {
+                    <span class="demo-indicator"><i class="fa-solid fa-flask me-1"></i> Modo demostración</span>
+                }
+                else
+                {
+                    <span class="api-indicator"><i class="fa-solid fa-link me-1"></i> API Java configurada</span>
+                }
+            </div>
+        </header>
+
+        <main class="main-content">
+            @if (Configuracion.GetValue<bool>("AdmitU:ModoDemostracion"))
+            {
+                <div class="alert demo-alert" role="status">
+                    <i class="fa-solid fa-circle-info me-2"></i>
+                    <strong>Datos de ejemplo.</strong> Las operaciones se conservan solo durante esta sesión y no modifican MySQL.
+                </div>
+            }
+            @Body
+        </main>
+        <footer class="app-footer">AdmitU · Programación 3 · Interfaz Blazor Web App</footer>
+    </div>
+</div>

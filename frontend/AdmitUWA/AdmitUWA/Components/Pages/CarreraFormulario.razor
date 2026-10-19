@@ -1,0 +1,121 @@
+@page "/carreras/nuevo"
+@page "/carreras/editar/{Id:int}"
+@inject IAdmitUService Servicio
+@inject NavigationManager Navegacion
+
+<PageTitle>@(Id is > 0 ? "Modificar" : "Registrar") carrera | AdmitU</PageTitle>
+<div class="page-title">
+    <div>
+        <div class="breadcrumb-text">AdmitU / <a href="/carreras">Carreras</a> / @(Id is > 0 ? "Editar" : "Nuevo")</div>
+        <h1>@(Id is > 0 ? "Modificar" : "Registrar") carrera</h1>
+        <p>Complete los campos correspondientes y guarde los cambios.</p>
+    </div>
+    <a href="/carreras" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left me-2"></i>Volver al listado</a>
+</div>
+
+<Aviso Mensaje="@mensajeError" EsError="true" />
+
+@if (cargando)
+{
+    <div class="panel-card p-4">Cargando información...</div>
+}
+else if (encontrado)
+{
+    <section class="panel-card">
+        <div class="panel-head"><h2>Datos de carrera</h2><span class="table-meta">* Campos obligatorios</span></div>
+        <div class="panel-body">
+            <EditForm Model="@modelo" OnValidSubmit="GuardarAsync" FormName="formCarrera">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger small mb-3" />
+                <div class="form-grid">
+
+                <div>
+                    <label class="form-label">Código de carrera *</label>
+                    <InputText @bind-Value="modelo.CodigoCarrera" class="form-control" placeholder="Ej. SIS" />
+                    <ValidationMessage For="@(() => modelo.CodigoCarrera)" />
+                </div>
+                <div>
+                    <label class="form-label">Nombre *</label>
+                    <InputText @bind-Value="modelo.Nombre" class="form-control" placeholder="Ej. Ingeniería de Sistemas" />
+                    <ValidationMessage For="@(() => modelo.Nombre)" />
+                </div>
+                <div class="full-span">
+                    <label class="form-label">Facultad *</label>
+                    <InputSelect @bind-Value="modelo.FacultadId" class="form-select">
+                        <option value="0">Seleccione una facultad</option>
+                        @foreach (var f in facultades.Where(x => x.Activo || x.Id == modelo.FacultadId))
+                        {
+                            <option value="@f.Id">@f.Nombre</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => modelo.FacultadId)" />
+                </div>
+                <div class="full-span"><label class="form-check-label"><InputCheckbox @bind-Value="modelo.Activo" class="form-check-input me-2" />Carrera activa</label></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Volver">Cancelar</button>
+                    <button type="submit" disabled="@guardando" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>@(guardando ? "Guardando..." : "Guardar cambios")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    private CarreraDto modelo = new();
+    private bool encontrado = true;
+    private bool cargando = true;
+    private bool guardando;
+    private string? mensajeError;
+    private List<FacultadDto> facultades = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        cargando = true;
+        mensajeError = null;
+        encontrado = true;
+        try
+        {
+            facultades = await Servicio.ListarFacultadesAsync();
+            if (Id is > 0)
+            {
+                var resultado = await Servicio.ObtenerCarreraAsync(Id.Value);
+                if (resultado is null)
+                {
+                    encontrado = false;
+                    mensajeError = "No se encontró el registro solicitado.";
+                }
+                else modelo = resultado;
+            }
+            else modelo = new CarreraDto();
+        }
+        catch (Exception ex)
+        {
+            encontrado = false;
+            mensajeError = $"No fue posible cargar el formulario: {ex.Message}";
+        }
+        finally { cargando = false; }
+    }
+
+    private void Volver() => Navegacion.NavigateTo("/carreras");
+
+    private async Task GuardarAsync()
+    {
+        if (guardando) return;
+        guardando = true;
+        mensajeError = null;
+        try
+        {
+            await Servicio.GuardarCarreraAsync(modelo);
+            Navegacion.NavigateTo("/carreras");
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"No se pudo guardar: {ex.Message}";
+        }
+        finally { guardando = false; }
+    }
+}

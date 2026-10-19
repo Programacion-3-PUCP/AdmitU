@@ -1,0 +1,15 @@
+<span class="status-pill @Clase"><span class="status-dot"></span>@Texto</span>
+
+@code {
+    [Parameter] public string? Estado { get; set; }
+
+    private string Texto => (Estado ?? "SIN ESTADO").Replace('_', ' ');
+
+    private string Clase => (Estado ?? "").ToUpperInvariant() switch
+    {
+        "ACTIVO" or "APROBADO" or "PUBLICADA" or "VALIDADO" => "status-success",
+        "INACTIVO" or "CERRADA" or "VENCIDO" or "RECHAZADO" or "ANULADA" => "status-danger",
+        "PENDIENTE" or "GENERADO" or "BORRADOR" or "EN REVISION" or "EN REVISIÓN" => "status-warning",
+        _ => "status-neutral"
+    };
+}
