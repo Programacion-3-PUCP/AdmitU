@@ -1,0 +1,21 @@
+@implements IDisposable
+@inject ToastService Avisos
+
+<div class="toasts" aria-live="polite">
+    @foreach (var a in Avisos.Avisos)
+    {
+        <div class="toast toast-@a.Tono" role="status">
+            <Icon Name="@(a.Tono == "success" ? "check-circle" : "info")" Size="18" />
+            <span>@a.Mensaje</span>
+            <button type="button" class="icon-btn icon-btn-sm" aria-label="Cerrar aviso" @onclick="() => Avisos.Cerrar(a.Id)"><Icon Name="x" Size="14" /></button>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized() => Avisos.Cambio += Actualizar;
+
+    private void Actualizar() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Avisos.Cambio -= Actualizar;
+}

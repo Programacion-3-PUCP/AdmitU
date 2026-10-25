@@ -1,0 +1,68 @@
+@page "/evaluador/postulaciones"
+
+<PageTitle>Mis postulaciones · AdmitU</PageTitle>
+
+<PageHeader Titulo="Mis postulaciones" Subtitulo="Postulaciones asignadas a ti. Revisa los documentos y registra tu decisión." Migas="@(["Mis postulaciones"])" />
+
+<div class="chips" role="group" aria-label="Filtrar por estado">
+    @foreach (var (clave, etiqueta, total) in grupos)
+    {
+        var actual = clave;
+        <button type="button" class="chip @(filtro == actual ? "is-active" : "")" @onclick="() => filtro = actual">@etiqueta<em>@total</em></button>
+    }
+</div>
+
+<DataTable TItem="Postulacion" Items="Filtradas" TextoInicial="@q" TextoBusqueda="@(p => $"{p.Codigo} {DatosDemo.Postulante(p.PostulanteId)?.NombreCompleto} {DatosDemo.Carrera(p.CarreraId)?.Nombre}")" Marcador="Buscar por código, postulante o carrera">
+    <Encabezado><th>Código</th><th>Postulante</th><th>Carrera</th><th>Modalidad</th><th>Envío</th><th>Estado</th><th class="th-actions"></th></Encabezado>
+    <Fila Context="p">
+        @{ var persona = DatosDemo.Postulante(p.PostulanteId); }
+        <tr>
+            <td><a class="mono" href="/evaluador/postulaciones/@p.Id">@p.Codigo</a></td>
+            <td><div class="cell-person"><Avatar Nombre="@(persona?.NombreCompleto ?? "?")" Tamano="sm" /><span><strong>@persona?.NombreCompleto</strong></span></div></td>
+            <td><span class="cell-title">@DatosDemo.Carrera(p.CarreraId)?.Nombre</span></td>
+            <td>@DatosDemo.Modalidad(p.ModalidadId)?.Nombre</td>
+            <td>@Formato.Fecha(p.FechaEnvio)</td>
+            <td><StatusBadge Texto="@p.Estado.Etiqueta()" Tono="@p.Estado.Tono()" /></td>
+            <td class="td-actions">
+                @if (p.Estado is EstadoPostulacion.Enviada or EstadoPostulacion.EnRevision)
+                {
+                    <a class="btn btn-primary btn-sm" href="/evaluador/postulaciones/@p.Id">Revisar</a>
+                }
+                else
+                {
+                    <a class="btn btn-ghost btn-sm" href="/evaluador/postulaciones/@p.Id">Ver</a>
+                }
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    [SupplyParameterFromQuery(Name = "q")] public string? q { get; set; }
+
+    private string filtro = "pendientes";
+    private List<Postulacion> mias = [];
+    private List<(string Clave, string Etiqueta, int Total)> grupos = [];
+
+    private static bool EsPendiente(Postulacion p) => p.Estado is EstadoPostulacion.Enviada or EstadoPostulacion.EnRevision;
+
+    protected override void OnInitialized()
+    {
+        mias = DatosDemo.Postulaciones.Where(p => p.EvaluadorId == DatosDemo.EvaluadorActualId).ToList();
+        grupos =
+        [
+            ("pendientes", "Por evaluar", mias.Count(EsPendiente)),
+            ("observadas", "Observadas", mias.Count(p => p.Estado == EstadoPostulacion.Observada)),
+            ("resueltas", "Resueltas", mias.Count(p => p.Estado is EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida)),
+            ("todas", "Todas", mias.Count)
+        ];
+    }
+
+    private IEnumerable<Postulacion> Filtradas => filtro switch
+    {
+        "pendientes" => mias.Where(EsPendiente),
+        "observadas" => mias.Where(p => p.Estado == EstadoPostulacion.Observada),
+        "resueltas" => mias.Where(p => p.Estado is EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida),
+        _ => mias
+    };
+}

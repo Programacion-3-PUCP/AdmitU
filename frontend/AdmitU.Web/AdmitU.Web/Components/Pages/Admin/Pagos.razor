@@ -1,0 +1,59 @@
+@page "/admin/pagos"
+@inject ToastService Avisos
+
+<PageTitle>Pagos · AdmitU</PageTitle>
+
+<PageHeader Titulo="Pagos" Subtitulo="Derechos de inscripción generados por cada postulación y su estado de cobranza." Migas="@(["Pagos"])">
+    <Acciones>
+        <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Exportación generada")'><Icon Name="download" Size="16" />Exportar</button>
+    </Acciones>
+</PageHeader>
+
+<section class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:22px">
+    <StatCard Etiqueta="Recaudado" Valor="@Formato.Soles(Total(EstadoPago.Pagado))" Icono="wallet" Tono="success" />
+    <StatCard Etiqueta="Por cobrar" Valor="@Formato.Soles(Total(EstadoPago.Pendiente))" Icono="clock" Tono="warning" />
+    <StatCard Etiqueta="Observados o anulados" Valor="@((DatosDemo.Pagos.Count(x => x.Estado is EstadoPago.Observado or EstadoPago.Anulado)).ToString())" Icono="alert" Tono="violet" />
+</section>
+
+<div class="chips" role="group" aria-label="Filtrar por estado">
+    <button type="button" class="chip @(estado is null ? "is-active" : "")" @onclick="() => estado = null">Todos<em>@DatosDemo.Pagos.Count</em></button>
+    @foreach (var e in Enum.GetValues<EstadoPago>())
+    {
+        var actual = e;
+        <button type="button" class="chip @(estado == actual ? "is-active" : "")" @onclick="() => estado = actual">@actual.Etiqueta()<em>@DatosDemo.Pagos.Count(x => x.Estado == actual)</em></button>
+    }
+</div>
+
+<DataTable TItem="Pago" Items="Filtrados" TextoBusqueda="@(x => $"{x.Codigo} {Persona(x)?.NombreCompleto} {x.Medio}")" Marcador="Buscar por código, postulante o medio">
+    <Encabezado>
+        <th>Código</th><th>Postulante</th><th>Medio</th><th>Monto</th><th>Generado</th><th>Pagado</th><th>Estado</th><th class="th-actions"></th>
+    </Encabezado>
+    <Fila Context="x">
+        <tr>
+            <td><span class="mono">@x.Codigo</span></td>
+            <td>
+                <div class="cell-person"><Avatar Nombre="@(Persona(x)?.NombreCompleto ?? "?")" Tamano="sm" />
+                    <span><strong>@Persona(x)?.NombreCompleto</strong><small>@DatosDemo.Postulacion(x.PostulacionId)?.Codigo</small></span></div>
+            </td>
+            <td>@x.Medio</td>
+            <td class="num"><strong>@Formato.Soles(x.Monto)</strong></td>
+            <td>@Formato.Fecha(x.FechaGeneracion)</td>
+            <td>@Formato.Fecha(x.FechaPago)</td>
+            <td><StatusBadge Texto="@x.Estado.Etiqueta()" Tono="@x.Estado.Tono()" /></td>
+            <td class="td-actions">
+                @if (x.Estado == EstadoPago.Pendiente)
+                {
+                    <button type="button" class="btn btn-ghost btn-sm" @onclick='() => Avisos.Exito("Pago confirmado")'><Icon Name="check" Size="14" />Confirmar</button>
+                }
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    private EstadoPago? estado;
+
+    private IEnumerable<Pago> Filtrados => DatosDemo.Pagos.Where(x => estado is null || x.Estado == estado);
+    private static decimal Total(EstadoPago e) => DatosDemo.Pagos.Where(x => x.Estado == e).Sum(x => x.Monto);
+    private static Postulante? Persona(Pago x) => DatosDemo.Postulante(DatosDemo.Postulacion(x.PostulacionId)?.PostulanteId ?? 0);
+}

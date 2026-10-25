@@ -1,0 +1,44 @@
+@implements IDisposable
+@inject NavigationManager Navegacion
+
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<CascadingValue Value="Area">
+    <div class="shell @(menuAbierto ? "menu-open" : "")" data-area="@Area.Clave">
+        <Sidebar Area="Area" />
+        <button type="button" class="scrim" aria-label="Cerrar menú" tabindex="-1" @onclick="CerrarMenu"></button>
+
+        <div class="main">
+            <Topbar Area="Area" OnMenu="AlternarMenu" />
+            <main id="contenido" class="content">
+                @ChildContent
+            </main>
+            <footer class="footer">
+                <span>AdmitU · Sistema de gestión de admisiones</span>
+                <span>© 2026</span>
+            </footer>
+        </div>
+    </div>
+</CascadingValue>
+
+<ToastHost />
+
+@code {
+    [Parameter, EditorRequired] public AreaInfo Area { get; set; } = default!;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool menuAbierto;
+
+    protected override void OnInitialized() => Navegacion.LocationChanged += AlCambiarRuta;
+
+    private void AlternarMenu() => menuAbierto = !menuAbierto;
+    private void CerrarMenu() => menuAbierto = false;
+
+    private void AlCambiarRuta(object? sender, LocationChangedEventArgs e)
+    {
+        menuAbierto = false;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Navegacion.LocationChanged -= AlCambiarRuta;
+}

@@ -1,0 +1,6 @@
+<span class="avatar avatar-@Tamano" style="--h:@Presentacion.Matiz(Nombre)" aria-hidden="true">@Presentacion.Iniciales(Nombre)</span>
+
+@code {
+    [Parameter, EditorRequired] public string Nombre { get; set; } = "";
+    [Parameter] public string Tamano { get; set; } = "md";
+}

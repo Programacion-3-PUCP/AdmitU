@@ -1,0 +1,106 @@
+@page "/evaluador"
+@using System.Globalization
+
+<PageTitle>Resumen · AdmitU</PageTitle>
+
+<section class="hero hero-soft" aria-label="Bienvenida">
+    <div>
+        <span class="eyebrow"><i class="dot"></i>Evaluación en curso</span>
+        <h2>Hola, @yo.Nombre</h2>
+        <p>Tienes <strong>@pendientes.Count postulaciones por evaluar</strong> y has resuelto @resueltas de @mias.Count asignadas. La fecha límite de evaluación es el @Formato.Fecha(limite).</p>
+        <div class="hero-actions">
+            <a class="btn btn-light" href="/evaluador/postulaciones">Ir a mi bandeja<Icon Name="arrow-right" Size="16" /></a>
+            <a class="btn btn-outline-light" href="/evaluador/historial">Ver historial</a>
+        </div>
+    </div>
+    <div class="hero-side">
+        <div class="progress-meta" style="color:#cfd6ff"><span>Avance de evaluación</span><strong style="color:#fff">@avance%</strong></div>
+        <div class="hero-progress" role="progressbar" aria-valuenow="@avance" aria-valuemin="0" aria-valuemax="100"><i style="width:@avance.ToString(CultureInfo.InvariantCulture)%"></i></div>
+        <div class="hero-dates"><span>@resueltas resueltas</span><span>@pendientes.Count pendientes</span></div>
+        <div class="hero-metrics">
+            <div><strong>@mias.Count</strong><span>Asignadas</span></div>
+            <div><strong>@aprobadas</strong><span>Admitidas</span></div>
+            <div><strong>@observadas</strong><span>Observadas</span></div>
+        </div>
+    </div>
+</section>
+
+<section class="stats" aria-label="Indicadores">
+    <StatCard Etiqueta="Por evaluar" Valor="@pendientes.Count.ToString()" Icono="clock" Tono="warning" Tendencia="semanas" />
+    <StatCard Etiqueta="Admitidas" Valor="@aprobadas.ToString()" Icono="check-circle" Tono="success" />
+    <StatCard Etiqueta="Observadas" Valor="@observadas.ToString()" Icono="alert" Tono="violet" />
+    <StatCard Etiqueta="No admitidas" Valor="@rechazadas.ToString()" Icono="x" Tono="danger" />
+</section>
+
+<div class="grid-2">
+    <section class="card card-pad">
+        <div class="card-head"><div><h2>Siguientes en mi bandeja</h2><p>Las postulaciones más antiguas primero</p></div><a class="link-more" href="/evaluador/postulaciones">Ver todas<Icon Name="arrow-up-right" Size="14" /></a></div>
+        @if (pendientes.Count == 0)
+        {
+            <EmptyState Icono="check-circle" Titulo="Bandeja al día" Mensaje="No tienes postulaciones pendientes de evaluar." />
+        }
+        else
+        {
+            <ul class="list-rows">
+                @foreach (var p in pendientes.Take(5))
+                {
+                    var persona = DatosDemo.Postulante(p.PostulanteId);
+                    <li>
+                        <Avatar Nombre="@(persona?.NombreCompleto ?? "?")" />
+                        <div class="file-meta"><strong>@persona?.NombreCompleto</strong><small>@p.Codigo · @DatosDemo.Carrera(p.CarreraId)?.Nombre</small></div>
+                        <StatusBadge Texto="@p.Estado.Etiqueta()" Tono="@p.Estado.Tono()" />
+                        <a class="btn btn-primary btn-sm" href="/evaluador/postulaciones/@p.Id">Revisar</a>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    <section class="card card-pad">
+        <div class="card-head"><div><h2>Mis decisiones</h2><p>Resultado de lo evaluado</p></div></div>
+        <DonutChart Segmentos="segmentos" Titulo="asignadas" />
+    </section>
+</div>
+
+<section class="card card-pad" style="margin-top:18px">
+    <div class="card-head"><div><h2>Avisos</h2><p>Novedades para tu trabajo de evaluación</p></div><a class="link-more" href="/evaluador/notificaciones">Ver todo<Icon Name="arrow-up-right" Size="14" /></a></div>
+    <ul class="feed">
+        @foreach (var n in DatosDemo.Notificaciones.Where(x => x.Rol == "Evaluador").OrderByDescending(x => x.Fecha).Take(3))
+        {
+            <li class="@(n.Leida ? "" : "is-unread")">
+                <span class="feed-icon t-@n.Tipo.ToLowerInvariant()"><Icon Name="@NotificacionesPanel.IconoDe(n.Tipo)" Size="18" /></span>
+                <div class="feed-text"><strong>@n.Titulo</strong><p>@n.Detalle</p></div>
+                <time>@Formato.Relativo(n.Fecha)</time>
+            </li>
+        }
+    </ul>
+</section>
+
+@code {
+    private static readonly IReadOnlyList<int> semanas = [2, 4, 3, 6, 5, 8, 7, 9];
+    private static readonly DateOnly limite = new(2026, 12, 4);
+
+    private readonly Evaluador yo = DatosDemo.Evaluadores.First(e => e.Id == DatosDemo.EvaluadorActualId);
+    private List<Postulacion> mias = [];
+    private List<Postulacion> pendientes = [];
+    private List<DonutChart.Segmento> segmentos = [];
+    private int aprobadas, observadas, rechazadas, resueltas, avance;
+
+    protected override void OnInitialized()
+    {
+        mias = DatosDemo.Postulaciones.Where(p => p.EvaluadorId == yo.Id).ToList();
+        pendientes = mias.Where(p => p.Estado is EstadoPostulacion.Enviada or EstadoPostulacion.EnRevision).OrderBy(p => p.FechaEnvio).ToList();
+        aprobadas = mias.Count(p => p.Estado == EstadoPostulacion.Admitida);
+        observadas = mias.Count(p => p.Estado == EstadoPostulacion.Observada);
+        rechazadas = mias.Count(p => p.Estado == EstadoPostulacion.NoAdmitida);
+        resueltas = aprobadas + observadas + rechazadas;
+        avance = mias.Count == 0 ? 0 : (int)Math.Round(resueltas * 100.0 / mias.Count);
+        segmentos =
+        [
+            new("Por evaluar", pendientes.Count, "var(--c-3)"),
+            new("Admitidas", aprobadas, "var(--c-5)"),
+            new("Observadas", observadas, "var(--c-4)"),
+            new("No admitidas", rechazadas, "var(--c-6)")
+        ];
+    }
+}

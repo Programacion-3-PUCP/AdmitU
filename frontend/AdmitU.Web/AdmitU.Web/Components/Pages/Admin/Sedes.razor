@@ -1,0 +1,58 @@
+@page "/admin/sedes"
+@inject ToastService Avisos
+
+<PageTitle>Sedes · AdmitU</PageTitle>
+
+<PageHeader Titulo="Sedes" Subtitulo="Locales habilitados para la evaluación y la atención a postulantes." Migas="@(["Sedes"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva sede</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="Sede" Items="DatosDemo.Sedes" TextoBusqueda="@(s => $"{s.Nombre} {s.Ciudad} {s.Direccion}")" Marcador="Buscar por sede, ciudad o dirección">
+    <Encabezado><th>Sede</th><th>Ciudad</th><th>Dirección</th><th>Postulaciones</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="s">
+        <tr>
+            <td><div class="cell-person"><span class="feed-icon"><Icon Name="map-pin" Size="18" /></span><strong>@s.Nombre</strong></div></td>
+            <td>@s.Ciudad</td>
+            <td>@s.Direccion</td>
+            <td class="num">@DatosDemo.Postulaciones.Count(p => p.SedeId == s.Id)</td>
+            <td><StatusBadge Texto="@(s.Activo ? "Activa" : "Inactiva")" Tono="@(s.Activo ? "success" : "neutral")" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <button type="button" class="icon-btn brand" title="Editar" aria-label="Editar @s.Nombre" @onclick="() => Editar(s)"><Icon Name="pencil" Size="17" /></button>
+                    <button type="button" class="icon-btn danger" title="Desactivar" aria-label="Desactivar @s.Nombre" disabled="@(!s.Activo)" @onclick="() => pendiente = s"><Icon Name="trash" Size="17" /></button>
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nueva sede" : "Editar sede")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field"><label for="s-nombre">Nombre <span class="req">*</span></label><InputText id="s-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Campus Principal" /><ValidationMessage For="() => modelo.Nombre" /></div>
+            <div class="field"><label for="s-ciudad">Ciudad <span class="req">*</span></label><InputText id="s-ciudad" @bind-Value="modelo.Ciudad" placeholder="Ej. Lima" /><ValidationMessage For="() => modelo.Ciudad" /></div>
+            <div class="field"><label for="s-dir">Dirección <span class="req">*</span></label><InputText id="s-dir" @bind-Value="modelo.Direccion" placeholder="Calle y número" /><ValidationMessage For="() => modelo.Direccion" /></div>
+            <label class="switch"><InputCheckbox @bind-Value="modelo.Activo" /><span><strong>Sede activa</strong><small>Solo las activas se ofrecen para evaluarse.</small></span></label>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Desactivar sede" Mensaje="@($"{pendiente?.Nombre} dejará de estar disponible para nuevas postulaciones.")" TextoConfirmar="Desactivar"
+               OnCancelar="() => pendiente = null" OnConfirmar="Desactivar" />
+
+@code {
+    private bool abierto;
+    private Sede modelo = new();
+    private Sede? pendiente;
+
+    private void Nueva() { modelo = new(); abierto = true; }
+    private void Editar(Sede s) { modelo = new() { Id = s.Id, Nombre = s.Nombre, Ciudad = s.Ciudad, Direccion = s.Direccion, Activo = s.Activo }; abierto = true; }
+    private void Cerrar() => abierto = false;
+    private void Guardar() { abierto = false; Avisos.Exito("Sede guardada"); }
+    private void Desactivar() { pendiente = null; Avisos.Exito("Sede desactivada"); }
+}

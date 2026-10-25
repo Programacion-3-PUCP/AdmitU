@@ -1,0 +1,40 @@
+<header class="page-header">
+    <div class="page-header-text">
+        @if (Migas is { Length: > 0 })
+        {
+            <nav class="crumbs" aria-label="Ruta de navegación">
+                <a href="@(Area?.Inicio ?? "/")">Inicio</a>
+                @for (int i = 0; i < Migas.Length; i++)
+                {
+                    <Icon Name="chevron-right" Size="12" />
+                    @if (i < Migas.Length - 1 && Enlaces is not null && i < Enlaces.Length)
+                    {
+                        <a href="@Enlaces[i]">@Migas[i]</a>
+                    }
+                    else
+                    {
+                        <span aria-current="@(i == Migas.Length - 1 ? "page" : null)">@Migas[i]</span>
+                    }
+                }
+            </nav>
+        }
+        <h1>@Titulo</h1>
+        @if (!string.IsNullOrWhiteSpace(Subtitulo))
+        {
+            <p class="page-sub">@Subtitulo</p>
+        }
+    </div>
+    @if (Acciones is not null)
+    {
+        <div class="page-actions">@Acciones</div>
+    }
+</header>
+
+@code {
+    [CascadingParameter] public AreaInfo? Area { get; set; }
+    [Parameter, EditorRequired] public string Titulo { get; set; } = "";
+    [Parameter] public string? Subtitulo { get; set; }
+    [Parameter] public string[]? Migas { get; set; }
+    [Parameter] public string[]? Enlaces { get; set; }
+    [Parameter] public RenderFragment? Acciones { get; set; }
+}

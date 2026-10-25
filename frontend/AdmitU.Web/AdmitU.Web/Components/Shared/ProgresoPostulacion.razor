@@ -1,0 +1,41 @@
+<ol class="timeline" style="list-style:none;padding:0;margin:0">
+    @foreach (var paso in Pasos())
+    {
+        <li class="@paso.Clase">
+            <span class="tl-dot"><Icon Name="@paso.Icono" Size="16" /></span>
+            <div class="tl-body"><strong>@paso.Titulo</strong><small>@paso.Detalle</small></div>
+        </li>
+    }
+</ol>
+
+@code {
+    [Parameter, EditorRequired] public Postulacion Postulacion { get; set; } = default!;
+
+    private record Paso(string Titulo, string Detalle, string Icono, string Clase);
+
+    private IEnumerable<Paso> Pasos()
+    {
+        var p = Postulacion;
+        int actual = p.Estado switch
+        {
+            EstadoPostulacion.Borrador => 0,
+            EstadoPostulacion.Enviada => 1,
+            EstadoPostulacion.EnRevision or EstadoPostulacion.Observada => 2,
+            _ => 3
+        };
+        string Clase(int i, string especial = "")
+            => i < actual ? "is-done" : i == actual ? (especial != "" ? especial : "is-now") : "is-todo";
+        string Marca(int i, string nombre) => i < actual ? "check" : nombre;
+
+        yield return new("Borrador creado", $"Registrada el {Formato.Fecha(p.FechaRegistro)}", Marca(0, "file-text"), Clase(0));
+        yield return new("Postulación enviada", p.FechaEnvio is null ? "Pendiente de envío" : $"Enviada el {Formato.Fecha(p.FechaEnvio)}", Marca(1, "upload"), Clase(1));
+        yield return new(p.Estado == EstadoPostulacion.Observada ? "Con observaciones" : "En revisión",
+            p.Estado == EstadoPostulacion.Observada ? "Los documentos deben corregirse" : "El equipo de admisión valida los requisitos",
+            p.Estado == EstadoPostulacion.Observada ? "alert" : Marca(2, "eye"),
+            Clase(2, p.Estado == EstadoPostulacion.Observada ? "is-warn" : ""));
+        yield return new(p.Estado == EstadoPostulacion.NoAdmitida ? "No admitida" : "Resultado de admisión",
+            p.Estado switch { EstadoPostulacion.Admitida => "Ingresó a la carrera", EstadoPostulacion.NoAdmitida => "No alcanzó vacante en esta convocatoria", _ => "Se publicará al cierre del proceso" },
+            p.Estado == EstadoPostulacion.NoAdmitida ? "x" : p.Estado == EstadoPostulacion.Admitida ? "check" : "graduation-cap",
+            p.Estado == EstadoPostulacion.NoAdmitida ? "is-bad" : p.Estado == EstadoPostulacion.Admitida ? "is-done" : "is-todo");
+    }
+}

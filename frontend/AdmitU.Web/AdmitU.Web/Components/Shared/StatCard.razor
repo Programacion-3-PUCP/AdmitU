@@ -1,0 +1,24 @@
+<article class="stat tone-@Tono">
+    <div class="stat-top">
+        <span class="stat-icon"><Icon Name="@Icono" Size="20" /></span>
+        @if (!string.IsNullOrWhiteSpace(Variacion))
+        {
+            <span class="stat-delta"><Icon Name="trending-up" Size="14" />@Variacion</span>
+        }
+    </div>
+    <div class="stat-value">@Valor</div>
+    <div class="stat-label">@Etiqueta</div>
+    @if (Tendencia is { Count: > 1 })
+    {
+        <Sparkline Valores="Tendencia" />
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public string Etiqueta { get; set; } = "";
+    [Parameter, EditorRequired] public string Valor { get; set; } = "";
+    [Parameter] public string Icono { get; set; } = "sparkles";
+    [Parameter] public string Tono { get; set; } = "brand";
+    [Parameter] public string? Variacion { get; set; }
+    [Parameter] public IReadOnlyList<int>? Tendencia { get; set; }
+}

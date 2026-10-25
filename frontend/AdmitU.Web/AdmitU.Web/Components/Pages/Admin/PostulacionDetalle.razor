@@ -1,0 +1,164 @@
+@page "/admin/postulaciones/{Id:int}"
+@inject ToastService Avisos
+
+@if (p is null)
+{
+    <PageTitle>Postulación no encontrada · AdmitU</PageTitle>
+    <PageHeader Titulo="Postulación no encontrada" Migas="@(["Postulaciones", "No encontrada"])" Enlaces="@(["/admin/postulaciones"])" />
+    <section class="card"><EmptyState Titulo="No existe esta postulación" Mensaje="Revisa el código o vuelve al listado.">
+        <a class="btn btn-primary" style="margin-top:14px" href="/admin/postulaciones">Volver al listado</a>
+    </EmptyState></section>
+}
+else
+{
+    <PageTitle>@p.Codigo · AdmitU</PageTitle>
+    <PageHeader Titulo="@p.Codigo" Subtitulo="@($"{DatosDemo.Carrera(p.CarreraId)?.Nombre} · {DatosDemo.Convocatoria(p.ConvocatoriaId)?.Nombre}")"
+                Migas="@(["Postulaciones", p.Codigo])" Enlaces="@(["/admin/postulaciones"])">
+        <Acciones>
+            <a class="btn btn-ghost" href="/admin/postulaciones"><Icon Name="arrow-left" Size="16" />Volver</a>
+            <button type="button" class="btn btn-primary" @onclick="() => asignando = true"><Icon Name="user-check" Size="16" />@(evaluador is null ? "Asignar evaluador" : "Reasignar evaluador")</button>
+        </Acciones>
+    </PageHeader>
+
+    @if (!string.IsNullOrWhiteSpace(p.Observacion))
+    {
+        <div class="notice" style="margin-bottom:18px" role="alert">
+            <Icon Name="alert" Size="20" />
+            <div><strong>Postulación observada</strong><p>@p.Observacion</p></div>
+        </div>
+    }
+
+    <div class="detail-grid">
+        <div class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><h2>Progreso de la postulación</h2><StatusBadge Texto="@p.Estado.Etiqueta()" Tono="@p.Estado.Tono()" /></div>
+                <ProgresoPostulacion Postulacion="p" />
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Documentos</h2><span class="muted">@documentos.Count archivo(s)</span></div>
+                @if (documentos.Count == 0)
+                {
+                    <EmptyState Icono="folder" Titulo="Sin documentos" Mensaje="Aún no se cargó ningún archivo en esta postulación." />
+                }
+                else
+                {
+                    <ul class="list-rows">
+                        @foreach (var d in documentos)
+                        {
+                            <li>
+                                <span class="file-icon">@d.Tipo</span>
+                                <div class="file-meta"><strong>@d.Requisito</strong><small>@d.Archivo · @Formato.Tamanio(d.TamanioKb)</small></div>
+                                <StatusBadge Texto="@d.Estado.Etiqueta()" Tono="@d.Estado.Tono()" />
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+        </div>
+
+        <aside class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><h2>Postulante</h2></div>
+                @if (persona is not null)
+                {
+                    <a class="cell-person" href="/admin/postulantes/@persona.Id" style="color:inherit;text-decoration:none">
+                        <Avatar Nombre="@persona.NombreCompleto" />
+                        <span><strong>@persona.NombreCompleto</strong><small>@persona.Correo</small></span>
+                    </a>
+                }
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Evaluador</h2></div>
+                @if (evaluador is null)
+                {
+                    <p class="muted">Aún no se asignó un evaluador a esta postulación.</p>
+                }
+                else
+                {
+                    <div class="cell-person"><Avatar Nombre="@evaluador.Nombre" /><span><strong>@evaluador.Nombre</strong><small>@evaluador.Especialidad</small></span></div>
+                }
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Resumen</h2></div>
+                <div class="summary-rows">
+                    <div><span>Carrera</span><strong>@DatosDemo.Carrera(p.CarreraId)?.Nombre</strong></div>
+                    <div><span>Modalidad</span><strong>@DatosDemo.Modalidad(p.ModalidadId)?.Nombre</strong></div>
+                    <div><span>Sede de evaluación</span><strong>@DatosDemo.Sede(p.SedeId)?.Nombre</strong></div>
+                    <div><span>Registro</span><strong>@Formato.Fecha(p.FechaRegistro)</strong></div>
+                    <div><span>Envío</span><strong>@Formato.Fecha(p.FechaEnvio)</strong></div>
+                </div>
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Pago</h2></div>
+                @if (pago is null)
+                {
+                    <p class="muted">Aún no se generó el pago de inscripción.</p>
+                }
+                else
+                {
+                    <div class="summary-rows">
+                        <div><span>Código</span><strong class="mono">@pago.Codigo</strong></div>
+                        <div><span>Monto</span><strong>@Formato.Soles(pago.Monto)</strong></div>
+                        <div><span>Medio</span><strong>@pago.Medio</strong></div>
+                        <div><span>Estado</span><StatusBadge Texto="@pago.Estado.Etiqueta()" Tono="@pago.Estado.Tono()" /></div>
+                    </div>
+                }
+            </section>
+        </aside>
+    </div>
+}
+
+<Drawer Abierto="asignando" Titulo="@(evaluador is null ? "Asignar evaluador" : "Reasignar evaluador")" Descripcion="El evaluador recibirá la postulación en su bandeja." OnCerrar="() => asignando = false">
+    <form class="drawer-form" @onsubmit="Asignar" @onsubmit:preventDefault>
+        <div class="drawer-body">
+            <div class="field">
+                <label for="eva">Evaluador</label>
+                <select id="eva" @bind="elegido">
+                    @foreach (var e in DatosDemo.Evaluadores.Where(e => e.Activo))
+                    {
+                        <option value="@e.Id">@e.Nombre · @e.Especialidad</option>
+                    }
+                </select>
+                <span class="hint">Se muestran solo los evaluadores activos.</span>
+            </div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="() => asignando = false">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Confirmar asignación</button>
+        </div>
+    </form>
+</Drawer>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool asignando;
+    private int elegido;
+    private Evaluador? evaluador;
+
+    private void Asignar()
+    {
+        asignando = false;
+        Avisos.Exito("Evaluador asignado");
+    }
+
+    private Postulacion? p;
+    private Postulante? persona;
+    private Pago? pago;
+    private List<Documento> documentos = [];
+
+    protected override void OnParametersSet()
+    {
+        p = DatosDemo.Postulacion(Id);
+        if (p is null) return;
+        persona = DatosDemo.Postulante(p.PostulanteId);
+        evaluador = DatosDemo.Evaluadores.FirstOrDefault(e => e.Id == p.EvaluadorId);
+        elegido = evaluador?.Id ?? DatosDemo.Evaluadores.First(e => e.Activo).Id;
+        pago = DatosDemo.Pagos.FirstOrDefault(x => x.PostulacionId == p.Id);
+        documentos = DatosDemo.Documentos.Where(x => x.PostulacionId == p.Id).ToList();
+    }
+}

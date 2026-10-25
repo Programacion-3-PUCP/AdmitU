@@ -1,0 +1,36 @@
+<aside class="sidebar" aria-label="Navegación principal">
+    <a class="brand" href="@Area.Inicio" aria-label="AdmitU, ir al inicio">
+        <span class="brand-mark"><Icon Name="graduation-cap" Size="22" /></span>
+        <span class="brand-text">
+            <strong>admit<em>U</em></strong>
+            <small>Portal @Area.Nombre.ToLowerInvariant()</small>
+        </span>
+    </a>
+
+    <nav class="nav">
+        @foreach (var grupo in Area.Menu)
+        {
+            <p class="nav-title">@grupo.Titulo</p>
+            @foreach (var item in grupo.Items)
+            {
+                <NavLink class="nav-link" href="@item.Href" Match="@(item.Exacto ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+                    <Icon Name="@item.Icono" />@item.Texto
+                    @if (item.Conteo > 0)
+                    {
+                        <span class="nav-count @(item.Alerta ? "nav-count-alert" : "")">@item.Conteo</span>
+                    }
+                </NavLink>
+            }
+        }
+    </nav>
+
+    <div class="side-card">
+        <span class="side-card-icon"><Icon Name="sparkles" Size="18" /></span>
+        <strong>@Area.TarjetaTitulo</strong>
+        <p>@Area.TarjetaTexto</p>
+    </div>
+</aside>
+
+@code {
+    [Parameter, EditorRequired] public AreaInfo Area { get; set; } = default!;
+}

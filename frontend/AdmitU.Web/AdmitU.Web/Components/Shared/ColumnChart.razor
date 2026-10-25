@@ -1,0 +1,22 @@
+@using System.Globalization
+
+<div class="columns" role="img" aria-label="@Titulo">
+    @for (int i = 0; i < Valores.Count; i++)
+    {
+        var v = Valores[i];
+        var alto = Maximo == 0 ? 0 : v * 100.0 / Maximo;
+        <div class="column @(i == Valores.Count - 1 ? "is-last" : "")">
+            <span class="column-value">@v</span>
+            <div class="column-bar" style="height:@alto.ToString("0.#", CultureInfo.InvariantCulture)%"></div>
+            <span class="column-label">@(Etiquetas.Count > i ? Etiquetas[i] : "")</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<int> Valores { get; set; } = [];
+    [Parameter] public IReadOnlyList<string> Etiquetas { get; set; } = [];
+    [Parameter] public string Titulo { get; set; } = "Gráfico de columnas";
+
+    private int Maximo => Valores.Count == 0 ? 0 : Valores.Max();
+}

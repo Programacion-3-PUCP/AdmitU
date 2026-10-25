@@ -1,0 +1,96 @@
+@page "/admin/postulantes/{Id:int}"
+@inject ToastService Avisos
+
+@if (postulante is null)
+{
+    <PageTitle>Postulante no encontrado · AdmitU</PageTitle>
+    <PageHeader Titulo="Postulante no encontrado" Migas="@(["Postulantes", "No encontrado"])" Enlaces="@(["/admin/postulantes"])" />
+    <section class="card"><EmptyState Titulo="No existe este postulante" Mensaje="Puede que el enlace no sea correcto.">
+        <a class="btn btn-primary" style="margin-top:14px" href="/admin/postulantes">Volver al listado</a>
+    </EmptyState></section>
+}
+else
+{
+    <PageTitle>@postulante.NombreCompleto · AdmitU</PageTitle>
+    <PageHeader Titulo="Ficha del postulante" Subtitulo="Información registrada por el propio postulante. Solo lectura." Migas="@(["Postulantes", postulante.NombreCompleto])" Enlaces="@(["/admin/postulantes"])">
+        <Acciones>
+            <a class="btn btn-ghost" href="/admin/postulantes"><Icon Name="arrow-left" Size="16" />Volver</a>
+            <button type="button" class="btn btn-primary" @onclick='() => Avisos.Exito("Mensaje enviado a " + postulante.Nombres)'><Icon Name="mail" Size="16" />Enviar mensaje</button>
+        </Acciones>
+    </PageHeader>
+
+    <div class="detail-grid">
+        <div class="stack">
+            <section class="card card-pad">
+                <div class="profile">
+                    <Avatar Nombre="@postulante.NombreCompleto" Tamano="lg" />
+                    <div>
+                        <h2>@postulante.NombreCompleto</h2>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+                            <StatusBadge Texto="@(postulante.CorreoValidado ? "Correo validado" : "Correo sin validar")" Tono="@(postulante.CorreoValidado ? "success" : "warning")" />
+                            @if (postulante.TieneDiscapacidad) { <StatusBadge Texto="CONADIS" Tono="violet" /> }
+                        </div>
+                    </div>
+                </div>
+                <hr style="border:0;border-top:1px solid var(--border);margin:22px 0" />
+                <dl class="dl">
+                    <div><dt>Documento</dt><dd>@postulante.TipoDocumento · @postulante.NumeroDocumento</dd></div>
+                    <div><dt>Fecha de nacimiento</dt><dd>@Formato.Fecha(postulante.FechaNacimiento)</dd></div>
+                    <div><dt>Correo electrónico</dt><dd>@postulante.Correo</dd></div>
+                    <div><dt>Teléfono</dt><dd>@(postulante.Telefono ?? "No registrado")</dd></div>
+                    @if (postulante.TieneDiscapacidad)
+                    {
+                        <div><dt>Carné CONADIS</dt><dd>@postulante.CarnetConadis</dd></div>
+                    }
+                </dl>
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Postulaciones</h2></div>
+                @if (postulaciones.Count == 0)
+                {
+                    <EmptyState Icono="file-text" Titulo="Aún no postula" Mensaje="Este postulante todavía no registra ninguna postulación." />
+                }
+                else
+                {
+                    <ul class="list-rows">
+                        @foreach (var p in postulaciones)
+                        {
+                            <li>
+                                <span class="feed-icon"><Icon Name="file-text" Size="18" /></span>
+                                <div class="file-meta">
+                                    <strong><a href="/admin/postulaciones/@p.Id">@p.Codigo</a></strong>
+                                    <small>@DatosDemo.Carrera(p.CarreraId)?.Nombre · @DatosDemo.Modalidad(p.ModalidadId)?.Nombre</small>
+                                </div>
+                                <StatusBadge Texto="@p.Estado.Etiqueta()" Tono="@p.Estado.Tono()" />
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+        </div>
+
+        <aside class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><h2>Acciones</h2></div>
+                <div class="stack" style="gap:10px">
+                    <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Correo de validación enviado")'><Icon Name="mail" Size="16" />Reenviar validación de correo</button>
+                    <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Notificación enviada")'><Icon Name="bell" Size="16" />Enviar notificación</button>
+                </div>
+            </section>
+        </aside>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Postulante? postulante;
+    private List<Postulacion> postulaciones = [];
+
+    protected override void OnParametersSet()
+    {
+        postulante = DatosDemo.Postulante(Id);
+        postulaciones = DatosDemo.Postulaciones.Where(p => p.PostulanteId == Id).ToList();
+    }
+}

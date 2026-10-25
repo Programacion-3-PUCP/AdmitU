@@ -1,0 +1,47 @@
+@inject ToastService Avisos
+
+<div class="chips" role="group" aria-label="Filtrar notificaciones">
+    <button type="button" class="chip @(soloSinLeer ? "" : "is-active")" @onclick="() => soloSinLeer = false">Todas<em>@Items.Count</em></button>
+    <button type="button" class="chip @(soloSinLeer ? "is-active" : "")" @onclick="() => soloSinLeer = true">Sin leer<em>@Items.Count(n => !n.Leida)</em></button>
+</div>
+
+<section class="card card-pad">
+    @if (Lista.Count == 0)
+    {
+        <EmptyState Icono="bell" Titulo="Todo al día" Mensaje="No tienes notificaciones pendientes por leer." />
+    }
+    else
+    {
+        <ul class="feed">
+            @foreach (var n in Lista)
+            {
+                <li class="@(n.Leida ? "" : "is-unread")">
+                    <span class="feed-icon t-@n.Tipo.ToLowerInvariant()"><Icon Name="@IconoDe(n.Tipo)" Size="18" /></span>
+                    <div class="feed-text">
+                        <strong>@n.Titulo</strong>
+                        <p>@n.Detalle</p>
+                        <div style="display:flex;gap:8px;margin-top:8px"><StatusBadge Texto="@n.Tipo" Tono="brand" Punto="false" /><StatusBadge Texto="@n.Medio" Tono="neutral" Punto="false" /></div>
+                    </div>
+                    <time>@Formato.Relativo(n.Fecha)</time>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<Notificacion> Items { get; set; } = [];
+
+    private bool soloSinLeer;
+
+    private List<Notificacion> Lista => Items.Where(n => !soloSinLeer || !n.Leida).OrderByDescending(n => n.Fecha).ToList();
+
+    public static string IconoDe(string tipo) => tipo switch
+    {
+        "Pago" => "credit-card",
+        "Documento" => "paperclip",
+        "Convocatoria" => "calendar",
+        "Postulante" => "users",
+        _ => "file-text"
+    };
+}

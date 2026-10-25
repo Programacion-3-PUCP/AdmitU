@@ -1,0 +1,29 @@
+@page "/evaluador/historial"
+
+<PageTitle>Historial · AdmitU</PageTitle>
+
+<PageHeader Titulo="Historial de evaluaciones" Subtitulo="Postulaciones que ya resolviste y la decisión que registraste." Migas="@(["Historial"])" />
+
+<DataTable TItem="Postulacion" Items="resueltas" TextoBusqueda="@(p => $"{p.Codigo} {DatosDemo.Postulante(p.PostulanteId)?.NombreCompleto} {DatosDemo.Carrera(p.CarreraId)?.Nombre}")" Marcador="Buscar por código, postulante o carrera">
+    <Encabezado><th>Código</th><th>Postulante</th><th>Carrera</th><th>Enviada</th><th>Decisión</th><th class="th-actions"></th></Encabezado>
+    <Fila Context="p">
+        @{ var persona = DatosDemo.Postulante(p.PostulanteId); }
+        <tr>
+            <td><a class="mono" href="/evaluador/postulaciones/@p.Id">@p.Codigo</a></td>
+            <td><div class="cell-person"><Avatar Nombre="@(persona?.NombreCompleto ?? "?")" Tamano="sm" /><span><strong>@persona?.NombreCompleto</strong></span></div></td>
+            <td>@DatosDemo.Carrera(p.CarreraId)?.Nombre</td>
+            <td>@Formato.Fecha(p.FechaEnvio)</td>
+            <td><StatusBadge Texto="@p.Estado.Etiqueta()" Tono="@p.Estado.Tono()" /></td>
+            <td class="td-actions"><a class="icon-btn brand" href="/evaluador/postulaciones/@p.Id" title="Ver detalle" aria-label="Ver detalle de @p.Codigo"><Icon Name="eye" Size="17" /></a></td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    private List<Postulacion> resueltas = [];
+
+    protected override void OnInitialized() =>
+        resueltas = DatosDemo.Postulaciones
+            .Where(p => p.EvaluadorId == DatosDemo.EvaluadorActualId && p.Estado is EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida or EstadoPostulacion.Observada)
+            .ToList();
+}

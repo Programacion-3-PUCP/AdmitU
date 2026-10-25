@@ -1,0 +1,56 @@
+@page "/admin/facultades"
+@inject ToastService Avisos
+
+<PageTitle>Facultades · AdmitU</PageTitle>
+
+<PageHeader Titulo="Facultades" Subtitulo="Unidades académicas que agrupan las carreras ofrecidas en la admisión." Migas="@(["Facultades"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva facultad</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="Facultad" Items="DatosDemo.Facultades" TextoBusqueda="@(f => $"{f.Codigo} {f.Nombre}")" Marcador="Buscar por código o nombre">
+    <Encabezado><th>Código</th><th>Facultad</th><th>Carreras</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="f">
+        <tr>
+            <td><span class="mono">@f.Codigo</span></td>
+            <td><span class="cell-title">@f.Nombre</span></td>
+            <td>@DatosDemo.Carreras.Count(c => c.FacultadId == f.Id) carrera(s)</td>
+            <td><StatusBadge Texto="@(f.Activo ? "Activa" : "Inactiva")" Tono="@(f.Activo ? "success" : "neutral")" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <button type="button" class="icon-btn brand" title="Editar" aria-label="Editar @f.Nombre" @onclick="() => Editar(f)"><Icon Name="pencil" Size="17" /></button>
+                    <button type="button" class="icon-btn danger" title="Desactivar" aria-label="Desactivar @f.Nombre" disabled="@(!f.Activo)" @onclick="() => pendiente = f"><Icon Name="trash" Size="17" /></button>
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nueva facultad" : "Editar facultad")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field"><label for="f-codigo">Código <span class="req">*</span></label><InputText id="f-codigo" @bind-Value="modelo.Codigo" placeholder="Ej. FCI" /><ValidationMessage For="() => modelo.Codigo" /></div>
+            <div class="field"><label for="f-nombre">Nombre <span class="req">*</span></label><InputText id="f-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Facultad de Ciencias" /><ValidationMessage For="() => modelo.Nombre" /></div>
+            <label class="switch"><InputCheckbox @bind-Value="modelo.Activo" /><span><strong>Facultad activa</strong><small>Las inactivas no aparecen al crear carreras.</small></span></label>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Desactivar facultad" Mensaje="@($"{pendiente?.Nombre} dejará de estar activa. Su historial se conserva.")" TextoConfirmar="Desactivar"
+               OnCancelar="() => pendiente = null" OnConfirmar="Desactivar" />
+
+@code {
+    private bool abierto;
+    private Facultad modelo = new();
+    private Facultad? pendiente;
+
+    private void Nueva() { modelo = new(); abierto = true; }
+    private void Editar(Facultad f) { modelo = new() { Id = f.Id, Codigo = f.Codigo, Nombre = f.Nombre, Activo = f.Activo }; abierto = true; }
+    private void Cerrar() => abierto = false;
+    private void Guardar() { abierto = false; Avisos.Exito("Facultad guardada"); }
+    private void Desactivar() { pendiente = null; Avisos.Exito("Facultad desactivada"); }
+}

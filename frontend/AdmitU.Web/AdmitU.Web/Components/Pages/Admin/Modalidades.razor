@@ -1,0 +1,58 @@
+@page "/admin/modalidades"
+@inject ToastService Avisos
+
+<PageTitle>Modalidades · AdmitU</PageTitle>
+
+<PageHeader Titulo="Modalidades" Subtitulo="Vías de ingreso disponibles y cuántas postulaciones recibe cada una." Migas="@(["Modalidades"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva modalidad</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="Modalidad" Items="DatosDemo.Modalidades" TextoBusqueda="@(m => $"{m.Codigo} {m.Nombre} {m.Descripcion}")" Marcador="Buscar por código o nombre">
+    <Encabezado><th>Código</th><th>Modalidad</th><th>Descripción</th><th>Postulaciones</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="m">
+        <tr>
+            <td><span class="mono">@m.Codigo</span></td>
+            <td><span class="cell-title">@m.Nombre</span></td>
+            <td style="max-width:360px">@m.Descripcion</td>
+            <td class="num">@DatosDemo.Postulaciones.Count(p => p.ModalidadId == m.Id)</td>
+            <td><StatusBadge Texto="@(m.Activo ? "Activa" : "Inactiva")" Tono="@(m.Activo ? "success" : "neutral")" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <button type="button" class="icon-btn brand" title="Editar" aria-label="Editar @m.Nombre" @onclick="() => Editar(m)"><Icon Name="pencil" Size="17" /></button>
+                    <button type="button" class="icon-btn danger" title="Desactivar" aria-label="Desactivar @m.Nombre" disabled="@(!m.Activo)" @onclick="() => pendiente = m"><Icon Name="trash" Size="17" /></button>
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nueva modalidad" : "Editar modalidad")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field"><label for="m-codigo">Código <span class="req">*</span></label><InputText id="m-codigo" @bind-Value="modelo.Codigo" placeholder="Ej. ORD" /><ValidationMessage For="() => modelo.Codigo" /></div>
+            <div class="field"><label for="m-nombre">Nombre <span class="req">*</span></label><InputText id="m-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Evaluación ordinaria" /><ValidationMessage For="() => modelo.Nombre" /></div>
+            <div class="field"><label for="m-desc">Descripción</label><InputTextArea id="m-desc" @bind-Value="modelo.Descripcion" placeholder="Quiénes pueden postular por esta vía" /><ValidationMessage For="() => modelo.Descripcion" /></div>
+            <label class="switch"><InputCheckbox @bind-Value="modelo.Activo" /><span><strong>Modalidad activa</strong><small>Solo las activas se ofrecen en la convocatoria.</small></span></label>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Desactivar modalidad" Mensaje="@($"{pendiente?.Nombre} dejará de ofrecerse en nuevas convocatorias.")" TextoConfirmar="Desactivar"
+               OnCancelar="() => pendiente = null" OnConfirmar="Desactivar" />
+
+@code {
+    private bool abierto;
+    private Modalidad modelo = new();
+    private Modalidad? pendiente;
+
+    private void Nueva() { modelo = new(); abierto = true; }
+    private void Editar(Modalidad m) { modelo = new() { Id = m.Id, Codigo = m.Codigo, Nombre = m.Nombre, Descripcion = m.Descripcion, Activo = m.Activo }; abierto = true; }
+    private void Cerrar() => abierto = false;
+    private void Guardar() { abierto = false; Avisos.Exito("Modalidad guardada"); }
+    private void Desactivar() { pendiente = null; Avisos.Exito("Modalidad desactivada"); }
+}

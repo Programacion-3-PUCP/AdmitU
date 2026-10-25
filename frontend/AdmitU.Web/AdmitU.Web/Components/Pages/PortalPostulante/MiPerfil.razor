@@ -1,0 +1,123 @@
+@page "/postulante/perfil"
+@inject ToastService Avisos
+
+<PageTitle>Mi perfil · AdmitU</PageTitle>
+
+<PageHeader Titulo="Mi perfil" Subtitulo="Mantén tus datos actualizados. Los campos con asterisco son obligatorios." Migas="@(["Mi perfil"])" />
+
+<EditForm Model="modelo" OnValidSubmit="Guardar" novalidate>
+    <DataAnnotationsValidator />
+
+    <div class="card card-pad">
+        <div class="profile" style="margin-bottom:24px">
+            <Avatar Nombre="@($"{modelo.Nombres} {modelo.ApellidoPaterno}")" Tamano="lg" />
+            <div>
+                <h2>@modelo.Nombres @modelo.ApellidoPaterno @modelo.ApellidoMaterno</h2>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+                    <StatusBadge Texto="@(correoValidado ? "Correo validado" : "Correo sin validar")" Tono="@(correoValidado ? "success" : "warning")" />
+                    @if (!correoValidado) { <button type="button" class="btn btn-ghost btn-sm" @onclick='() => Avisos.Exito("Te enviamos un correo de validación")'>Validar correo</button> }
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-head"><span class="step">1</span><div><h2>Datos personales</h2></div></div>
+            <div class="form-grid">
+                <div class="field"><label for="nombres">Nombres <span class="req">*</span></label><InputText id="nombres" @bind-Value="modelo.Nombres" /><ValidationMessage For="() => modelo.Nombres" /></div>
+                <div class="field"><label for="paterno">Apellido paterno <span class="req">*</span></label><InputText id="paterno" @bind-Value="modelo.ApellidoPaterno" /><ValidationMessage For="() => modelo.ApellidoPaterno" /></div>
+                <div class="field"><label for="materno">Apellido materno <span class="req">*</span></label><InputText id="materno" @bind-Value="modelo.ApellidoMaterno" /><ValidationMessage For="() => modelo.ApellidoMaterno" /></div>
+                <div class="field"><label for="nac">Fecha de nacimiento <span class="req">*</span></label><InputDate id="nac" @bind-Value="modelo.FechaNacimiento" /><ValidationMessage For="() => modelo.FechaNacimiento" /></div>
+                <div class="field">
+                    <label for="tipo">Tipo de documento <span class="req">*</span></label>
+                    <InputSelect id="tipo" @bind-Value="modelo.TipoDocumento">
+                        <option value="DNI">DNI</option>
+                        <option value="CE">Carné de extranjería</option>
+                        <option value="PAS">Pasaporte</option>
+                    </InputSelect>
+                </div>
+                <div class="field"><label for="doc">Número de documento <span class="req">*</span></label><InputText id="doc" @bind-Value="modelo.NumeroDocumento" /><ValidationMessage For="() => modelo.NumeroDocumento" /></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-head"><span class="step">2</span><div><h2>Contacto</h2></div></div>
+            <div class="form-grid">
+                <div class="field"><label for="correo">Correo electrónico <span class="req">*</span></label><InputText id="correo" type="email" @bind-Value="modelo.Correo" /><ValidationMessage For="() => modelo.Correo" /></div>
+                <div class="field"><label for="tel">Teléfono</label><InputText id="tel" type="tel" @bind-Value="modelo.Telefono" placeholder="987 654 321" /><ValidationMessage For="() => modelo.Telefono" /></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-head"><span class="step">3</span><div><h2>Accesibilidad</h2></div></div>
+            <div class="form-grid">
+                <label class="switch full">
+                    <InputCheckbox @bind-Value="modelo.TieneDiscapacidad" />
+                    <span><strong>Registro una discapacidad</strong><small>Nos permite ofrecerte ajustes razonables durante la evaluación.</small></span>
+                </label>
+                @if (modelo.TieneDiscapacidad)
+                {
+                    <div class="field full"><label for="conadis">Número de carné CONADIS <span class="req">*</span></label><InputText id="conadis" @bind-Value="modelo.CarnetConadis" placeholder="CON-00000" /><ValidationMessage For="() => modelo.CarnetConadis" /></div>
+                }
+            </div>
+        </div>
+
+        <div class="form-footer">
+            <a class="btn btn-ghost" href="/postulante">Cancelar</a>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar cambios</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private FormularioPerfil modelo = new();
+    private bool correoValidado;
+
+    protected override void OnInitialized()
+    {
+        var p = DatosDemo.Postulante(DatosDemo.PostulanteActualId)!;
+        correoValidado = p.CorreoValidado;
+        modelo = new FormularioPerfil
+        {
+            Nombres = p.Nombres, ApellidoPaterno = p.ApellidoPaterno, ApellidoMaterno = p.ApellidoMaterno,
+            TipoDocumento = p.TipoDocumento, NumeroDocumento = p.NumeroDocumento, Correo = p.Correo,
+            Telefono = p.Telefono, FechaNacimiento = p.FechaNacimiento,
+            TieneDiscapacidad = p.TieneDiscapacidad, CarnetConadis = p.CarnetConadis
+        };
+    }
+
+    private void Guardar() => Avisos.Exito("Tu perfil fue actualizado");
+
+    private sealed class FormularioPerfil : IValidatableObject
+    {
+        [Required(ErrorMessage = "Ingresa tus nombres.")] [StringLength(100)]
+        public string Nombres { get; set; } = "";
+        [Required(ErrorMessage = "Ingresa tu apellido paterno.")] [StringLength(100)]
+        public string ApellidoPaterno { get; set; } = "";
+        [Required(ErrorMessage = "Ingresa tu apellido materno.")] [StringLength(100)]
+        public string ApellidoMaterno { get; set; } = "";
+        [Required] public string TipoDocumento { get; set; } = "DNI";
+        [Required(ErrorMessage = "Ingresa tu número de documento.")]
+        public string NumeroDocumento { get; set; } = "";
+        [Required(ErrorMessage = "Ingresa tu correo electrónico.")] [EmailAddress(ErrorMessage = "Ingresa un correo válido.")]
+        public string Correo { get; set; } = "";
+        public string? Telefono { get; set; }
+        public DateOnly? FechaNacimiento { get; set; }
+        public bool TieneDiscapacidad { get; set; }
+        public string? CarnetConadis { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext contexto)
+        {
+            var patron = TipoDocumento switch { "DNI" => "^[0-9]{8}$", "CE" => "^[A-Za-z0-9]{9,12}$", _ => "^[A-Za-z0-9]{6,12}$" };
+            if (!System.Text.RegularExpressions.Regex.IsMatch(NumeroDocumento ?? "", patron))
+                yield return new ValidationResult("El formato no corresponde al tipo de documento.", [nameof(NumeroDocumento)]);
+            if (FechaNacimiento is null)
+                yield return new ValidationResult("Ingresa tu fecha de nacimiento.", [nameof(FechaNacimiento)]);
+            else if (FechaNacimiento > DatosDemo.Hoy)
+                yield return new ValidationResult("La fecha de nacimiento no puede ser futura.", [nameof(FechaNacimiento)]);
+            if (!string.IsNullOrWhiteSpace(Telefono) && !System.Text.RegularExpressions.Regex.IsMatch(Telefono, @"^\+?[0-9 ]{6,18}$"))
+                yield return new ValidationResult("Ingresa un teléfono válido.", [nameof(Telefono)]);
+            if (TieneDiscapacidad && string.IsNullOrWhiteSpace(CarnetConadis))
+                yield return new ValidationResult("Ingresa el número de carné CONADIS.", [nameof(CarnetConadis)]);
+        }
+    }
+}

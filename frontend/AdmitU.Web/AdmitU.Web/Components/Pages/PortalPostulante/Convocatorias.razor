@@ -1,0 +1,38 @@
+@page "/postulante/convocatorias"
+@using System.Globalization
+
+<PageTitle>Convocatorias · AdmitU</PageTitle>
+
+<PageHeader Titulo="Convocatorias" Subtitulo="Procesos de admisión disponibles. Elige uno para postular." Migas="@(["Convocatorias"])" />
+
+<div class="conv-grid">
+    @foreach (var c in DatosDemo.Convocatorias.Where(c => c.Estado != EstadoConvocatoria.Borrador).OrderByDescending(c => c.Inicio))
+    {
+        bool abierta = c.Estado == EstadoConvocatoria.Publicada;
+        <article class="card conv">
+            <div class="conv-top">
+                <div><span class="code">@c.Periodo</span><h3>@c.Nombre</h3></div>
+                <StatusBadge Texto="@(abierta ? "Inscripciones abiertas" : "Finalizada")" Tono="@(abierta ? "success" : "neutral")" />
+            </div>
+            <p>@c.Descripcion</p>
+            <div class="conv-range"><Icon Name="calendar" Size="16" />@Formato.Fecha(c.Inicio)<Icon Name="arrow-right" Size="14" />@Formato.Fecha(c.Fin)</div>
+            <div class="conv-foot">
+                <span>@DatosDemo.Carreras.Count(x => x.Activo) carreras · @DatosDemo.Modalidades.Count(x => x.Activo) modalidades</span>
+                @if (abierta)
+                {
+                    <a class="btn btn-primary btn-sm" href="/postulante/postular">Postular<Icon Name="arrow-right" Size="14" /></a>
+                }
+            </div>
+        </article>
+    }
+</div>
+
+<section class="card card-pad" style="margin-top:22px">
+    <div class="card-head"><div><h2>Modalidades de ingreso</h2><p>Elige la vía que corresponde a tu situación.</p></div></div>
+    <div class="grid-eq" style="margin-top:0">
+        @foreach (var m in DatosDemo.Modalidades.Where(m => m.Activo))
+        {
+            <div class="quick-item"><span class="q-icon"><Icon Name="list-checks" Size="18" /></span><div><strong>@m.Nombre</strong><small>@m.Descripcion</small></div></div>
+        }
+    </div>
+</section>
