@@ -1,0 +1,84 @@
+@page "/"
+@inject IAdmitUService Servicio
+
+<PageTitle>Inicio | AdmitU</PageTitle>
+<div class="page-title">
+    <div>
+        <div class="breadcrumb-text">Panel principal / AdmitU</div>
+        <h1>Panel de admisiones</h1>
+        <p>Consulta de postulantes, convocatorias y estado de los trámites.</p>
+    </div>
+    <a class="btn btn-primary" href="/postulantes/nuevo"><i class="fa-solid fa-user-plus me-2"></i>Registrar postulante</a>
+</div>
+
+<Aviso Mensaje="@error" EsError="true" />
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card"><div><div class="metric-name">Postulantes</div><div class="metric-value">@cantidadPostulantes</div></div><div class="metric-icon"><i class="fa-solid fa-users"></i></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card"><div><div class="metric-name">Convocatorias activas</div><div class="metric-value">@cantidadConvocatorias</div></div><div class="metric-icon green"><i class="fa-solid fa-calendar-check"></i></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card"><div><div class="metric-name">Postulaciones</div><div class="metric-value">@cantidadPostulaciones</div></div><div class="metric-icon purple"><i class="fa-solid fa-file-signature"></i></div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card"><div><div class="metric-name">Pagos pendientes</div><div class="metric-value">@cantidadPagosPendientes</div></div><div class="metric-icon gold"><i class="fa-solid fa-credit-card"></i></div></div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <section class="panel-card h-100">
+            <div class="panel-head"><h2>Acceso rápido</h2><span class="table-meta">Operaciones habituales</span></div>
+            <div class="panel-body">
+                <p class="section-muted mb-3">Gestiona los principales catálogos y registros del sistema.</p>
+                <div class="shortcuts">
+                    <a class="shortcut" href="/postulantes"><i class="fa-solid fa-users"></i> Postulantes</a>
+                    <a class="shortcut" href="/convocatorias"><i class="fa-solid fa-calendar-days"></i> Convocatorias</a>
+                    <a class="shortcut" href="/carreras"><i class="fa-solid fa-book-open-reader"></i> Carreras</a>
+                    <a class="shortcut" href="/pagos"><i class="fa-solid fa-credit-card"></i> Pagos</a>
+                    <a class="shortcut" href="/documentos"><i class="fa-solid fa-folder-open"></i> Documentos</a>
+                </div>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-5">
+        <section class="panel-card h-100">
+            <div class="panel-head"><h2>Arquitectura del sistema</h2></div>
+            <div class="panel-body">
+                <div class="d-flex gap-2 mb-3 align-items-center"><span class="metric-icon" style="width:38px;height:38px;font-size:14px"><i class="fa-solid fa-desktop"></i></span><div><strong class="d-block small">Blazor Web App</strong><span class="table-meta">Interfaz C# · Razor · QuickGrid</span></div></div>
+                <div class="d-flex gap-2 mb-3 align-items-center"><span class="metric-icon green" style="width:38px;height:38px;font-size:14px"><i class="fa-solid fa-code"></i></span><div><strong class="d-block small">Servicios REST Java</strong><span class="table-meta">Interfaz de comunicación aún por implementar</span></div></div>
+                <div class="d-flex gap-2 align-items-center"><span class="metric-icon purple" style="width:38px;height:38px;font-size:14px"><i class="fa-solid fa-database"></i></span><div><strong class="d-block small">Backend Java + MySQL</strong><span class="table-meta">Negocio, persistencia y procedimientos</span></div></div>
+            </div>
+        </section>
+    </div>
+</div>
+
+@code {
+    private int cantidadPostulantes;
+    private int cantidadConvocatorias;
+    private int cantidadPostulaciones;
+    private int cantidadPagosPendientes;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var postulantes = await Servicio.ListarPostulantesAsync();
+            var convocatorias = await Servicio.ListarConvocatoriasAsync();
+            var postulaciones = await Servicio.ListarPostulacionesAsync();
+            var pagos = await Servicio.ListarPagosAsync();
+            cantidadPostulantes = postulantes.Count;
+            cantidadConvocatorias = convocatorias.Count(x => x.Activo);
+            cantidadPostulaciones = postulaciones.Count;
+            cantidadPagosPendientes = pagos.Count(x => x.EstadoPago is "PENDIENTE" or "GENERADO");
+        }
+        catch (Exception ex)
+        {
+            error = $"No se pudo consultar el resumen: {ex.Message}";
+        }
+    }
+}

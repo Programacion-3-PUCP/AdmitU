@@ -1,0 +1,65 @@
+@page "/documentos"
+@inject IAdmitUService Servicio
+
+<PageTitle>Documentos | AdmitU</PageTitle>
+<div class="page-title">
+    <div><div class="breadcrumb-text">AdmitU / Documentos</div><h1>Documentos de postulación</h1><p>Seguimiento de archivos presentados y su estado de evaluación.</p></div>
+</div>
+<Aviso Mensaje="@error" EsError="true" />
+<section class="panel-card">
+    <div class="toolbar">
+        <div><strong>Documentos registrados</strong><div class="table-meta">@Filtrados.Count registro(s)</div></div>
+        <div class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" value="@texto" @oninput="Buscar" class="form-control" placeholder="Buscar por archivo o inscripción" aria-label="Buscar documentos" /></div>
+    </div>
+    @if (cargando)
+    {
+        <div class="empty-state">Cargando documentos...</div>
+    }
+    else if (Filtrados.Count == 0)
+    {
+        <div class="empty-state">No se encontraron documentos.</div>
+    }
+    else
+    {
+        <div class="table-container">
+            <QuickGrid Items="@Filtrados.AsQueryable()" Pagination="@paginacion" Class="grid-table">
+                <TemplateColumn Title="Archivo" Context="item"><i class="fa-solid fa-file-lines me-2 text-primary"></i>@item.NombreArchivo</TemplateColumn>
+                <TemplateColumn Title="Inscripción" Context="item">@CodigoInscripcion(item.PostulacionId)</TemplateColumn>
+                <TemplateColumn Title="Versión" Context="item">@item.NumeroVersion</TemplateColumn>
+                <TemplateColumn Title="Formato" Context="item">@item.TipoArchivo</TemplateColumn>
+                <TemplateColumn Title="Fecha de carga" Context="item">@(item.FechaCarga?.ToString("dd/MM/yyyy") ?? "—")</TemplateColumn>
+                <TemplateColumn Title="Estado" Context="item"><EstadoEtiqueta Estado="@item.EstadoDocumento" /></TemplateColumn>
+            </QuickGrid>
+            <Paginador State="@paginacion" TotalItems="@Filtrados.Count" />
+        </div>
+    }
+</section>
+<p class="field-note mt-3">La carga de archivos y la evaluación documental se habilitarán cuando se definan los contratos de almacenamiento y la API Java. Esta pantalla solo muestra registros.</p>
+
+@code {
+    private List<DocumentoPostulacionDto> datos = [];
+    private List<PostulacionDto> postulaciones = [];
+    private PaginationState paginacion = new() { ItemsPerPage = 8 };
+    private bool cargando = true;
+    private string texto = "";
+    private string? error;
+    private string CodigoInscripcion(int id) => postulaciones.Find(x => x.Id == id)?.CodigoInscripcion ?? $"ID {id}";
+    private List<DocumentoPostulacionDto> Filtrados => datos.Where(x => string.IsNullOrWhiteSpace(texto) || x.NombreArchivo.Contains(texto, StringComparison.OrdinalIgnoreCase) || CodigoInscripcion(x.PostulacionId).Contains(texto, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            datos = await Servicio.ListarDocumentosAsync();
+            postulaciones = await Servicio.ListarPostulacionesAsync();
+        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { cargando = false; }
+    }
+
+    private async Task Buscar(ChangeEventArgs e)
+    {
+        texto = e.Value?.ToString() ?? "";
+        await paginacion.SetCurrentPageIndexAsync(0);
+    }
+}

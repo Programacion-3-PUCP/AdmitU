@@ -1,0 +1,12 @@
+@if (!string.IsNullOrWhiteSpace(Mensaje))
+{
+    <div class="alert @(EsError ? "alert-danger" : "alert-success")" role="alert">
+        <i class="fa-solid @(EsError ? "fa-triangle-exclamation" : "fa-circle-check") me-2"></i>
+        @Mensaje
+    </div>
+}
+
+@code {
+    [Parameter] public string? Mensaje { get; set; }
+    [Parameter] public bool EsError { get; set; }
+}

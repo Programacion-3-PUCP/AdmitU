@@ -1,0 +1,160 @@
+@page "/postulantes/nuevo"
+@page "/postulantes/editar/{Id:int}"
+@inject IAdmitUService Servicio
+@inject NavigationManager Navegacion
+
+<PageTitle>@(Id is > 0 ? "Modificar" : "Registrar") postulante | AdmitU</PageTitle>
+<div class="page-title">
+    <div>
+        <div class="breadcrumb-text">AdmitU / <a href="/postulantes">Postulantes</a> / @(Id is > 0 ? "Editar" : "Nuevo")</div>
+        <h1>@(Id is > 0 ? "Modificar" : "Registrar") postulante</h1>
+        <p>Complete los campos correspondientes y guarde los cambios.</p>
+    </div>
+    <a href="/postulantes" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left me-2"></i>Volver al listado</a>
+</div>
+
+<Aviso Mensaje="@mensajeError" EsError="true" />
+
+@if (cargando)
+{
+    <div class="panel-card p-4">Cargando información...</div>
+}
+else if (encontrado)
+{
+    <section class="panel-card">
+        <div class="panel-head"><h2>Datos de postulante</h2><span class="table-meta">* Campos obligatorios</span></div>
+        <div class="panel-body">
+            <EditForm Model="@modelo" OnValidSubmit="GuardarAsync" FormName="formPostulante">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger small mb-3" />
+                <div class="form-grid">
+
+                <div>
+                    <label class="form-label">Nombres *</label>
+                    <InputText @bind-Value="modelo.Nombres" class="form-control" placeholder="Nombres" />
+                    <ValidationMessage For="@(() => modelo.Nombres)" />
+                </div>
+                <div>
+                    <label class="form-label">Apellido paterno *</label>
+                    <InputText @bind-Value="modelo.ApellidoPaterno" class="form-control" placeholder="Apellido paterno" />
+                    <ValidationMessage For="@(() => modelo.ApellidoPaterno)" />
+                </div>
+                <div>
+                    <label class="form-label">Apellido materno *</label>
+                    <InputText @bind-Value="modelo.ApellidoMaterno" class="form-control" placeholder="Apellido materno" />
+                    <ValidationMessage For="@(() => modelo.ApellidoMaterno)" />
+                </div>
+                <div>
+                    <label class="form-label">Correo electrónico *</label>
+                    <InputText @bind-Value="modelo.Correo" class="form-control" type="email" placeholder="correo@ejemplo.com" />
+                    <ValidationMessage For="@(() => modelo.Correo)" />
+                </div>
+                <div>
+                    <label class="form-label">Tipo de documento *</label>
+                    <InputSelect @bind-Value="modelo.TipoDocumento" class="form-select">
+                        <option value="DNI">DNI</option>
+                        <option value="CE">Carné de extranjería</option>
+                        <option value="PAS">Pasaporte</option>
+                        <option value="CPP">CPP</option>
+                    </InputSelect>
+                </div>
+                <div>
+                    <label class="form-label">Número de documento *</label>
+                    <InputText @bind-Value="modelo.NumeroDocumento" class="form-control" placeholder="Ingrese su documento" />
+                    <ValidationMessage For="@(() => modelo.NumeroDocumento)" />
+                </div>
+                <div>
+                    <label class="form-label">Teléfono</label>
+                    <InputText @bind-Value="modelo.Telefono" class="form-control" placeholder="Ej. 987654321" />
+                    <ValidationMessage For="@(() => modelo.Telefono)" />
+                </div>
+                <div>
+                    <label class="form-label">Fecha de nacimiento</label>
+                    <InputDate @bind-Value="modelo.FechaNacimiento" class="form-control" />
+                    <ValidationMessage For="@(() => modelo.FechaNacimiento)" />
+                </div>
+                <div class="full-span">
+                    <label class="form-check-label"><InputCheckbox @bind-Value="modelo.TieneDiscapacidad" class="form-check-input me-2" />Registra discapacidad</label>
+                </div>
+                @if (modelo.TieneDiscapacidad)
+                {
+                    <div class="full-span">
+                        <label class="form-label">Carné CONADIS</label>
+                        <InputText @bind-Value="modelo.NumeroCarnetConadis" class="form-control" placeholder="Número de carné" />
+                        <ValidationMessage For="@(() => modelo.NumeroCarnetConadis)" />
+                    </div>
+                }
+                @if (Id is > 0)
+                {
+                    <div class="full-span">
+                        <span class="field-note">Correo validado: @(modelo.CorreoValidado ? "Sí" : "No"). La validación real se gestiona en Java.</span>
+                    </div>
+                }
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Volver">Cancelar</button>
+                    <button type="submit" disabled="@guardando" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>@(guardando ? "Guardando..." : "Guardar cambios")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    private PostulanteDto modelo = new();
+    private bool encontrado = true;
+    private bool cargando = true;
+    private bool guardando;
+    private string? mensajeError;
+    
+
+    protected override async Task OnParametersSetAsync()
+    {
+        cargando = true;
+        mensajeError = null;
+        encontrado = true;
+        try
+        {
+            
+            if (Id is > 0)
+            {
+                var resultado = await Servicio.ObtenerPostulanteAsync(Id.Value);
+                if (resultado is null)
+                {
+                    encontrado = false;
+                    mensajeError = "No se encontró el registro solicitado.";
+                }
+                else modelo = resultado;
+            }
+            else modelo = new PostulanteDto();
+        }
+        catch (Exception ex)
+        {
+            encontrado = false;
+            mensajeError = $"No fue posible cargar el formulario: {ex.Message}";
+        }
+        finally { cargando = false; }
+    }
+
+    private void Volver() => Navegacion.NavigateTo("/postulantes");
+
+    private async Task GuardarAsync()
+    {
+        if (guardando) return;
+        guardando = true;
+        mensajeError = null;
+        try
+        {
+            await Servicio.GuardarPostulanteAsync(modelo);
+            Navegacion.NavigateTo("/postulantes");
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"No se pudo guardar: {ex.Message}";
+        }
+        finally { guardando = false; }
+    }
+}

@@ -1,0 +1,122 @@
+@page "/postulantes"
+@inject IAdmitUService Servicio
+@inject NavigationManager Navegacion
+
+<PageTitle>Postulantes | AdmitU</PageTitle>
+<div class="page-title">
+    <div>
+        <div class="breadcrumb-text">AdmitU / Postulantes</div>
+        <h1>Postulantes</h1>
+        <p>Consulta y administra los datos de identificación y contacto.</p>
+    </div>
+    <a class="btn btn-primary" href="/postulantes/nuevo"><i class="fa-solid fa-plus me-2"></i>Nuevo registro</a>
+</div>
+
+<Aviso Mensaje="@mensaje" EsError="@hayError" />
+
+<section class="panel-card">
+    <div class="toolbar">
+        <div>
+            <strong>Listado de postulantes</strong>
+            <div class="table-meta">@Filtrados.Count registro(s) encontrados</div>
+        </div>
+        <div class="search-field">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" class="form-control" value="@texto" @oninput="Buscar" placeholder="Buscar por nombre o código" aria-label="Buscar registros" />
+        </div>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i>Cargando registros...</div>
+    }
+    else if (Filtrados.Count == 0)
+    {
+        <div class="empty-state"><i class="fa-solid fa-magnifying-glass"></i>No se encontraron registros.</div>
+    }
+    else
+    {
+        <div class="table-container">
+            <QuickGrid Items="@Filtrados.AsQueryable()" Pagination="@paginacion" Class="grid-table">
+                <TemplateColumn Title="Documento" Context="item">@(item.TipoDocumento + " · " + item.NumeroDocumento)</TemplateColumn>
+                <TemplateColumn Title="Postulante" Context="item">@(NombrePostulante(item))</TemplateColumn>
+                <PropertyColumn Property="@(x => x.Correo)" Title="Correo" Sortable="true" />
+                <TemplateColumn Title="Teléfono" Context="item">@(item.Telefono ?? "—")</TemplateColumn>
+                
+                <TemplateColumn Title="Acciones" Context="item">
+                    <div class="action-group">
+                        <button type="button" title="Editar" aria-label="Editar" class="icon-btn" @onclick="() => Editar(item.Id)"><i class="fa-solid fa-pen"></i></button>
+                        <button type="button" title="Eliminar" aria-label="Eliminar" class="icon-btn icon-btn-danger"  @onclick="() => pendiente = item.Id"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </TemplateColumn>
+            </QuickGrid>
+            <Paginador State="@paginacion" TotalItems="@Filtrados.Count" />
+        </div>
+    }
+</section>
+
+<ConfirmarAccion Visible="@(pendiente is not null)"
+    Titulo="Eliminar postulante"
+    Descripcion="Se intentará eliminar el registro. El backend puede rechazarlo cuando existen relaciones asociadas."
+    TextoConfirmar="Eliminar"
+    OnConfirmar="ConfirmarAsync"
+    OnCancelar="() => pendiente = null" />
+
+@code {
+    private List<PostulanteDto> registros = [];
+    private PaginationState paginacion = new() { ItemsPerPage = 8 };
+    private string texto = "";
+    private string? mensaje;
+    private bool hayError;
+    private bool cargando = true;
+    private int? pendiente;
+    private static string NombrePostulante(PostulanteDto x) => $"{x.Nombres} {x.ApellidoPaterno} {x.ApellidoMaterno}";
+
+    private List<PostulanteDto> Filtrados => registros.Where(x =>
+        string.IsNullOrWhiteSpace(texto) || x.Nombres.Contains(texto, StringComparison.OrdinalIgnoreCase) || x.ApellidoPaterno.Contains(texto, StringComparison.OrdinalIgnoreCase) || x.ApellidoMaterno.Contains(texto, StringComparison.OrdinalIgnoreCase) || x.NumeroDocumento.Contains(texto, StringComparison.OrdinalIgnoreCase) || x.Correo.Contains(texto, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    protected override async Task OnInitializedAsync() => await CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        try
+        {
+            hayError = false;
+            registros = await Servicio.ListarPostulantesAsync();
+
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"No se pudieron cargar los registros: {ex.Message}";
+            hayError = true;
+        }
+        finally { cargando = false; }
+    }
+
+    private void Editar(int id) => Navegacion.NavigateTo($"/postulantes/editar/{id}");
+
+    private async Task Buscar(ChangeEventArgs args)
+    {
+        texto = args.Value?.ToString() ?? "";
+        await paginacion.SetCurrentPageIndexAsync(0);
+    }
+
+    private async Task ConfirmarAsync()
+    {
+        if (pendiente is null) return;
+        try
+        {
+            await Servicio.EliminarPostulanteAsync(pendiente.Value);
+            mensaje = "Operación completada.";
+            hayError = false;
+            await CargarAsync();
+            await paginacion.SetCurrentPageIndexAsync(0);
+        }
+        catch (Exception ex)
+        {
+            mensaje = ex.Message;
+            hayError = true;
+        }
+        finally { pendiente = null; }
+    }
+}

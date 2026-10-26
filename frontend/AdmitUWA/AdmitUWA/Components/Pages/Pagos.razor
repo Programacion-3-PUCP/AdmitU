@@ -1,0 +1,91 @@
+@page "/pagos"
+@inject IAdmitUService Servicio
+
+<PageTitle>Pagos | AdmitU</PageTitle>
+<div class="page-title">
+    <div><div class="breadcrumb-text">AdmitU / Pagos</div><h1>Pagos</h1><p>Consulta de comprobantes y estados de pago vinculados a postulaciones.</p></div>
+</div>
+<Aviso Mensaje="@mensaje" EsError="@hayError" />
+<section class="panel-card">
+    <div class="toolbar">
+        <div><strong>Listado de pagos</strong><div class="table-meta">@Filtrados.Count registro(s)</div></div>
+        <div class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" value="@texto" @oninput="Buscar" class="form-control" placeholder="Buscar pago o inscripción" aria-label="Buscar pagos" /></div>
+    </div>
+    @if (cargando)
+    {
+        <div class="empty-state">Cargando pagos...</div>
+    }
+    else if (Filtrados.Count == 0)
+    {
+        <div class="empty-state">No se encontraron pagos.</div>
+    }
+    else
+    {
+        <div class="table-container">
+            <QuickGrid Items="@Filtrados.AsQueryable()" Pagination="@paginacion" Class="grid-table">
+                <PropertyColumn Property="@(x => x.CodigoPago)" Title="Código de pago" />
+                <TemplateColumn Title="Inscripción" Context="item">@CodigoInscripcion(item.PostulacionId)</TemplateColumn>
+                <TemplateColumn Title="Medio" Context="item">@item.MedioPago</TemplateColumn>
+                <TemplateColumn Title="Monto" Context="item">S/ @item.Monto.ToString("N2")</TemplateColumn>
+                <TemplateColumn Title="Estado" Context="item"><EstadoEtiqueta Estado="@item.EstadoPago" /></TemplateColumn>
+                <TemplateColumn Title="Fecha de pago" Context="item">@(item.FechaPago?.ToString("dd/MM/yyyy") ?? "Pendiente")</TemplateColumn>
+                <TemplateColumn Title="Acciones" Context="item">
+                    @if (item.EstadoPago is "PENDIENTE" or "GENERADO")
+                    {
+                        <button type="button" title="Aprobar pago" class="btn btn-outline-primary btn-sm" @onclick="() => pendiente = item.Id"><i class="fa-solid fa-check me-1"></i>Aprobar</button>
+                    }
+                    else { <span class="table-meta">—</span> }
+                </TemplateColumn>
+            </QuickGrid>
+            <Paginador State="@paginacion" TotalItems="@Filtrados.Count" />
+        </div>
+    }
+</section>
+<ConfirmarAccion Visible="@(pendiente is not null)" Titulo="Aprobar pago"
+    Descripcion="Confirma la aprobación del pago. El backend debe registrar también la fecha de pago."
+    TextoConfirmar="Aprobar" OnConfirmar="AprobarAsync" OnCancelar="() => pendiente = null" />
+<p class="field-note mt-3">En modo API, la acción requiere el endpoint de aprobación en Java. En demostración la transición solo modifica datos temporales.</p>
+
+@code {
+    private List<PagoDto> datos = [];
+    private List<PostulacionDto> postulaciones = [];
+    private PaginationState paginacion = new() { ItemsPerPage = 8 };
+    private string texto = "";
+    private bool hayError;
+    private bool cargando = true;
+    private string? mensaje;
+    private int? pendiente;
+    private string CodigoInscripcion(int id) => postulaciones.Find(x => x.Id == id)?.CodigoInscripcion ?? $"ID {id}";
+    private List<PagoDto> Filtrados => datos.Where(x => string.IsNullOrWhiteSpace(texto) || x.CodigoPago.Contains(texto, StringComparison.OrdinalIgnoreCase) || CodigoInscripcion(x.PostulacionId).Contains(texto, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            datos = await Servicio.ListarPagosAsync();
+            postulaciones = await Servicio.ListarPostulacionesAsync();
+        }
+        catch (Exception ex) { hayError = true; mensaje = ex.Message; }
+        finally { cargando = false; }
+    }
+
+    private async Task Buscar(ChangeEventArgs e)
+    {
+        texto = e.Value?.ToString() ?? "";
+        await paginacion.SetCurrentPageIndexAsync(0);
+    }
+
+    private async Task AprobarAsync()
+    {
+        if (pendiente is null) return;
+        try
+        {
+            await Servicio.AprobarPagoAsync(pendiente.Value);
+            datos = await Servicio.ListarPagosAsync();
+            hayError = false;
+            mensaje = "Pago aprobado. Verifique la fecha de pago en el listado.";
+        }
+        catch (Exception ex) { hayError = true; mensaje = ex.Message; }
+        finally { pendiente = null; }
+    }
+}

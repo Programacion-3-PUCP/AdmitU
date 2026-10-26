@@ -1,0 +1,138 @@
+@page "/convocatorias/nuevo"
+@page "/convocatorias/editar/{Id:int}"
+@inject IAdmitUService Servicio
+@inject NavigationManager Navegacion
+
+<PageTitle>@(Id is > 0 ? "Modificar" : "Registrar") convocatoria | AdmitU</PageTitle>
+<div class="page-title">
+    <div>
+        <div class="breadcrumb-text">AdmitU / <a href="/convocatorias">Convocatorias</a> / @(Id is > 0 ? "Editar" : "Nuevo")</div>
+        <h1>@(Id is > 0 ? "Modificar" : "Registrar") convocatoria</h1>
+        <p>Complete los campos correspondientes y guarde los cambios.</p>
+    </div>
+    <a href="/convocatorias" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left me-2"></i>Volver al listado</a>
+</div>
+
+<Aviso Mensaje="@mensajeError" EsError="true" />
+
+@if (cargando)
+{
+    <div class="panel-card p-4">Cargando información...</div>
+}
+else if (encontrado)
+{
+    <section class="panel-card">
+        <div class="panel-head"><h2>Datos de convocatoria</h2><span class="table-meta">* Campos obligatorios</span></div>
+        <div class="panel-body">
+            <EditForm Model="@modelo" OnValidSubmit="GuardarAsync" FormName="formConvocatoria">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger small mb-3" />
+                <div class="form-grid">
+
+                <div>
+                    <label class="form-label">Código de convocatoria *</label>
+                    <InputText @bind-Value="modelo.CodigoConvocatoria" class="form-control" placeholder="Ej. ADM-2027-I" />
+                    <ValidationMessage For="@(() => modelo.CodigoConvocatoria)" />
+                </div>
+                <div>
+                    <label class="form-label">Nombre *</label>
+                    <InputText @bind-Value="modelo.Nombre" class="form-control" placeholder="Ej. Admisión 2027-I" />
+                    <ValidationMessage For="@(() => modelo.Nombre)" />
+                </div>
+                <div>
+                    <label class="form-label">Período *</label>
+                    <InputText @bind-Value="modelo.Periodo" class="form-control" placeholder="Ej. 2027-I" />
+                    <ValidationMessage For="@(() => modelo.Periodo)" />
+                </div>
+                <div>
+                    <label class="form-label">Estado *</label>
+                    <InputSelect @bind-Value="modelo.Estado" class="form-select">
+                        <option value="BORRADOR">Borrador</option>
+                        <option value="PUBLICADA">Publicada</option>
+                        <option value="CERRADA">Cerrada</option>
+                        <option value="ANULADA">Anulada</option>
+                    </InputSelect>
+                </div>
+                <div>
+                    <label class="form-label">Fecha de inicio *</label>
+                    <InputDate @bind-Value="modelo.FechaInicio" class="form-control" />
+                    <ValidationMessage For="@(() => modelo.FechaInicio)" />
+                </div>
+                <div>
+                    <label class="form-label">Fecha de cierre *</label>
+                    <InputDate @bind-Value="modelo.FechaFin" class="form-control" />
+                    <ValidationMessage For="@(() => modelo.FechaFin)" />
+                </div>
+                <div class="full-span">
+                    <label class="form-label">Descripción</label>
+                    <InputTextArea @bind-Value="modelo.Descripcion" class="form-control" rows="3" />
+                </div>
+                <div class="full-span"><label class="form-check-label"><InputCheckbox @bind-Value="modelo.Activo" class="form-check-input me-2" />Convocatoria activa</label></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Volver">Cancelar</button>
+                    <button type="submit" disabled="@guardando" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>@(guardando ? "Guardando..." : "Guardar cambios")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    private ConvocatoriaDto modelo = new();
+    private bool encontrado = true;
+    private bool cargando = true;
+    private bool guardando;
+    private string? mensajeError;
+    
+
+    protected override async Task OnParametersSetAsync()
+    {
+        cargando = true;
+        mensajeError = null;
+        encontrado = true;
+        try
+        {
+            
+            if (Id is > 0)
+            {
+                var resultado = await Servicio.ObtenerConvocatoriaAsync(Id.Value);
+                if (resultado is null)
+                {
+                    encontrado = false;
+                    mensajeError = "No se encontró el registro solicitado.";
+                }
+                else modelo = resultado;
+            }
+            else modelo = new ConvocatoriaDto();
+        }
+        catch (Exception ex)
+        {
+            encontrado = false;
+            mensajeError = $"No fue posible cargar el formulario: {ex.Message}";
+        }
+        finally { cargando = false; }
+    }
+
+    private void Volver() => Navegacion.NavigateTo("/convocatorias");
+
+    private async Task GuardarAsync()
+    {
+        if (guardando) return;
+        guardando = true;
+        mensajeError = null;
+        try
+        {
+            await Servicio.GuardarConvocatoriaAsync(modelo);
+            Navegacion.NavigateTo("/convocatorias");
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"No se pudo guardar: {ex.Message}";
+        }
+        finally { guardando = false; }
+    }
+}
