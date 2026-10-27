@@ -1,0 +1,50 @@
+@using System.Globalization
+
+<div class="donut">
+    <svg viewBox="0 0 120 120" role="img" aria-label="@Titulo">
+        <circle class="donut-track" cx="60" cy="60" r="@Radio" />
+        @foreach (var s in Arcos())
+        {
+            <circle cx="60" cy="60" r="@Radio" fill="none" stroke="@s.Color" stroke-width="14"
+                    stroke-dasharray="@s.Trazo" stroke-dashoffset="@s.Desfase" transform="rotate(-90 60 60)" />
+        }
+        <text x="60" y="58" text-anchor="middle" class="donut-total">@Total</text>
+        <text x="60" y="74" text-anchor="middle" class="donut-caption">@Titulo</text>
+    </svg>
+    <ul class="legend">
+        @foreach (var s in Segmentos)
+        {
+            <li>
+                <i style="background:@s.Color"></i>
+                <span>@s.Etiqueta</span>
+                <strong>@s.Valor</strong>
+            </li>
+        }
+    </ul>
+</div>
+
+@code {
+    public sealed record Segmento(string Etiqueta, int Valor, string Color);
+
+    [Parameter, EditorRequired] public IReadOnlyList<Segmento> Segmentos { get; set; } = [];
+    [Parameter] public string Titulo { get; set; } = "Total";
+
+    private const double Radio = 46;
+    private int Total => Segmentos.Sum(s => s.Valor);
+
+    private static string F(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
+
+    private IEnumerable<(string Color, string Trazo, string Desfase)> Arcos()
+    {
+        double circunferencia = 2 * Math.PI * Radio;
+        double acumulado = 0;
+        int total = Math.Max(1, Total);
+        foreach (var s in Segmentos.Where(s => s.Valor > 0))
+        {
+            double largo = s.Valor * circunferencia / total;
+            double tramo = Math.Max(0, largo - 2); // pequeño hueco entre arcos
+            yield return (s.Color, $"{F(tramo)} {F(circunferencia - tramo)}", F(-acumulado));
+            acumulado += largo;
+        }
+    }
+}

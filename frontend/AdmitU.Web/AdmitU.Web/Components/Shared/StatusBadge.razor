@@ -1,0 +1,7 @@
+<span class="badge badge-@Tono">@if (Punto) {<i class="dot"></i>}@Texto</span>
+
+@code {
+    [Parameter, EditorRequired] public string Texto { get; set; } = "";
+    [Parameter] public string Tono { get; set; } = "neutral";
+    [Parameter] public bool Punto { get; set; } = true;
+}

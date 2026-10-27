@@ -1,0 +1,83 @@
+@page "/admin/convocatorias"
+@using System.Globalization
+@inject ToastService Avisos
+
+<PageTitle>Convocatorias · AdmitU</PageTitle>
+
+<PageHeader Titulo="Convocatorias" Subtitulo="Procesos de admisión por periodo, con sus fechas y el avance de cada uno." Migas="@(["Convocatorias"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva convocatoria</button></Acciones>
+</PageHeader>
+
+<div class="conv-grid">
+    @foreach (var c in DatosDemo.Convocatorias)
+    {
+        var avance = Avance(c);
+        <article class="card conv">
+            <div class="conv-top">
+                <div><span class="code">@c.Codigo</span><h3>@c.Nombre</h3></div>
+                <StatusBadge Texto="@c.Estado.Etiqueta()" Tono="@c.Estado.Tono()" />
+            </div>
+            <p>@c.Descripcion</p>
+            <div class="conv-range"><Icon Name="calendar" Size="16" />@Formato.Fecha(c.Inicio)<Icon Name="arrow-right" Size="14" />@Formato.Fecha(c.Fin)</div>
+            <div>
+                <div class="progress-meta"><span>Avance</span><strong>@avance%</strong></div>
+                <div class="conv-bar" role="progressbar" aria-valuenow="@avance" aria-valuemin="0" aria-valuemax="100"><i style="width:@avance.ToString(CultureInfo.InvariantCulture)%"></i></div>
+            </div>
+            <div class="conv-foot">
+                <span>@DatosDemo.Postulaciones.Count(p => p.ConvocatoriaId == c.Id) postulaciones</span>
+                <span class="row-actions">
+                    <button type="button" class="icon-btn brand" title="Editar" aria-label="Editar @c.Nombre" @onclick="() => Editar(c)"><Icon Name="pencil" Size="17" /></button>
+                    <button type="button" class="icon-btn danger" title="Cerrar convocatoria" aria-label="Cerrar @c.Nombre" disabled="@(c.Estado == EstadoConvocatoria.Cerrada)" @onclick="() => pendiente = c"><Icon Name="x" Size="17" /></button>
+                </span>
+            </div>
+        </article>
+    }
+</div>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nueva convocatoria" : "Editar convocatoria")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field"><label for="v-codigo">Código <span class="req">*</span></label><InputText id="v-codigo" @bind-Value="modelo.Codigo" placeholder="Ej. ADM-2027-1" /><ValidationMessage For="() => modelo.Codigo" /></div>
+            <div class="field"><label for="v-nombre">Nombre <span class="req">*</span></label><InputText id="v-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Admisión 2027-I" /><ValidationMessage For="() => modelo.Nombre" /></div>
+            <div class="field"><label for="v-periodo">Periodo <span class="req">*</span></label><InputText id="v-periodo" @bind-Value="modelo.Periodo" placeholder="Ej. 2027-I" /><ValidationMessage For="() => modelo.Periodo" /></div>
+            <div class="form-grid">
+                <div class="field"><label for="v-ini">Inicio</label><InputDate id="v-ini" @bind-Value="modelo.Inicio" /></div>
+                <div class="field"><label for="v-fin">Fin</label><InputDate id="v-fin" @bind-Value="modelo.Fin" /></div>
+            </div>
+            <div class="field">
+                <label for="v-estado">Estado</label>
+                <InputSelect id="v-estado" @bind-Value="modelo.Estado">
+                    @foreach (var e in Enum.GetValues<EstadoConvocatoria>()) { <option value="@e">@e.Etiqueta()</option> }
+                </InputSelect>
+            </div>
+            <div class="field"><label for="v-desc">Descripción</label><InputTextArea id="v-desc" @bind-Value="modelo.Descripcion" /><ValidationMessage For="() => modelo.Descripcion" /></div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Cerrar convocatoria" Mensaje="@($"{pendiente?.Nombre} dejará de recibir postulaciones.")" TextoConfirmar="Cerrar convocatoria"
+               OnCancelar="() => pendiente = null" OnConfirmar="Cerrar_" />
+
+@code {
+    private bool abierto;
+    private Convocatoria modelo = new();
+    private Convocatoria? pendiente;
+
+    private static int Avance(Convocatoria c)
+    {
+        if (DatosDemo.Hoy >= c.Fin) return 100;
+        if (DatosDemo.Hoy <= c.Inicio) return 0;
+        return (int)Math.Round((DatosDemo.Hoy.DayNumber - c.Inicio.DayNumber) * 100.0 / (c.Fin.DayNumber - c.Inicio.DayNumber));
+    }
+
+    private void Nueva() { modelo = new(); abierto = true; }
+    private void Editar(Convocatoria c) { modelo = new() { Id = c.Id, Codigo = c.Codigo, Nombre = c.Nombre, Periodo = c.Periodo, Inicio = c.Inicio, Fin = c.Fin, Estado = c.Estado, Descripcion = c.Descripcion }; abierto = true; }
+    private void Cerrar() => abierto = false;
+    private void Guardar() { abierto = false; Avisos.Exito("Convocatoria guardada"); }
+    private void Cerrar_() { pendiente = null; Avisos.Exito("Convocatoria cerrada"); }
+}

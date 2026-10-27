@@ -1,0 +1,18 @@
+<div class="empty">
+    <div class="empty-art">
+        <Icon Name="@Icono" Size="26" />
+    </div>
+    <strong>@Titulo</strong>
+    @if (!string.IsNullOrWhiteSpace(Mensaje))
+    {
+        <p>@Mensaje</p>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string Icono { get; set; } = "inbox";
+    [Parameter] public string Titulo { get; set; } = "Sin resultados";
+    [Parameter] public string? Mensaje { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

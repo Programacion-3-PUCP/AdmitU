@@ -1,0 +1,66 @@
+@page "/admin/postulantes"
+@inject ToastService Avisos
+
+<PageTitle>Postulantes · AdmitU</PageTitle>
+
+<PageHeader Titulo="Postulantes" Subtitulo="Personas registradas en el proceso de admisión, con su documento y datos de contacto." Migas="@(["Postulantes"])">
+    <Acciones>
+        <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Exportación generada")'><Icon Name="download" Size="16" />Exportar</button>
+    </Acciones>
+</PageHeader>
+
+<DataTable TItem="Postulante" Items="Filtrados" TextoBusqueda="@(p => $"{p.NombreCompleto} {p.Correo} {p.NumeroDocumento}")" TextoInicial="@q" Marcador="Buscar por nombre, correo o documento">
+    <Filtros>
+        <select class="select" aria-label="Filtrar por tipo de documento" @bind="tipo">
+            <option value="">Todos los documentos</option>
+            <option value="DNI">DNI</option>
+            <option value="CE">Carné de extranjería</option>
+        </select>
+        <select class="select" aria-label="Filtrar por correo" @bind="validacion">
+            <option value="">Cualquier correo</option>
+            <option value="si">Correo validado</option>
+            <option value="no">Sin validar</option>
+        </select>
+    </Filtros>
+    <Encabezado>
+        <th>Postulante</th><th>Documento</th><th>Contacto</th><th>Postulación</th><th>Correo</th><th class="th-actions">Acciones</th>
+    </Encabezado>
+    <Fila Context="p">
+        @{ var postulacion = DatosDemo.Postulaciones.FirstOrDefault(x => x.PostulanteId == p.Id); }
+        <tr>
+            <td>
+                <a class="cell-person" href="/admin/postulantes/@p.Id" style="color:inherit;text-decoration:none">
+                    <Avatar Nombre="@p.NombreCompleto" />
+                    <span><strong>@p.NombreCompleto</strong><small>@p.Correo</small></span>
+                </a>
+            </td>
+            <td><span class="mono">@p.TipoDocumento · @p.NumeroDocumento</span></td>
+            <td>@(p.Telefono ?? "—")</td>
+            <td>
+                @if (postulacion is null) { <span class="muted">Sin postulación</span> }
+                else { <StatusBadge Texto="@postulacion.Estado.Etiqueta()" Tono="@postulacion.Estado.Tono()" /> }
+            </td>
+            <td>
+                @if (p.CorreoValidado) { <StatusBadge Texto="Validado" Tono="success" /> }
+                else { <StatusBadge Texto="Sin validar" Tono="warning" /> }
+            </td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <a class="icon-btn brand" href="/admin/postulantes/@p.Id" title="Ver ficha" aria-label="Ver ficha de @p.NombreCompleto"><Icon Name="eye" Size="17" /></a>
+                    <button type="button" class="icon-btn brand" title="Enviar mensaje" aria-label="Enviar mensaje a @p.NombreCompleto" @onclick='() => Avisos.Exito("Mensaje enviado a " + p.Nombres)'><Icon Name="mail" Size="17" /></button>
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    [SupplyParameterFromQuery(Name = "q")] public string? q { get; set; }
+
+    private string tipo = "";
+    private string validacion = "";
+
+    private IEnumerable<Postulante> Filtrados => DatosDemo.Postulantes
+        .Where(p => tipo == "" || p.TipoDocumento == tipo)
+        .Where(p => validacion == "" || (validacion == "si") == p.CorreoValidado);
+}

@@ -1,0 +1,88 @@
+@typeparam TItem
+
+<section class="card table-card">
+    <div class="table-toolbar">
+        <label class="search">
+            <Icon Name="search" Size="16" />
+            <input type="search" placeholder="@Marcador" value="@texto" @oninput="Buscar" aria-label="Buscar en la tabla" />
+        </label>
+        @if (Filtros is not null)
+        {
+            <div class="toolbar-filters">@Filtros</div>
+        }
+        <span class="table-count">@Filtrados.Count @(Filtrados.Count == 1 ? "resultado" : "resultados")</span>
+    </div>
+
+    @if (Filtrados.Count == 0)
+    {
+        <EmptyState Titulo="No encontramos resultados" Mensaje="Prueba con otra búsqueda o cambia los filtros aplicados." Icono="search" />
+    }
+    else
+    {
+        <div class="table-scroll">
+            <table class="table">
+                <thead><tr>@Encabezado</tr></thead>
+                <tbody>
+                    @foreach (var item in Pagina)
+                    {
+                        @Fila(item)
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (Paginas > 1)
+        {
+            <footer class="pager">
+                <span>Mostrando @(inicio + 1)–@(Math.Min(inicio + TamanoPagina, Filtrados.Count)) de @Filtrados.Count</span>
+                <div class="pager-buttons">
+                    <button type="button" class="icon-btn" aria-label="Página anterior" disabled="@(indice == 0)" @onclick="() => indice--"><Icon Name="chevron-left" Size="16" /></button>
+                    @for (int p = 0; p < Paginas; p++)
+                    {
+                        int destino = p;
+                        <button type="button" class="page-btn @(p == indice ? "is-active" : "")" aria-current="@(p == indice ? "page" : null)" @onclick="() => indice = destino">@(p + 1)</button>
+                    }
+                    <button type="button" class="icon-btn" aria-label="Página siguiente" disabled="@(indice >= Paginas - 1)" @onclick="() => indice++"><Icon Name="chevron-right" Size="16" /></button>
+                </div>
+            </footer>
+        }
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public IEnumerable<TItem> Items { get; set; } = [];
+    [Parameter, EditorRequired] public RenderFragment Encabezado { get; set; } = default!;
+    [Parameter, EditorRequired] public RenderFragment<TItem> Fila { get; set; } = default!;
+    [Parameter] public Func<TItem, string>? TextoBusqueda { get; set; }
+    [Parameter] public RenderFragment? Filtros { get; set; }
+    [Parameter] public string Marcador { get; set; } = "Buscar...";
+    [Parameter] public int TamanoPagina { get; set; } = 8;
+    [Parameter] public string? TextoInicial { get; set; }
+
+    private string texto = "";
+    private int indice;
+    private bool inicializado;
+
+    protected override void OnParametersSet()
+    {
+        if (!inicializado)
+        {
+            texto = TextoInicial ?? "";
+            inicializado = true;
+        }
+        if (indice >= Paginas) indice = Math.Max(0, Paginas - 1);
+    }
+
+    private List<TItem> Filtrados => string.IsNullOrWhiteSpace(texto) || TextoBusqueda is null
+        ? Items.ToList()
+        : Items.Where(i => TextoBusqueda(i).Contains(texto.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private int Paginas => (int)Math.Ceiling(Filtrados.Count / (double)TamanoPagina);
+    private int inicio => indice * TamanoPagina;
+    private IEnumerable<TItem> Pagina => Filtrados.Skip(inicio).Take(TamanoPagina);
+
+    private void Buscar(ChangeEventArgs e)
+    {
+        texto = e.Value?.ToString() ?? "";
+        indice = 0;
+    }
+}

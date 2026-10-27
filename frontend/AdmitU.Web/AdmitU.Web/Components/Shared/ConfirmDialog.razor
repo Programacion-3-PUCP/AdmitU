@@ -1,0 +1,25 @@
+@if (Abierto)
+{
+    <div class="overlay" @onclick="Cancelar"></div>
+    <div class="dialog" role="alertdialog" aria-modal="true" aria-label="@Titulo">
+        <div class="dialog-icon"><Icon Name="alert" Size="22" /></div>
+        <h2>@Titulo</h2>
+        <p>@Mensaje</p>
+        <div class="dialog-actions">
+            <button type="button" class="btn btn-ghost" @onclick="Cancelar">Cancelar</button>
+            <button type="button" class="btn btn-danger" @onclick="Confirmar">@TextoConfirmar</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Abierto { get; set; }
+    [Parameter] public string Titulo { get; set; } = "¿Confirmar acción?";
+    [Parameter] public string Mensaje { get; set; } = "";
+    [Parameter] public string TextoConfirmar { get; set; } = "Confirmar";
+    [Parameter] public EventCallback OnConfirmar { get; set; }
+    [Parameter] public EventCallback OnCancelar { get; set; }
+
+    private Task Confirmar() => OnConfirmar.InvokeAsync();
+    private Task Cancelar() => OnCancelar.InvokeAsync();
+}

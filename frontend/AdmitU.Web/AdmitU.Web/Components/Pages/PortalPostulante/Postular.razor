@@ -1,0 +1,171 @@
+@page "/postulante/postular"
+@inject NavigationManager Navegacion
+@inject ToastService Avisos
+
+<PageTitle>Nueva postulación · AdmitU</PageTitle>
+
+<PageHeader Titulo="Nueva postulación" Subtitulo="Completa los cuatro pasos. Puedes volver atrás para corregir lo que necesites." Migas="@(["Mi postulación", "Nueva"])" Enlaces="@(["/postulante/mi-postulacion"])" />
+
+<ol class="wizard" aria-label="Pasos de la postulación">
+    @for (int i = 0; i < titulos.Length; i++)
+    {
+        int n = i;
+        <li class="@(n < paso ? "is-done" : n == paso ? "is-now" : "")" aria-current="@(n == paso ? "step" : null)">
+            <span class="wizard-dot">@if (n < paso) { <Icon Name="check" Size="16" /> } else { @(n + 1) }</span>
+            <span class="wizard-label">@titulos[n]</span>
+        </li>
+    }
+</ol>
+
+<section class="card card-pad">
+    @if (paso == 0)
+    {
+        <div class="form-section-head"><div><h2>¿A qué quieres postular?</h2><p class="page-sub" style="margin:4px 0 0">Elige la carrera, tu modalidad de ingreso y la sede donde rendirás la evaluación.</p></div></div>
+        <div class="form-grid">
+            <div class="field full">
+                <label for="carrera">Carrera <span class="req">*</span></label>
+                <select id="carrera" @bind="carreraId" class="@(error is not null && carreraId == 0 ? "invalid" : "")">
+                    <option value="0">Selecciona una carrera</option>
+                    @foreach (var g in DatosDemo.Carreras.Where(c => c.Activo).GroupBy(c => c.FacultadId))
+                    {
+                        <optgroup label="@DatosDemo.Facultad(g.Key)?.Nombre">
+                            @foreach (var c in g) { <option value="@c.Id">@c.Nombre · @c.Vacantes vacantes</option> }
+                        </optgroup>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label for="modalidad">Modalidad de ingreso <span class="req">*</span></label>
+                <select id="modalidad" @bind="modalidadId">
+                    @foreach (var m in DatosDemo.Modalidades.Where(m => m.Activo)) { <option value="@m.Id">@m.Nombre</option> }
+                </select>
+                <span class="hint">@DatosDemo.Modalidad(modalidadId)?.Descripcion</span>
+            </div>
+            <div class="field">
+                <label for="sede">Sede de evaluación <span class="req">*</span></label>
+                <select id="sede" @bind="sedeId">
+                    @foreach (var s in DatosDemo.Sedes.Where(s => s.Activo)) { <option value="@s.Id">@s.Nombre · @s.Ciudad</option> }
+                </select>
+            </div>
+        </div>
+    }
+    else if (paso == 1)
+    {
+        <div class="form-section-head"><div><h2>Revisa tus datos</h2><p class="page-sub" style="margin:4px 0 0">Usaremos la información de tu perfil. Si algo cambió, actualízala antes de continuar.</p></div></div>
+        <dl class="dl">
+            <div><dt>Nombre completo</dt><dd>@yo.NombreCompleto</dd></div>
+            <div><dt>Documento</dt><dd>@yo.TipoDocumento · @yo.NumeroDocumento</dd></div>
+            <div><dt>Correo electrónico</dt><dd>@yo.Correo</dd></div>
+            <div><dt>Teléfono</dt><dd>@(yo.Telefono ?? "No registrado")</dd></div>
+            <div><dt>Fecha de nacimiento</dt><dd>@Formato.Fecha(yo.FechaNacimiento)</dd></div>
+            <div><dt>Correo</dt><dd><StatusBadge Texto="@(yo.CorreoValidado ? "Validado" : "Sin validar")" Tono="@(yo.CorreoValidado ? "success" : "warning")" /></dd></div>
+        </dl>
+        <a class="btn btn-ghost btn-sm" style="margin-top:20px" href="/postulante/perfil"><Icon Name="pencil" Size="14" />Editar mi perfil</a>
+    }
+    else if (paso == 2)
+    {
+        <div class="form-section-head"><div><h2>Sube tus documentos</h2><p class="page-sub" style="margin:4px 0 0">Todos los requisitos son obligatorios. Un evaluador los revisará después de enviar.</p></div></div>
+        <div class="stack">
+            @foreach (var r in requisitos)
+            {
+                var requisito = r;
+                <div class="field">
+                    <label>@requisito <span class="req">*</span></label>
+                    <ZonaCarga Etiqueta="@($"Subir {requisito.ToLowerInvariant()}")" OnArchivo="nombre => Cargado(requisito, nombre)" />
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="form-section-head"><div><h2>Confirma y paga</h2><p class="page-sub" style="margin:4px 0 0">Revisa el resumen. Al enviar se generará el pago de tu derecho de inscripción.</p></div></div>
+        <div class="grid-eq" style="margin-top:0">
+            <div class="stack">
+                <div class="summary-rows">
+                    <div><span>Carrera</span><strong>@DatosDemo.Carrera(carreraId)?.Nombre</strong></div>
+                    <div><span>Modalidad</span><strong>@DatosDemo.Modalidad(modalidadId)?.Nombre</strong></div>
+                    <div><span>Sede</span><strong>@DatosDemo.Sede(sedeId)?.Nombre</strong></div>
+                    <div><span>Documentos cargados</span><strong>@archivos.Count de @requisitos.Length</strong></div>
+                </div>
+            </div>
+            <div class="stack">
+                <div class="field">
+                    <label for="medio">Medio de pago</label>
+                    <select id="medio" @bind="medio">
+                        <option>Tarjeta</option><option>Transferencia</option><option>Pasarela web</option>
+                    </select>
+                </div>
+                <div class="pay-total"><span>Derecho de inscripción</span><strong>@Formato.Soles(modalidadId == 3 ? 320m : 250m)</strong></div>
+            </div>
+        </div>
+        <label class="switch" style="margin-top:20px">
+            <input type="checkbox" @bind="acepta" />
+            <span><strong>Declaro que la información es verdadera</strong><small>Acepto los términos y condiciones del proceso de admisión.</small></span>
+        </label>
+    }
+
+    @if (error is not null)
+    {
+        <p class="validation-message" role="alert" style="margin-top:16px">@error</p>
+    }
+
+    <div class="form-footer">
+        @if (paso > 0)
+        {
+            <button type="button" class="btn btn-ghost" @onclick="Atras"><Icon Name="arrow-left" Size="16" />Atrás</button>
+        }
+        else
+        {
+            <a class="btn btn-ghost" href="/postulante">Cancelar</a>
+        }
+        @if (paso < titulos.Length - 1)
+        {
+            <button type="button" class="btn btn-primary" @onclick="Siguiente">Continuar<Icon Name="arrow-right" Size="16" /></button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-primary" @onclick="Enviar"><Icon Name="check" Size="16" />Enviar postulación</button>
+        }
+    </div>
+</section>
+
+@code {
+    private static readonly string[] titulos = ["Carrera", "Mis datos", "Documentos", "Confirmar"];
+    private static readonly string[] requisitos = ["Documento de identidad", "Certificado de estudios", "Fotografía tamaño carné"];
+
+    private readonly Postulante yo = DatosDemo.Postulante(DatosDemo.PostulanteActualId)!;
+    private int paso;
+    private int carreraId;
+    private int modalidadId = DatosDemo.Modalidades[0].Id;
+    private int sedeId = DatosDemo.Sedes[0].Id;
+    private string medio = "Tarjeta";
+    private bool acepta;
+    private string? error;
+    private readonly Dictionary<string, string> archivos = [];
+
+    private void Cargado(string requisito, string nombre) { archivos[requisito] = nombre; error = null; }
+
+    private void Atras() { error = null; paso--; }
+
+    private void Siguiente()
+    {
+        error = paso switch
+        {
+            0 when carreraId == 0 => "Selecciona la carrera a la que deseas postular.",
+            2 when archivos.Count < requisitos.Length => "Sube todos los documentos para continuar.",
+            _ => null
+        };
+        if (error is null) paso++;
+    }
+
+    private void Enviar()
+    {
+        if (!acepta)
+        {
+            error = "Debes aceptar la declaración para enviar tu postulación.";
+            return;
+        }
+        Avisos.Exito("Tu postulación fue enviada");
+        Navegacion.NavigateTo("/postulante/mi-postulacion");
+    }
+}

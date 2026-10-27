@@ -1,0 +1,136 @@
+@page "/admin"
+@using System.Globalization
+
+<PageTitle>Resumen · AdmitU</PageTitle>
+
+<section class="hero" aria-label="Convocatoria activa">
+    <div>
+        <span class="eyebrow"><i class="dot"></i>Convocatoria en curso</span>
+        <h2>@conv.Nombre</h2>
+        <p>@conv.Descripcion Quedan <strong>@diasRestantes días</strong> para el cierre del proceso.</p>
+        <div class="hero-actions">
+            <a class="btn btn-light" href="/admin/evaluadores"><Icon Name="user-check" Size="16" />Gestionar evaluadores</a>
+            <a class="btn btn-outline-light" href="/admin/postulaciones">Ver postulaciones<Icon Name="arrow-right" Size="16" /></a>
+        </div>
+    </div>
+    <div class="hero-side">
+        <div class="progress-meta" style="color:#cfd6ff"><span>Avance del proceso</span><strong style="color:#fff">@avance%</strong></div>
+        <div class="hero-progress" role="progressbar" aria-valuenow="@avance" aria-valuemin="0" aria-valuemax="100"><i style="width:@avance.ToString(CultureInfo.InvariantCulture)%"></i></div>
+        <div class="hero-dates"><span>@Formato.Fecha(conv.Inicio)</span><span>@Formato.Fecha(conv.Fin)</span></div>
+        <div class="hero-metrics">
+            <div><strong>@Postulaciones.Count</strong><span>Postulaciones</span></div>
+            <div><strong>@vacantes</strong><span>Vacantes</span></div>
+            <div><strong>@DatosDemo.Sedes.Count(s => s.Activo)</strong><span>Sedes</span></div>
+        </div>
+    </div>
+</section>
+
+<section class="stats" aria-label="Indicadores">
+    <StatCard Etiqueta="Postulantes registrados" Valor="@DatosDemo.Postulantes.Count.ToString()" Icono="users" Tono="brand" Variacion="+18%" Tendencia="DatosDemo.PostulantesPorSemana" />
+    <StatCard Etiqueta="Postulaciones enviadas" Valor="@enviadas.ToString()" Icono="file-text" Tono="accent" Variacion="+24%" Tendencia="DatosDemo.PostulacionesPorSemana" />
+    <StatCard Etiqueta="Pagos pendientes" Valor="@pendientes.ToString()" Icono="clock" Tono="warning" Tendencia="DatosDemo.IngresosPorSemana" />
+    <StatCard Etiqueta="Recaudado" Valor="@Formato.Soles(recaudado)" Icono="wallet" Tono="success" Variacion="+12%" Tendencia="DatosDemo.IngresosPorSemana" />
+</section>
+
+<div class="grid-2">
+    <section class="card card-pad">
+        <div class="card-head">
+            <div><h2>Postulaciones por semana</h2><p>Últimas 8 semanas del proceso</p></div>
+            <StatusBadge Texto="Tendencia al alza" Tono="success" />
+        </div>
+        <ColumnChart Valores="DatosDemo.PostulacionesPorSemana" Etiquetas="semanas" Titulo="Postulaciones por semana" />
+    </section>
+
+    <section class="card card-pad">
+        <div class="card-head"><div><h2>Estado de postulaciones</h2><p>Distribución actual</p></div></div>
+        <DonutChart Segmentos="segmentos" Titulo="postulaciones" />
+    </section>
+</div>
+
+<div class="grid-3">
+    <section class="card card-pad">
+        <div class="card-head"><div><h2>Carreras más solicitadas</h2><p>Por número de postulaciones</p></div></div>
+        <RankingBars Items="ranking" />
+    </section>
+
+    <section class="card card-pad">
+        <div class="card-head"><h2>Próximas fechas</h2><a class="link-more" href="/admin/convocatorias">Calendario<Icon Name="arrow-up-right" Size="14" /></a></div>
+        <div class="dates">
+            @foreach (var h in DatosDemo.Hitos)
+            {
+                <div class="date-row @(h.Fecha < DatosDemo.Hoy ? "is-past" : "")">
+                    <div class="date-chip">@h.Fecha.Day<small>@Formato.Mes(h.Fecha)</small></div>
+                    <div><strong>@h.Nombre</strong><small>@h.Detalle</small></div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="card card-pad">
+        <div class="card-head"><h2>Acceso rápido</h2></div>
+        <div class="quick">
+            <a href="/admin/evaluadores"><span class="q-icon"><Icon Name="user-check" Size="18" /></span>Asignar evaluadores</a>
+            <a href="/admin/convocatorias"><span class="q-icon"><Icon Name="calendar" Size="18" /></span>Convocatorias</a>
+            <a href="/admin/documentos"><span class="q-icon"><Icon Name="folder" Size="18" /></span>Ver documentos</a>
+            <a href="/admin/pagos"><span class="q-icon"><Icon Name="credit-card" Size="18" /></span>Ver pagos</a>
+        </div>
+    </section>
+</div>
+
+<section class="card card-pad" style="margin-top:18px">
+    <div class="card-head"><div><h2>Actividad reciente</h2><p>Lo último que ocurrió en el proceso</p></div><a class="link-more" href="/admin/notificaciones">Ver todo<Icon Name="arrow-up-right" Size="14" /></a></div>
+    <ul class="feed">
+        @foreach (var n in DatosDemo.Notificaciones.Where(x => x.Rol == "Administrador").OrderByDescending(x => x.Fecha).Take(4))
+        {
+            <li class="@(n.Leida ? "" : "is-unread")">
+                <span class="feed-icon t-@n.Tipo.ToLowerInvariant()"><Icon Name="@IconoDe(n.Tipo)" Size="18" /></span>
+                <div class="feed-text"><strong>@n.Titulo</strong><p>@n.Detalle</p></div>
+                <time>@Formato.Relativo(n.Fecha)</time>
+            </li>
+        }
+    </ul>
+</section>
+
+@code {
+    private static readonly string[] semanas = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"];
+
+    private readonly Convocatoria conv = DatosDemo.Convocatorias.First(c => c.Estado == EstadoConvocatoria.Publicada);
+    private IReadOnlyList<Postulacion> Postulaciones => DatosDemo.Postulaciones;
+    private int diasRestantes, enviadas, pendientes, vacantes;
+    private double avance;
+    private decimal recaudado;
+    private List<DonutChart.Segmento> segmentos = [];
+    private List<(string Etiqueta, int Valor)> ranking = [];
+
+    protected override void OnInitialized()
+    {
+        diasRestantes = conv.Fin.DayNumber - DatosDemo.Hoy.DayNumber;
+        avance = Math.Round((DatosDemo.Hoy.DayNumber - conv.Inicio.DayNumber) * 100.0 / (conv.Fin.DayNumber - conv.Inicio.DayNumber));
+        enviadas = Postulaciones.Count(p => p.Estado != EstadoPostulacion.Borrador);
+        pendientes = DatosDemo.Pagos.Count(p => p.Estado == EstadoPago.Pendiente);
+        recaudado = DatosDemo.Pagos.Where(p => p.Estado == EstadoPago.Pagado).Sum(p => p.Monto);
+        vacantes = DatosDemo.Carreras.Where(c => c.Activo).Sum(c => c.Vacantes);
+
+        string[] colores = ["var(--c-3)", "var(--c-1)", "var(--c-4)", "var(--c-6)", "var(--c-5)", "var(--c-2)"];
+        var orden = new[] { EstadoPostulacion.Borrador, EstadoPostulacion.Enviada, EstadoPostulacion.EnRevision, EstadoPostulacion.Observada, EstadoPostulacion.Admitida, EstadoPostulacion.NoAdmitida };
+        segmentos = orden
+            .Select((e, i) => new DonutChart.Segmento(e.Etiqueta(), Postulaciones.Count(p => p.Estado == e), colores[i]))
+            .ToList();
+
+        ranking = Postulaciones
+            .GroupBy(p => p.CarreraId)
+            .Select(g => (DatosDemo.Carrera(g.Key)?.Nombre ?? "—", g.Count()))
+            .OrderByDescending(x => x.Item2)
+            .Take(5)
+            .ToList();
+    }
+
+    private static string IconoDe(string tipo) => tipo switch
+    {
+        "Pago" => "credit-card",
+        "Documento" => "paperclip",
+        "Convocatoria" => "calendar",
+        "Postulante" => "users",
+        _ => "file-text"
+    };
+}

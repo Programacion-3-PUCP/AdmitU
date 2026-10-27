@@ -1,0 +1,148 @@
+@page "/evaluador/postulaciones/{Id:int}"
+@inject NavigationManager Navegacion
+@inject ToastService Avisos
+
+@if (p is null)
+{
+    <PageTitle>Postulación no encontrada · AdmitU</PageTitle>
+    <PageHeader Titulo="Postulación no encontrada" Migas="@(["Mis postulaciones", "No encontrada"])" Enlaces="@(["/evaluador/postulaciones"])" />
+    <section class="card"><EmptyState Titulo="No tienes acceso a esta postulación" Mensaje="Solo puedes revisar las postulaciones que te asignaron.">
+        <a class="btn btn-primary" style="margin-top:14px" href="/evaluador/postulaciones">Volver a mi bandeja</a>
+    </EmptyState></section>
+}
+else
+{
+    <PageTitle>Revisión @p.Codigo · AdmitU</PageTitle>
+    <PageHeader Titulo="@($"Revisión de {p.Codigo}")" Subtitulo="@($"{persona?.NombreCompleto} · {DatosDemo.Carrera(p.CarreraId)?.Nombre}")"
+                Migas="@(["Mis postulaciones", p.Codigo])" Enlaces="@(["/evaluador/postulaciones"])">
+        <Acciones>
+            <a class="btn btn-ghost" href="/evaluador/postulaciones"><Icon Name="arrow-left" Size="16" />Volver</a>
+            <StatusBadge Texto="@p.Estado.Etiqueta()" Tono="@p.Estado.Tono()" />
+        </Acciones>
+    </PageHeader>
+
+    <div class="detail-grid">
+        <div class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><div><h2>Documentos del postulante</h2><p>Revisa cada archivo y marca su estado.</p></div></div>
+                <ul class="list-rows">
+                    @foreach (var d in docs)
+                    {
+                        var doc = d;
+                        <li style="flex-wrap:wrap;align-items:flex-start">
+                            <span class="file-icon">@doc.Tipo</span>
+                            <div class="file-meta"><strong>@doc.Requisito</strong><small>@doc.Archivo · @Formato.Tamanio(doc.TamanioKb)</small></div>
+                            <StatusBadge Texto="@doc.Estado.Etiqueta()" Tono="@doc.Estado.Tono()" />
+                            <div style="flex-basis:100%;display:flex;gap:8px;flex-wrap:wrap;padding-left:54px">
+                                <button type="button" class="btn btn-ghost btn-sm" @onclick='() => Avisos.Exito("Abriendo documento")'><Icon Name="eye" Size="14" />Ver</button>
+                                <button type="button" class="btn btn-ghost btn-sm" disabled="@(!Editable)" @onclick="() => Marcar(doc, EstadoDocumento.Aprobado)"><Icon Name="check" Size="14" />Aprobar</button>
+                                <button type="button" class="btn btn-ghost btn-sm" disabled="@(!Editable)" @onclick="() => Marcar(doc, EstadoDocumento.Observado)"><Icon Name="alert" Size="14" />Observar</button>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><div><h2>Mi decisión</h2><p>@(Editable ? "Registra el resultado de tu evaluación." : "Esta postulación ya fue resuelta.")</p></div></div>
+                <div class="field">
+                    <label for="comentario">Comentario para el postulante</label>
+                    <textarea id="comentario" @bind="comentario" disabled="@(!Editable)" placeholder="Explica el motivo de tu decisión, sobre todo si observas o no admites."></textarea>
+                </div>
+                @if (error is not null) { <p class="validation-message" role="alert" style="margin-top:12px">@error</p> }
+                @if (Editable)
+                {
+                    <div class="form-footer">
+                        <button type="button" class="btn btn-ghost" @onclick="() => Decidir(EstadoPostulacion.NoAdmitida)">No admitir</button>
+                        <button type="button" class="btn btn-ghost" @onclick="() => Decidir(EstadoPostulacion.Observada)"><Icon Name="alert" Size="16" />Observar</button>
+                        <button type="button" class="btn btn-primary" @onclick="() => Decidir(EstadoPostulacion.Admitida)"><Icon Name="check" Size="16" />Admitir</button>
+                    </div>
+                }
+            </section>
+        </div>
+
+        <aside class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><h2>Postulante</h2></div>
+                @if (persona is not null)
+                {
+                    <div class="cell-person"><Avatar Nombre="@persona.NombreCompleto" /><span><strong>@persona.NombreCompleto</strong><small>@persona.TipoDocumento · @persona.NumeroDocumento</small></span></div>
+                    <div class="summary-rows" style="margin-top:16px">
+                        <div><span>Correo</span><strong>@persona.Correo</strong></div>
+                        <div><span>Teléfono</span><strong>@(persona.Telefono ?? "—")</strong></div>
+                        <div><span>Nacimiento</span><strong>@Formato.Fecha(persona.FechaNacimiento)</strong></div>
+                        @if (persona.TieneDiscapacidad) { <div><span>CONADIS</span><strong>@persona.CarnetConadis</strong></div> }
+                    </div>
+                }
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Postulación</h2></div>
+                <div class="summary-rows">
+                    <div><span>Carrera</span><strong>@DatosDemo.Carrera(p.CarreraId)?.Nombre</strong></div>
+                    <div><span>Modalidad</span><strong>@DatosDemo.Modalidad(p.ModalidadId)?.Nombre</strong></div>
+                    <div><span>Sede</span><strong>@DatosDemo.Sede(p.SedeId)?.Nombre</strong></div>
+                    <div><span>Enviada</span><strong>@Formato.Fecha(p.FechaEnvio)</strong></div>
+                    <div><span>Pago</span><StatusBadge Texto="@(pago?.Estado.Etiqueta() ?? "Sin pago")" Tono="@(pago?.Estado.Tono() ?? "neutral")" /></div>
+                </div>
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Progreso</h2></div>
+                <ProgresoPostulacion Postulacion="p" />
+            </section>
+        </aside>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Postulacion? p;
+    private Postulante? persona;
+    private Pago? pago;
+    private List<Documento> docs = [];
+    private string comentario = "";
+    private string? error;
+
+    private bool Editable => p is not null && p.Estado is EstadoPostulacion.Enviada or EstadoPostulacion.EnRevision;
+
+    protected override void OnParametersSet()
+    {
+        p = DatosDemo.Postulaciones.FirstOrDefault(x => x.Id == Id && x.EvaluadorId == DatosDemo.EvaluadorActualId);
+        if (p is null) return;
+        persona = DatosDemo.Postulante(p.PostulanteId);
+        pago = DatosDemo.Pagos.FirstOrDefault(x => x.PostulacionId == p.Id);
+        // Copia local para poder marcar el estado de cada documento durante la revisión.
+        docs = DatosDemo.Documentos.Where(x => x.PostulacionId == p.Id)
+            .Select(x => new Documento
+            {
+                Id = x.Id, PostulacionId = x.PostulacionId, Requisito = x.Requisito, Archivo = x.Archivo, Tipo = x.Tipo,
+                TamanioKb = x.TamanioKb, FechaCarga = x.FechaCarga, Estado = x.Estado, Comentario = x.Comentario
+            }).ToList();
+        comentario = p.Observacion ?? "";
+    }
+
+    private void Marcar(Documento doc, EstadoDocumento estado)
+    {
+        doc.Estado = estado;
+        Avisos.Exito(estado == EstadoDocumento.Aprobado ? "Documento aprobado" : "Documento observado");
+    }
+
+    private void Decidir(EstadoPostulacion decision)
+    {
+        if (decision != EstadoPostulacion.Admitida && string.IsNullOrWhiteSpace(comentario))
+        {
+            error = "Escribe un comentario para explicar tu decisión.";
+            return;
+        }
+        error = null;
+        Avisos.Exito(decision switch
+        {
+            EstadoPostulacion.Admitida => "Postulación admitida",
+            EstadoPostulacion.Observada => "Postulación observada",
+            _ => "Postulación no admitida"
+        });
+        Navegacion.NavigateTo("/evaluador/postulaciones");
+    }
+}

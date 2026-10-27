@@ -1,0 +1,31 @@
+<div class="dropzone @(archivo is null ? "" : "has-file")">
+    <label>
+        <InputFile OnChange="Elegido" accept=".pdf,.jpg,.jpeg,.png" class="sr-only" />
+        <span class="dropzone-icon"><Icon Name="@(archivo is null ? "upload" : "check-circle")" Size="20" /></span>
+        <span class="dropzone-text">
+            @if (archivo is null)
+            {
+                <strong>@Etiqueta</strong>
+                <small>Arrastra el archivo o haz clic para elegirlo · PDF, JPG o PNG hasta 5 MB</small>
+            }
+            else
+            {
+                <strong>@archivo</strong>
+                <small>Archivo seleccionado · haz clic para cambiarlo</small>
+            }
+        </span>
+    </label>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Etiqueta { get; set; } = "";
+    [Parameter] public EventCallback<string> OnArchivo { get; set; }
+
+    private string? archivo;
+
+    private async Task Elegido(InputFileChangeEventArgs e)
+    {
+        archivo = e.File.Name;
+        await OnArchivo.InvokeAsync(archivo);
+    }
+}

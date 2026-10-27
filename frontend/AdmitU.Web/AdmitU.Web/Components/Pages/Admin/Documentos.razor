@@ -1,0 +1,53 @@
+@page "/admin/documentos"
+@inject ToastService Avisos
+
+<PageTitle>Documentos · AdmitU</PageTitle>
+
+<PageHeader Titulo="Documentos" Subtitulo="Archivos cargados por los postulantes y su estado de revisión." Migas="@(["Documentos"])">
+    <Acciones>
+        <button type="button" class="btn btn-primary" @onclick='() => Avisos.Exito("Descarga preparada")'><Icon Name="download" Size="16" />Descargar lote</button>
+    </Acciones>
+</PageHeader>
+
+<div class="chips" role="group" aria-label="Filtrar por estado">
+    <button type="button" class="chip @(estado is null ? "is-active" : "")" @onclick="() => estado = null">Todos<em>@DatosDemo.Documentos.Count</em></button>
+    @foreach (var e in Enum.GetValues<EstadoDocumento>())
+    {
+        var actual = e;
+        <button type="button" class="chip @(estado == actual ? "is-active" : "")" @onclick="() => estado = actual">@actual.Etiqueta()<em>@DatosDemo.Documentos.Count(x => x.Estado == actual)</em></button>
+    }
+</div>
+
+<DataTable TItem="Documento" Items="Filtrados" TextoBusqueda="@(d => $"{d.Archivo} {d.Requisito} {Persona(d)?.NombreCompleto}")" Marcador="Buscar por archivo, requisito o postulante">
+    <Encabezado>
+        <th>Archivo</th><th>Postulante</th><th>Requisito</th><th>Cargado</th><th>Estado</th><th class="th-actions">Acciones</th>
+    </Encabezado>
+    <Fila Context="d">
+        <tr>
+            <td>
+                <div class="cell-person"><span class="file-icon">@d.Tipo</span>
+                    <span><strong>@d.Archivo</strong><small>@Formato.Tamanio(d.TamanioKb)</small></span></div>
+            </td>
+            <td>@Persona(d)?.NombreCompleto</td>
+            <td>@d.Requisito</td>
+            <td>@Formato.Fecha(d.FechaCarga)</td>
+            <td>
+                <StatusBadge Texto="@d.Estado.Etiqueta()" Tono="@d.Estado.Tono()" />
+                @if (!string.IsNullOrWhiteSpace(d.Comentario)) { <span class="cell-sub" title="@d.Comentario">Con comentario</span> }
+            </td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <button type="button" class="icon-btn brand" title="Ver" aria-label="Ver @d.Archivo" @onclick='() => Avisos.Exito("Abriendo documento")'><Icon Name="eye" Size="17" /></button>
+                    <button type="button" class="icon-btn brand" title="Descargar" aria-label="Descargar @d.Archivo" @onclick='() => Avisos.Exito("Descarga iniciada")'><Icon Name="download" Size="17" /></button>
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    private EstadoDocumento? estado;
+
+    private IEnumerable<Documento> Filtrados => DatosDemo.Documentos.Where(d => estado is null || d.Estado == estado);
+    private static Postulante? Persona(Documento d) => DatosDemo.Postulante(DatosDemo.Postulacion(d.PostulacionId)?.PostulanteId ?? 0);
+}

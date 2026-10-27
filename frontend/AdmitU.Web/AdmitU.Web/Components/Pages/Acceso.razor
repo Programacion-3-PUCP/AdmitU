@@ -1,0 +1,78 @@
+@page "/"
+@layout AdmitU.Web.Components.Layout.AccesoLayout
+@inject NavigationManager Navegacion
+
+<PageTitle>Ingresar · AdmitU</PageTitle>
+
+<div class="login">
+    <section class="login-brand" aria-hidden="false">
+        <a class="brand" href="/">
+            <span class="brand-mark"><Icon Name="graduation-cap" Size="22" /></span>
+            <span class="brand-text"><strong>admit<em>U</em></strong><small>Gestión de admisiones</small></span>
+        </a>
+        <div class="login-copy">
+            <h2>Un solo lugar para todo el proceso de admisión.</h2>
+            <p>Postula, evalúa y administra con trazabilidad completa, sin papeles ni hojas de cálculo dispersas.</p>
+        </div>
+        <ul class="login-points">
+            <li><span><Icon Name="check" Size="16" /></span>Seguimiento en tiempo real de cada postulación</li>
+            <li><span><Icon Name="check" Size="16" /></span>Documentos y pagos centralizados y seguros</li>
+            <li><span><Icon Name="check" Size="16" /></span>Evaluación ordenada con historial de decisiones</li>
+        </ul>
+    </section>
+
+    <section class="login-panel">
+        <div class="login-card">
+            <h1>Bienvenido</h1>
+            <p class="page-sub">Selecciona tu perfil e ingresa a tu portal.</p>
+
+            <div class="roles" role="radiogroup" aria-label="Tipo de usuario">
+                @foreach (var r in roles)
+                {
+                    var actual = r;
+                    <button type="button" role="radio" aria-checked="@(rol == actual.Clave)" class="role @(rol == actual.Clave ? "is-active" : "")" @onclick="() => Elegir(actual)">
+                        <span class="role-icon"><Icon Name="@actual.Icono" Size="20" /></span>
+                        <strong>@actual.Nombre</strong>
+                        <small>@actual.Detalle</small>
+                    </button>
+                }
+            </div>
+
+            <form class="stack" @onsubmit="Ingresar" @onsubmit:preventDefault style="gap:16px">
+                <div class="field">
+                    <label for="correo">Correo institucional</label>
+                    <input id="correo" type="email" @bind="correo" autocomplete="username" />
+                </div>
+                <div class="field">
+                    <label for="clave">Contraseña</label>
+                    <input id="clave" type="password" @bind="clave" autocomplete="current-password" />
+                </div>
+                <button type="submit" class="btn btn-primary" style="height:46px">Ingresar<Icon Name="arrow-right" Size="16" /></button>
+            </form>
+            <p class="hint" style="margin-top:18px;text-align:center">¿Olvidaste tu contraseña? Contacta a la oficina de admisión.</p>
+        </div>
+    </section>
+</div>
+
+@code {
+    private sealed record Rol(string Clave, string Nombre, string Detalle, string Icono, string Correo, string Ruta);
+
+    private static readonly Rol[] roles =
+    [
+        new("postulante", "Postulante", "Postula y sigue tu proceso", "graduation-cap", "luis.vargas@example.com", "/postulante"),
+        new("evaluador", "Evaluador", "Revisa y califica", "user-check", "c.villanueva@admitu.edu.pe", "/evaluador"),
+        new("admin", "Administrador", "Gestiona la admisión", "dashboard", "admin@admitu.edu.pe", "/admin")
+    ];
+
+    private string rol = "postulante";
+    private string correo = roles[0].Correo;
+    private string clave = "contraseña";
+
+    private void Elegir(Rol r)
+    {
+        rol = r.Clave;
+        correo = r.Correo;
+    }
+
+    private void Ingresar() => Navegacion.NavigateTo(roles.First(r => r.Clave == rol).Ruta);
+}

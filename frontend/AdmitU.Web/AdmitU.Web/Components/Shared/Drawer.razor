@@ -1,0 +1,27 @@
+@if (Abierto)
+{
+    <div class="overlay" @onclick="Cerrar"></div>
+    <aside class="drawer" role="dialog" aria-modal="true" aria-label="@Titulo">
+        <header class="drawer-head">
+            <div>
+                <h2>@Titulo</h2>
+                @if (!string.IsNullOrWhiteSpace(Descripcion))
+                {
+                    <p>@Descripcion</p>
+                }
+            </div>
+            <button type="button" class="icon-btn" aria-label="Cerrar panel" @onclick="Cerrar"><Icon Name="x" /></button>
+        </header>
+        @ChildContent
+    </aside>
+}
+
+@code {
+    [Parameter] public bool Abierto { get; set; }
+    [Parameter, EditorRequired] public string Titulo { get; set; } = "";
+    [Parameter] public string? Descripcion { get; set; }
+    [Parameter] public EventCallback OnCerrar { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private Task Cerrar() => OnCerrar.InvokeAsync();
+}

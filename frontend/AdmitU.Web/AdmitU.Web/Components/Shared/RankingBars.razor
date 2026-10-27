@@ -1,0 +1,18 @@
+@using System.Globalization
+
+<ul class="ranking">
+    @foreach (var (etiqueta, valor) in Items)
+    {
+        var ancho = Maximo == 0 ? 0 : valor * 100.0 / Maximo;
+        <li>
+            <div class="ranking-head"><span>@etiqueta</span><strong>@valor</strong></div>
+            <div class="ranking-track"><div class="ranking-fill" style="width:@ancho.ToString("0.#", CultureInfo.InvariantCulture)%"></div></div>
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<(string Etiqueta, int Valor)> Items { get; set; } = [];
+
+    private int Maximo => Items.Count == 0 ? 0 : Items.Max(i => i.Valor);
+}

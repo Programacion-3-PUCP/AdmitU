@@ -1,0 +1,69 @@
+@page "/admin/evaluadores"
+@using System.Globalization
+@inject ToastService Avisos
+
+<PageTitle>Evaluadores · AdmitU</PageTitle>
+
+<PageHeader Titulo="Evaluadores" Subtitulo="Docentes a cargo de revisar y calificar las postulaciones asignadas." Migas="@(["Evaluadores"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nuevo"><Icon Name="plus" Size="16" />Nuevo evaluador</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="Evaluador" Items="DatosDemo.Evaluadores" TextoBusqueda="@(e => $"{e.Nombre} {e.Correo} {e.Especialidad}")" Marcador="Buscar por nombre, correo o especialidad">
+    <Encabezado><th>Evaluador</th><th>Especialidad</th><th style="min-width:200px">Avance de evaluación</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="e">
+        @{ var pct = e.Asignadas == 0 ? 0 : (int)Math.Round(e.Evaluadas * 100.0 / e.Asignadas); }
+        <tr>
+            <td><div class="cell-person"><Avatar Nombre="@e.Nombre" /><span><strong>@e.Nombre</strong><small>@e.Correo</small></span></div></td>
+            <td>@e.Especialidad</td>
+            <td>
+                <div class="progress-meta"><span>@e.Evaluadas de @e.Asignadas</span><strong>@pct%</strong></div>
+                <div class="conv-bar"><i style="width:@pct.ToString(CultureInfo.InvariantCulture)%"></i></div>
+            </td>
+            <td><StatusBadge Texto="@(e.Activo ? "Activo" : "Inactivo")" Tono="@(e.Activo ? "success" : "neutral")" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <a class="icon-btn brand" href="/admin/postulaciones" title="Ver postulaciones" aria-label="Ver postulaciones de @e.Nombre"><Icon Name="file-text" Size="17" /></a>
+                    <button type="button" class="icon-btn brand" title="Editar" aria-label="Editar @e.Nombre" @onclick="() => Editar(e)"><Icon Name="pencil" Size="17" /></button>
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nuevo evaluador" : "Editar evaluador")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field"><label for="e-nombre">Nombre completo <span class="req">*</span></label><InputText id="e-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Dra. Carmen Villanueva" /><ValidationMessage For="() => modelo.Nombre" /></div>
+            <div class="field"><label for="e-correo">Correo institucional <span class="req">*</span></label><InputText id="e-correo" @bind-Value="modelo.Correo" placeholder="nombre@admitu.edu.pe" /><ValidationMessage For="() => modelo.Correo" /></div>
+            <div class="field"><label for="e-esp">Especialidad <span class="req">*</span></label><InputText id="e-esp" @bind-Value="modelo.Especialidad" placeholder="Ej. Ingeniería" /><ValidationMessage For="() => modelo.Especialidad" /></div>
+            <label class="switch"><InputCheckbox @bind-Value="modelo.Activo" /><span><strong>Evaluador activo</strong><small>Solo los activos pueden recibir postulaciones.</small></span></label>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+@code {
+    private bool abierto;
+    private FormularioEvaluador modelo = new();
+
+    private void Nuevo() { modelo = new(); abierto = true; }
+    private void Editar(Evaluador e) { modelo = new() { Id = e.Id, Nombre = e.Nombre, Correo = e.Correo, Especialidad = e.Especialidad, Activo = e.Activo }; abierto = true; }
+    private void Cerrar() => abierto = false;
+    private void Guardar() { abierto = false; Avisos.Exito("Evaluador guardado"); }
+
+    private sealed class FormularioEvaluador
+    {
+        public int Id { get; set; }
+        [Required(ErrorMessage = "Ingrese el nombre.")] [StringLength(100)]
+        public string Nombre { get; set; } = "";
+        [Required(ErrorMessage = "Ingrese el correo.")] [EmailAddress(ErrorMessage = "Ingrese un correo válido.")]
+        public string Correo { get; set; } = "";
+        [Required(ErrorMessage = "Ingrese la especialidad.")] [StringLength(60)]
+        public string Especialidad { get; set; } = "";
+        public bool Activo { get; set; } = true;
+    }
+}

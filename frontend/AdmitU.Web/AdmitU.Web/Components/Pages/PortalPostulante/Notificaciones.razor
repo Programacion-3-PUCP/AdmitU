@@ -1,0 +1,10 @@
+@page "/postulante/notificaciones"
+@inject ToastService Avisos
+
+<PageTitle>Notificaciones · AdmitU</PageTitle>
+
+<PageHeader Titulo="Notificaciones" Subtitulo="Avisos sobre tu postulación, documentos y pagos." Migas="@(["Notificaciones"])">
+    <Acciones><button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Notificaciones marcadas como leídas")'><Icon Name="check" Size="16" />Marcar todo como leído</button></Acciones>
+</PageHeader>
+
+<NotificacionesPanel Items="@DatosDemo.Notificaciones.Where(n => n.Rol == "Postulante").ToList()" />

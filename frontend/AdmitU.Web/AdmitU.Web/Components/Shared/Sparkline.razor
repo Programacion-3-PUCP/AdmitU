@@ -1,0 +1,33 @@
+@using System.Globalization
+
+<svg class="spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true">
+    <path class="spark-area" d="@Area" />
+    <polyline class="spark-line" points="@Linea" vector-effect="non-scaling-stroke" />
+</svg>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<int> Valores { get; set; } = [];
+
+    private IEnumerable<(double X, double Y)> Puntos()
+    {
+        if (Valores.Count < 2) yield break;
+        double min = Valores.Min(), max = Valores.Max();
+        double rango = Math.Max(1, max - min);
+        for (int i = 0; i < Valores.Count; i++)
+            yield return (i * 100.0 / (Valores.Count - 1), 28 - (Valores[i] - min) / rango * 24);
+    }
+
+    private static string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private string Linea => string.Join(' ', Puntos().Select(p => $"{F(p.X)},{F(p.Y)}"));
+
+    private string Area
+    {
+        get
+        {
+            var pts = Puntos().ToList();
+            if (pts.Count == 0) return "";
+            return "M0,32 " + string.Join(' ', pts.Select(p => $"L{F(p.X)},{F(p.Y)}")) + " L100,32 Z";
+        }
+    }
+}

@@ -1,0 +1,126 @@
+@page "/postulante"
+
+<PageTitle>Mi portal · AdmitU</PageTitle>
+
+<section class="hero hero-soft" aria-label="Bienvenida">
+    <div>
+        <span class="eyebrow"><i class="dot"></i>@conv.Nombre</span>
+        <h2>Hola, @yo.Nombres</h2>
+        @if (mia is null)
+        {
+            <p>Aún no has iniciado tu postulación. Las inscripciones están abiertas por @dias días más.</p>
+            <div class="hero-actions">
+                <a class="btn btn-light" href="/postulante/postular"><Icon Name="plus" Size="16" />Iniciar mi postulación</a>
+            </div>
+        }
+        else
+        {
+            <p>Tu postulación <strong>@mia.Codigo</strong> a <strong>@DatosDemo.Carrera(mia.CarreraId)?.Nombre</strong> está <strong>@mia.Estado.Etiqueta().ToLowerInvariant()</strong>.</p>
+            <div class="hero-actions">
+                <a class="btn btn-light" href="/postulante/mi-postulacion">Ver mi postulación<Icon Name="arrow-right" Size="16" /></a>
+                <a class="btn btn-outline-light" href="/postulante/postular"><Icon Name="plus" Size="16" />Postular a otra carrera</a>
+            </div>
+        }
+    </div>
+    <div class="hero-side">
+        <div class="progress-meta" style="color:#cfd6ff"><span>Tu avance</span><strong style="color:#fff">@avance%</strong></div>
+        <div class="hero-progress" role="progressbar" aria-valuenow="@avance" aria-valuemin="0" aria-valuemax="100"><i style="width:@avance%"></i></div>
+        <div class="hero-dates"><span>@hechos de @pasos.Count pasos completados</span><span>Cierre: @Formato.FechaCorta(conv.Fin)</span></div>
+        <div class="hero-metrics">
+            <div><strong>@dias</strong><span>Días restantes</span></div>
+            <div><strong>@docsOk/@docs.Count</strong><span>Documentos</span></div>
+            <div><strong>@(pago is null ? "—" : pago.Estado.Etiqueta())</strong><span>Pago</span></div>
+        </div>
+    </div>
+</section>
+
+@if (mia?.Observacion is { Length: > 0 } obs)
+{
+    <div class="notice" style="margin-bottom:18px" role="alert">
+        <Icon Name="alert" Size="20" />
+        <div style="flex:1"><strong>Tu postulación tiene una observación</strong><p>@obs</p></div>
+        <a class="btn btn-ghost btn-sm" href="/postulante/mi-postulacion">Corregir ahora</a>
+    </div>
+}
+
+<div class="grid-2" style="margin-top:0">
+    <section class="card card-pad">
+        <div class="card-head"><div><h2>Tus siguientes pasos</h2><p>Completa cada paso para que tu postulación sea evaluada.</p></div></div>
+        <ul class="steps">
+            @foreach (var s in pasos)
+            {
+                <li class="@(s.Hecho ? "is-done" : s.Actual ? "is-now" : "")">
+                    <span class="steps-mark">@if (s.Hecho) { <Icon Name="check" Size="16" /> } else { @s.Numero }</span>
+                    <div><strong>@s.Titulo</strong><small>@s.Detalle</small></div>
+                    @if (!s.Hecho && s.Enlace is not null) { <a class="btn btn-ghost btn-sm" href="@s.Enlace">@s.Accion</a> }
+                </li>
+            }
+        </ul>
+    </section>
+
+    <section class="card card-pad">
+        <div class="card-head"><h2>Fechas importantes</h2></div>
+        <div class="dates">
+            @foreach (var h in DatosDemo.Hitos)
+            {
+                <div class="date-row @(h.Fecha < DatosDemo.Hoy ? "is-past" : "")">
+                    <div class="date-chip">@h.Fecha.Day<small>@Formato.Mes(h.Fecha)</small></div>
+                    <div><strong>@h.Nombre</strong><small>@h.Detalle</small></div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+<section class="card card-pad" style="margin-top:18px">
+    <div class="card-head"><div><h2>Novedades</h2><p>Avisos sobre tu proceso</p></div><a class="link-more" href="/postulante/notificaciones">Ver todo<Icon Name="arrow-up-right" Size="14" /></a></div>
+    <ul class="feed">
+        @foreach (var n in DatosDemo.Notificaciones.Where(x => x.Rol == "Postulante").OrderByDescending(x => x.Fecha).Take(3))
+        {
+            <li class="@(n.Leida ? "" : "is-unread")">
+                <span class="feed-icon t-@n.Tipo.ToLowerInvariant()"><Icon Name="@NotificacionesPanel.IconoDe(n.Tipo)" Size="18" /></span>
+                <div class="feed-text"><strong>@n.Titulo</strong><p>@n.Detalle</p></div>
+                <time>@Formato.Relativo(n.Fecha)</time>
+            </li>
+        }
+    </ul>
+</section>
+
+@code {
+    private sealed record PasoTarea(int Numero, string Titulo, string Detalle, bool Hecho, bool Actual, string? Enlace, string Accion);
+
+    private readonly Postulante yo = DatosDemo.Postulante(DatosDemo.PostulanteActualId)!;
+    private readonly Convocatoria conv = DatosDemo.Convocatorias.First(c => c.Estado == EstadoConvocatoria.Publicada);
+    private Postulacion? mia;
+    private Pago? pago;
+    private List<Documento> docs = [];
+    private List<PasoTarea> pasos = [];
+    private int dias, docsOk, hechos, avance;
+
+    protected override void OnInitialized()
+    {
+        dias = conv.Fin.DayNumber - DatosDemo.Hoy.DayNumber;
+        mia = DatosDemo.Postulaciones.FirstOrDefault(p => p.PostulanteId == yo.Id);
+        pago = mia is null ? null : DatosDemo.Pagos.FirstOrDefault(p => p.PostulacionId == mia.Id);
+        docs = mia is null ? [] : DatosDemo.Documentos.Where(d => d.PostulacionId == mia.Id).ToList();
+        docsOk = docs.Count(d => d.Estado == EstadoDocumento.Aprobado);
+
+        bool docsListos = docs.Count > 0 && docs.All(d => d.Estado == EstadoDocumento.Aprobado);
+        bool pagado = pago?.Estado == EstadoPago.Pagado;
+        bool enviada = mia is not null && mia.Estado != EstadoPostulacion.Borrador;
+        bool resultado = mia?.Estado is EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
+
+        var lista = new List<(string, string, bool, string?, string)>
+        {
+            ("Completa tu perfil", "Datos personales y de contacto verificados.", yo.CorreoValidado, "/postulante/perfil", "Ir a mi perfil"),
+            ("Envía tu postulación", "Elige carrera, modalidad y sede.", enviada, "/postulante/postular", "Postular"),
+            ("Sube y corrige tus documentos", docs.Any(d => d.Estado == EstadoDocumento.Observado) ? "Tienes un documento observado por corregir." : "Todos los requisitos deben estar aprobados.", docsListos, "/postulante/mi-postulacion", "Ver documentos"),
+            ("Paga tu derecho de inscripción", pagado ? "Pago acreditado." : "El pago habilita la evaluación final.", pagado, "/postulante/mi-postulacion", "Ver pago"),
+            ("Conoce tu resultado", "Se publicará al cierre de la convocatoria.", resultado, null, "")
+        };
+        int actual = lista.FindIndex(x => !x.Item3);
+        pasos = lista.Select((x, i) => new PasoTarea(i + 1, x.Item1, x.Item2, x.Item3, i == actual, x.Item4, x.Item5)).ToList();
+        hechos = pasos.Count(p => p.Hecho);
+        avance = (int)Math.Round(hechos * 100.0 / pasos.Count);
+    }
+}

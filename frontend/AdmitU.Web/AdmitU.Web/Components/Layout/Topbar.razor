@@ -1,0 +1,43 @@
+@inject NavigationManager Navegacion
+
+<header class="topbar">
+    <button type="button" class="icon-btn menu-btn" aria-label="Abrir menú" @onclick="() => OnMenu.InvokeAsync()"><Icon Name="menu" Size="20" /></button>
+
+    @if (Area.RutaBusqueda is not null)
+    {
+        <form class="global-search" role="search" @onsubmit="Buscar" @onsubmit:preventDefault>
+            <Icon Name="search" Size="16" />
+            <input type="search" placeholder="@Area.MarcadorBusqueda" @bind="consulta" aria-label="Búsqueda" />
+            <kbd>Enter</kbd>
+        </form>
+    }
+
+    <div class="topbar-actions">
+        <span class="pill pill-role"><i class="dot"></i>@Area.Nombre</span>
+        <button type="button" class="icon-btn theme-btn" aria-label="Cambiar entre tema claro y oscuro" title="Cambiar tema" onclick="admitu.alternarTema()">
+            <span class="theme-moon"><Icon Name="moon" Size="19" /></span>
+            <span class="theme-sun"><Icon Name="sun" Size="19" /></span>
+        </button>
+        <a class="icon-btn bell" href="@(Area.Inicio)/notificaciones" aria-label="Notificaciones">
+            <Icon Name="bell" Size="19" /><i class="bell-dot"></i>
+        </a>
+        <div class="user" title="@Area.Usuario">
+            <Avatar Nombre="@Area.Usuario" Tamano="sm" />
+            <span class="user-text"><strong>@Area.Usuario</strong><small>@Area.Cargo</small></span>
+        </div>
+        <a class="icon-btn" href="/" aria-label="Cerrar sesión" title="Cerrar sesión"><Icon Name="log-out" Size="19" /></a>
+    </div>
+</header>
+
+@code {
+    [Parameter, EditorRequired] public AreaInfo Area { get; set; } = default!;
+    [Parameter] public EventCallback OnMenu { get; set; }
+
+    private string consulta = "";
+
+    private void Buscar()
+    {
+        var ruta = Area.RutaBusqueda ?? Area.Inicio;
+        Navegacion.NavigateTo(string.IsNullOrWhiteSpace(consulta) ? ruta : $"{ruta}?q={Uri.EscapeDataString(consulta.Trim())}");
+    }
+}

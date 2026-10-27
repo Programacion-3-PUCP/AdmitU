@@ -1,0 +1,50 @@
+@page "/admin/postulaciones"
+@inject ToastService Avisos
+
+<PageTitle>Postulaciones · AdmitU</PageTitle>
+
+<PageHeader Titulo="Postulaciones" Subtitulo="Seguimiento de cada postulación, desde el borrador hasta el resultado final." Migas="@(["Postulaciones"])">
+    <Acciones>
+        <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Exportación generada")'><Icon Name="download" Size="16" />Exportar</button>
+    </Acciones>
+</PageHeader>
+
+<div class="chips" role="group" aria-label="Filtrar por estado">
+    <button type="button" class="chip @(estado is null ? "is-active" : "")" @onclick="() => estado = null">Todas<em>@DatosDemo.Postulaciones.Count</em></button>
+    @foreach (var e in Enum.GetValues<EstadoPostulacion>())
+    {
+        var actual = e;
+        <button type="button" class="chip @(estado == actual ? "is-active" : "")" @onclick="() => estado = actual">@actual.Etiqueta()<em>@DatosDemo.Postulaciones.Count(p => p.Estado == actual)</em></button>
+    }
+</div>
+
+<DataTable TItem="Postulacion" Items="Filtradas" TextoBusqueda="@(p => $"{p.Codigo} {DatosDemo.Postulante(p.PostulanteId)?.NombreCompleto} {DatosDemo.Carrera(p.CarreraId)?.Nombre}")" Marcador="Buscar por código, postulante o carrera">
+    <Encabezado>
+        <th>Código</th><th>Postulante</th><th>Carrera</th><th>Evaluador</th><th>Envío</th><th>Estado</th><th class="th-actions"></th>
+    </Encabezado>
+    <Fila Context="p">
+        @{ var persona = DatosDemo.Postulante(p.PostulanteId); }
+        <tr>
+            <td><a class="mono" href="/admin/postulaciones/@p.Id">@p.Codigo</a></td>
+            <td>
+                <div class="cell-person">
+                    <Avatar Nombre="@(persona?.NombreCompleto ?? "?")" Tamano="sm" />
+                    <span><strong>@persona?.NombreCompleto</strong></span>
+                </div>
+            </td>
+            <td><span class="cell-title">@DatosDemo.Carrera(p.CarreraId)?.Nombre</span><span class="cell-sub">@DatosDemo.Facultad(DatosDemo.Carrera(p.CarreraId)?.FacultadId ?? 0)?.Codigo</span></td>
+            <td>@(Evaluador(p) ?? "Sin asignar")</td>
+            <td>@Formato.Fecha(p.FechaEnvio)</td>
+            <td><StatusBadge Texto="@p.Estado.Etiqueta()" Tono="@p.Estado.Tono()" /></td>
+            <td class="td-actions"><a class="icon-btn brand" href="/admin/postulaciones/@p.Id" title="Ver detalle" aria-label="Ver detalle de @p.Codigo"><Icon Name="arrow-right" Size="17" /></a></td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    private EstadoPostulacion? estado;
+
+    private static string? Evaluador(Postulacion p) => DatosDemo.Evaluadores.FirstOrDefault(e => e.Id == p.EvaluadorId)?.Nombre;
+
+    private IEnumerable<Postulacion> Filtradas => DatosDemo.Postulaciones.Where(p => estado is null || p.Estado == estado);
+}
