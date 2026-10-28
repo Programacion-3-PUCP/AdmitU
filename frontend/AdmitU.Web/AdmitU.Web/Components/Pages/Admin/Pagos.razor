@@ -10,9 +10,9 @@
 </PageHeader>
 
 <section class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:22px">
-    <StatCard Etiqueta="Recaudado" Valor="@Formato.Soles(Total(EstadoPago.Pagado))" Icono="wallet" Tono="success" />
+    <StatCard Etiqueta="Recaudado (aprobados)" Valor="@Formato.Soles(Total(EstadoPago.Aprobado))" Icono="wallet" Tono="success" />
     <StatCard Etiqueta="Por cobrar" Valor="@Formato.Soles(Total(EstadoPago.Pendiente))" Icono="clock" Tono="warning" />
-    <StatCard Etiqueta="Observados o anulados" Valor="@((DatosDemo.Pagos.Count(x => x.Estado is EstadoPago.Observado or EstadoPago.Anulado)).ToString())" Icono="alert" Tono="violet" />
+    <StatCard Etiqueta="Rechazados o vencidos" Valor="@((DatosDemo.Pagos.Count(x => x.Estado is EstadoPago.Rechazado or EstadoPago.Vencido)).ToString())" Icono="alert" Tono="violet" />
 </section>
 
 <div class="chips" role="group" aria-label="Filtrar por estado">
@@ -26,7 +26,7 @@
 
 <DataTable TItem="Pago" Items="Filtrados" TextoBusqueda="@(x => $"{x.Codigo} {Persona(x)?.NombreCompleto} {x.Medio}")" Marcador="Buscar por código, postulante o medio">
     <Encabezado>
-        <th>Código</th><th>Postulante</th><th>Medio</th><th>Monto</th><th>Generado</th><th>Pagado</th><th>Estado</th><th class="th-actions"></th>
+        <th>Código</th><th>Postulante</th><th>Medio</th><th>Monto</th><th>Generado</th><th>Aprobado</th><th>Estado</th><th class="th-actions"></th>
     </Encabezado>
     <Fila Context="x">
         <tr>

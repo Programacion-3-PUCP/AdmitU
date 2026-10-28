@@ -26,6 +26,7 @@
             <div class="conv-foot">
                 <span>@DatosDemo.Postulaciones.Count(p => p.ConvocatoriaId == c.Id) postulaciones</span>
                 <span class="row-actions">
+                    <a class="btn btn-ghost btn-sm" href="/admin/convocatorias/@c.Id" style="margin-right:6px">Gestionar</a>
                     <button type="button" class="icon-btn brand" title="Editar" aria-label="Editar @c.Nombre" @onclick="() => Editar(c)"><Icon Name="pencil" Size="17" /></button>
                     <button type="button" class="icon-btn danger" title="Cerrar convocatoria" aria-label="Cerrar @c.Nombre" disabled="@(c.Estado == EstadoConvocatoria.Cerrada)" @onclick="() => pendiente = c"><Icon Name="x" Size="17" /></button>
                 </span>

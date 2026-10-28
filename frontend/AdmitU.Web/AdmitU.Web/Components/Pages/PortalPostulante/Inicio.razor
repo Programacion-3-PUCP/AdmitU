@@ -106,7 +106,7 @@
         docsOk = docs.Count(d => d.Estado == EstadoDocumento.Aprobado);
 
         bool docsListos = docs.Count > 0 && docs.All(d => d.Estado == EstadoDocumento.Aprobado);
-        bool pagado = pago?.Estado == EstadoPago.Pagado;
+        bool pagado = pago?.Estado == EstadoPago.Aprobado;
         bool enviada = mia is not null && mia.Estado != EstadoPostulacion.Borrador;
         bool resultado = mia?.Estado is EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
 
@@ -114,8 +114,8 @@
         {
             ("Completa tu perfil", "Datos personales y de contacto verificados.", yo.CorreoValidado, "/postulante/perfil", "Ir a mi perfil"),
             ("Envía tu postulación", "Elige carrera, modalidad y sede.", enviada, "/postulante/postular", "Postular"),
-            ("Sube y corrige tus documentos", docs.Any(d => d.Estado == EstadoDocumento.Observado) ? "Tienes un documento observado por corregir." : "Todos los requisitos deben estar aprobados.", docsListos, "/postulante/mi-postulacion", "Ver documentos"),
-            ("Paga tu derecho de inscripción", pagado ? "Pago acreditado." : "El pago habilita la evaluación final.", pagado, "/postulante/mi-postulacion", "Ver pago"),
+            ("Sube y corrige tus documentos", docs.Any(d => d.Estado == EstadoDocumento.Observado) ? "Tienes un documento observado por corregir." : "Todos los requisitos deben estar aprobados.", docsListos, "/postulante/documentos", "Ver documentos"),
+            ("Paga tu derecho de inscripción", pagado ? "Pago acreditado." : "El pago habilita la evaluación final.", pagado, "/postulante/pago", "Ver pago"),
             ("Conoce tu resultado", "Se publicará al cierre de la convocatoria.", resultado, null, "")
         };
         int actual = lista.FindIndex(x => !x.Item3);

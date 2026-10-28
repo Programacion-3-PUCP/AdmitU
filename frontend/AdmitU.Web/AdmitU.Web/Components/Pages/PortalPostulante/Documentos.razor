@@ -1,0 +1,80 @@
+@page "/postulante/documentos"
+@inject ToastService Avisos
+
+<PageTitle>Mis documentos · AdmitU</PageTitle>
+
+<PageHeader Titulo="Mis documentos" Subtitulo="Documento de identidad, fotografía y demás requisitos de tu modalidad. Corrige las observaciones para continuar."
+            Migas="@(["Mis documentos"])" />
+
+@if (post is null)
+{
+    <section class="card"><EmptyState Icono="folder" Titulo="Aún no tienes una postulación" Mensaje="Inicia tu postulación para conocer los documentos que debes presentar.">
+        <a class="btn btn-primary" style="margin-top:14px" href="/postulante/postular">Iniciar postulación</a></EmptyState></section>
+}
+else
+{
+    <section class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:22px">
+        <StatCard Etiqueta="Documentos aprobados" Valor="@($"{items.Count(i => i.Doc?.Estado == EstadoDocumento.Aprobado)} de {items.Count}")" Icono="check-circle" Tono="success" />
+        <StatCard Etiqueta="Con observaciones" Valor="@items.Count(i => i.Doc?.Estado == EstadoDocumento.Observado).ToString()" Icono="alert" Tono="warning" />
+        <StatCard Etiqueta="Por cargar" Valor="@items.Count(i => i.Doc is null).ToString()" Icono="upload" Tono="violet" />
+    </section>
+
+    <div class="check-list">
+        @foreach (var i in items)
+        {
+            var item = i;
+            var obs = item.Doc is null ? null : DatosDemo.Observaciones.FirstOrDefault(o => o.DocumentoId == item.Doc.Id && o.Estado == EstadoObservacion.Pendiente);
+            <article class="check-card @(item.Doc?.Estado == EstadoDocumento.Observado ? "is-warn" : item.Doc?.Estado == EstadoDocumento.Aprobado ? "is-ok" : "")">
+                <span class="file-icon" style="background:var(--brand-soft);color:var(--brand)">@(item.Req.TipoArchivo == "IMAGEN" ? "IMG" : "PDF")</span>
+                <div class="check-body">
+                    <div>
+                        <h3>@item.Req.Nombre @if (!item.Obligatorio) { <span class="muted">(opcional)</span> }</h3>
+                        <p class="hint">@item.Req.Descripcion Máximo @item.Req.TamanioMaximoMb MB · @item.Req.TipoArchivo.</p>
+                        @if (item.Doc is not null) { <p class="hint"><strong>@item.Doc.Archivo</strong> · @Formato.Tamanio(item.Doc.TamanioKb) · cargado el @Formato.Fecha(item.Doc.FechaCarga)</p> }
+                    </div>
+                </div>
+                @if (item.Doc is null) { <StatusBadge Texto="Por cargar" Tono="violet" /> }
+                else { <StatusBadge Texto="@item.Doc.Estado.Etiqueta()" Tono="@item.Doc.Estado.Tono()" /> }
+
+                @if (obs is not null)
+                {
+                    <div class="check-extra">
+                        <div class="notice"><Icon Name="alert" Size="18" /><div><strong>Observación: @obs.Tipo.Etiqueta()</strong><p>@obs.Descripcion</p></div></div>
+                        <ZonaCarga Etiqueta="Subir documento corregido" OnArchivo="Corregido" />
+                        <div class="field"><label>Comentario de subsanación</label><textarea maxlength="255" placeholder="Cuéntanos qué corregiste (opcional)"></textarea></div>
+                        <div><button type="button" class="btn btn-primary btn-sm" @onclick='() => Avisos.Exito("Subsanación enviada al evaluador")'><Icon Name="check" Size="14" />Enviar subsanación</button></div>
+                    </div>
+                }
+                else if (item.Doc is null)
+                {
+                    <div class="check-extra"><ZonaCarga Etiqueta="@($"Subir {item.Req.Nombre.ToLowerInvariant()}")" OnArchivo="Cargado" /></div>
+                }
+            </article>
+        }
+    </div>
+}
+
+@code {
+    private sealed record Item(Requisito Req, bool Obligatorio, Documento? Doc);
+
+    private Postulacion? post;
+    private List<Item> items = [];
+
+    protected override void OnInitialized()
+    {
+        post = DatosDemo.Postulaciones.FirstOrDefault(x => x.PostulanteId == DatosDemo.PostulanteActualId);
+        if (post is null) return;
+        var docs = DatosDemo.Documentos.Where(d => d.PostulacionId == post.Id).ToList();
+        items = DatosDemo.RequisitosAsignados.Where(r => r.ConvocatoriaId == post.ConvocatoriaId && r.ModalidadId == post.ModalidadId)
+            .OrderBy(r => r.Orden)
+            .Select(r =>
+            {
+                var req = DatosDemo.Requisitos.First(x => x.Id == r.RequisitoId);
+                var doc = docs.FirstOrDefault(d => d.Requisito == req.Nombre);
+                return new Item(req, r.Obligatorio, doc);
+            }).ToList();
+    }
+
+    private void Cargado(string nombre) => Avisos.Exito("Documento cargado: " + nombre);
+    private void Corregido(string nombre) => Avisos.Exito("Archivo corregido seleccionado: " + nombre);
+}

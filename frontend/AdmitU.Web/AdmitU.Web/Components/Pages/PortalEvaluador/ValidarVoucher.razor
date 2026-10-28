@@ -1,0 +1,127 @@
+@page "/evaluador/vouchers/{Id:int}"
+@inject NavigationManager Navegacion
+@inject ToastService Avisos
+
+@if (pago is null)
+{
+    <PageTitle>Voucher no encontrado · AdmitU</PageTitle>
+    <PageHeader Titulo="Voucher no encontrado" Migas="@(["Vouchers", "No encontrado"])" Enlaces="@(["/evaluador/vouchers"])" />
+    <section class="card"><EmptyState Titulo="No tienes acceso a este voucher" Mensaje="Solo puedes validar los vouchers de postulaciones asignadas a ti.">
+        <a class="btn btn-primary" style="margin-top:14px" href="/evaluador/vouchers">Volver a mis vouchers</a>
+    </EmptyState></section>
+}
+else
+{
+    <PageTitle>Validar @pago.Codigo · AdmitU</PageTitle>
+    <PageHeader Titulo="@($"Validar voucher {pago.Codigo}")" Subtitulo="@($"{persona?.NombreCompleto} · {post?.Codigo}")" Migas="@(["Vouchers", pago.Codigo])" Enlaces="@(["/evaluador/vouchers"])">
+        <Acciones>
+            <a class="btn btn-ghost" href="/evaluador/vouchers"><Icon Name="arrow-left" Size="16" />Volver</a>
+            <StatusBadge Texto="@pago.Estado.Etiqueta()" Tono="@pago.Estado.Tono()" />
+        </Acciones>
+    </PageHeader>
+
+    <div class="detail-grid">
+        <div class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><div><h2>Comprobante enviado</h2><p>@pago.Voucher</p></div>
+                    <button type="button" class="btn btn-ghost btn-sm" @onclick='() => Avisos.Exito("Descarga iniciada")'><Icon Name="download" Size="14" />Descargar</button></div>
+                <div class="voucher-preview" role="img" aria-label="Vista del voucher @pago.Voucher">
+                    <span class="voucher-art"><Icon Name="credit-card" Size="30" /></span>
+                    <strong>@pago.Voucher</strong>
+                    <span>Constancia de transferencia por @Formato.Soles(pago.Monto)</span>
+                </div>
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><div><h2>Resultado de la validación</h2><p>@(Editable ? "Elige el estado del voucher." : "Este voucher ya fue validado.")</p></div></div>
+                <div class="segmented" role="radiogroup" aria-label="Estado del voucher">
+                    @foreach (var (valor, texto, tono) in opciones)
+                    {
+                        var actual = valor;
+                        <button type="button" role="radio" aria-checked="@(decision == actual)" disabled="@(!Editable)" class="@(decision == actual ? $"is-active tone-{tono}" : "")" @onclick="() => decision = actual">@texto</button>
+                    }
+                </div>
+                <div class="field" style="margin-top:18px">
+                    <label for="comentario">Comentario @(decision == EstadoPago.Rechazado ? "(obligatorio)" : "")</label>
+                    <textarea id="comentario" @bind="comentario" disabled="@(!Editable)" maxlength="255" placeholder="Ej. El monto del voucher no coincide con el derecho de inscripción."></textarea>
+                </div>
+                @if (error is not null) { <p class="validation-message" role="alert" style="margin-top:12px">@error</p> }
+                @if (Editable)
+                {
+                    <div class="form-footer">
+                        <a class="btn btn-ghost" href="/evaluador/vouchers">Cancelar</a>
+                        <button type="button" class="btn btn-primary" @onclick="Guardar"><Icon Name="check" Size="16" />Guardar validación</button>
+                    </div>
+                }
+            </section>
+        </div>
+
+        <aside class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><h2>Datos del pago</h2></div>
+                <div class="summary-rows">
+                    <div><span>Código</span><strong class="mono">@pago.Codigo</strong></div>
+                    <div><span>Monto a validar</span><strong>@Formato.Soles(pago.Monto)</strong></div>
+                    <div><span>Medio</span><strong>@pago.Medio</strong></div>
+                    <div><span>Generado</span><strong>@Formato.Fecha(pago.FechaGeneracion)</strong></div>
+                    <div><span>Fecha de pago</span><strong>@Formato.Fecha(pago.FechaPago)</strong></div>
+                </div>
+            </section>
+            <section class="card card-pad">
+                <div class="card-head"><h2>Postulación</h2></div>
+                <div class="summary-rows">
+                    <div><span>Expediente</span><strong><a href="/evaluador/postulaciones/@post?.Id">@post?.Codigo</a></strong></div>
+                    <div><span>Carrera</span><strong>@DatosDemo.Carrera(post?.CarreraId ?? 0)?.Nombre</strong></div>
+                    <div><span>Modalidad</span><strong>@DatosDemo.Modalidad(post?.ModalidadId ?? 0)?.Nombre</strong></div>
+                </div>
+            </section>
+        </aside>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private static readonly (EstadoPago, string, string)[] opciones =
+    [
+        (EstadoPago.Pendiente, "Pendiente", "warning"),
+        (EstadoPago.Aprobado, "Aprobado", "success"),
+        (EstadoPago.Rechazado, "Rechazado", "danger")
+    ];
+
+    private Pago? pago;
+    private Postulacion? post;
+    private Postulante? persona;
+    private EstadoPago decision;
+    private string comentario = "";
+    private string? error;
+
+    private bool Editable => pago is not null && pago.Estado == EstadoPago.Pendiente;
+
+    protected override void OnParametersSet()
+    {
+        pago = DatosDemo.Pagos.FirstOrDefault(x => x.Id == Id && x.Voucher is not null);
+        post = pago is null ? null : DatosDemo.Postulacion(pago.PostulacionId);
+        if (post is null || post.EvaluadorId != DatosDemo.EvaluadorActualId) { pago = null; return; }
+        persona = DatosDemo.Postulante(post.PostulanteId);
+        decision = pago!.Estado;
+        comentario = pago.ComentarioVoucher ?? "";
+    }
+
+    private void Guardar()
+    {
+        if (decision == EstadoPago.Rechazado && string.IsNullOrWhiteSpace(comentario))
+        {
+            error = "Explica el motivo del rechazo para que el postulante pueda corregirlo.";
+            return;
+        }
+        error = null;
+        Avisos.Exito(decision switch
+        {
+            EstadoPago.Aprobado => "Voucher aprobado",
+            EstadoPago.Rechazado => "Voucher rechazado",
+            _ => "Voucher mantenido como pendiente"
+        });
+        Navegacion.NavigateTo("/evaluador/vouchers");
+    }
+}

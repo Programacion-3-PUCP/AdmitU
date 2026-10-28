@@ -1,0 +1,54 @@
+@page "/evaluador/vouchers"
+
+<PageTitle>Vouchers · AdmitU</PageTitle>
+
+<PageHeader Titulo="Vouchers de pago" Subtitulo="Comprobantes de transferencia de los postulantes que te asignaron. Valida cada uno como aprobado o rechazado."
+            Migas="@(["Vouchers"])" />
+
+<div class="chips" role="group" aria-label="Filtrar por estado">
+    @foreach (var (clave, etiqueta, total) in grupos)
+    {
+        var actual = clave;
+        <button type="button" class="chip @(filtro == actual ? "is-active" : "")" @onclick="() => filtro = actual">@etiqueta<em>@total</em></button>
+    }
+</div>
+
+<DataTable TItem="Pago" Items="Filtrados" TextoBusqueda="@(x => $"{x.Codigo} {Persona(x)?.NombreCompleto} {x.Voucher}")" Marcador="Buscar por código, postulante o archivo">
+    <Encabezado><th>Pago</th><th>Postulante</th><th>Voucher</th><th>Monto</th><th>Generado</th><th>Estado</th><th class="th-actions"></th></Encabezado>
+    <Fila Context="x">
+        <tr>
+            <td><span class="mono">@x.Codigo</span></td>
+            <td><div class="cell-person"><Avatar Nombre="@(Persona(x)?.NombreCompleto ?? "?")" Tamano="sm" /><span><strong>@Persona(x)?.NombreCompleto</strong><small>@DatosDemo.Postulacion(x.PostulacionId)?.Codigo</small></span></div></td>
+            <td>@x.Voucher</td>
+            <td class="num"><strong>@Formato.Soles(x.Monto)</strong></td>
+            <td>@Formato.Fecha(x.FechaGeneracion)</td>
+            <td><StatusBadge Texto="@x.Estado.Etiqueta()" Tono="@x.Estado.Tono()" /></td>
+            <td class="td-actions">
+                <a class="btn @(x.Estado == EstadoPago.Pendiente ? "btn-primary" : "btn-ghost") btn-sm" href="/evaluador/vouchers/@x.Id">@(x.Estado == EstadoPago.Pendiente ? "Validar" : "Ver")</a>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    private string filtro = "Pendiente";
+    private List<Pago> mios = [];
+    private List<(string Clave, string Etiqueta, int Total)> grupos = [];
+
+    protected override void OnInitialized()
+    {
+        var misPostulaciones = DatosDemo.Postulaciones.Where(p => p.EvaluadorId == DatosDemo.EvaluadorActualId).Select(p => p.Id).ToHashSet();
+        mios = DatosDemo.Pagos.Where(x => x.Voucher is not null && misPostulaciones.Contains(x.PostulacionId)).ToList();
+        grupos =
+        [
+            ("Pendiente", "Pendientes", mios.Count(x => x.Estado == EstadoPago.Pendiente)),
+            ("Aprobado", "Aprobados", mios.Count(x => x.Estado == EstadoPago.Aprobado)),
+            ("Rechazado", "Rechazados", mios.Count(x => x.Estado == EstadoPago.Rechazado)),
+            ("", "Todos", mios.Count)
+        ];
+    }
+
+    private IEnumerable<Pago> Filtrados => mios.Where(x => filtro == "" || x.Estado.ToString() == filtro);
+
+    private static Postulante? Persona(Pago x) => DatosDemo.Postulante(DatosDemo.Postulacion(x.PostulacionId)?.PostulanteId ?? 0);
+}

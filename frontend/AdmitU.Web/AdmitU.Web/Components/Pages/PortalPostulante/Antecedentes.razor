@@ -1,0 +1,105 @@
+@page "/postulante/antecedentes"
+@inject ToastService Avisos
+
+<PageTitle>Antecedentes académicos · AdmitU</PageTitle>
+
+<PageHeader Titulo="Antecedentes académicos" Subtitulo="Colegios y universidades donde estudiaste. Algunas modalidades los exigen para validar tu postulación."
+            Migas="@(["Antecedentes académicos"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nuevo"><Icon Name="plus" Size="16" />Agregar antecedente</button></Acciones>
+</PageHeader>
+
+@if (lista.Count == 0)
+{
+    <section class="card"><EmptyState Icono="graduation-cap" Titulo="Aún no registras antecedentes" Mensaje="Agrega tu colegio de procedencia o la universidad donde estudiaste.">
+        <button type="button" class="btn btn-primary" style="margin-top:14px" @onclick="Nuevo">Agregar antecedente</button></EmptyState></section>
+}
+else
+{
+    <div class="conv-grid">
+        @foreach (var a in lista)
+        {
+            var ins = DatosDemo.Instituciones.First(x => x.Id == a.InstitucionId);
+            <article class="card conv">
+                <div class="conv-top">
+                    <div><span class="code">@ins.Codigo · @ins.Pais</span><h3>@ins.Nombre</h3></div>
+                    <StatusBadge Texto="@(ins.Tipo == "COLEGIO" ? "Colegio" : "Universidad")" Tono="@(ins.Tipo == "COLEGIO" ? "info" : "violet")" Punto="false" />
+                </div>
+                <div class="conv-range"><Icon Name="calendar" Size="16" />@(a.AnioInicio?.ToString() ?? "—")<Icon Name="arrow-right" Size="14" />@(a.AnioFin?.ToString() ?? "—")</div>
+                <p>@a.Descripcion</p>
+                <div class="conv-foot">
+                    <span></span>
+                    <span class="row-actions">
+                        <button type="button" class="icon-btn brand" title="Editar" aria-label="Editar @ins.Nombre" @onclick="() => Editar(a)"><Icon Name="pencil" Size="17" /></button>
+                        <button type="button" class="icon-btn danger" title="Quitar" aria-label="Quitar @ins.Nombre" @onclick="() => pendiente = a"><Icon Name="trash" Size="17" /></button>
+                    </span>
+                </div>
+            </article>
+        }
+    </div>
+}
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Agregar antecedente" : "Editar antecedente")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field">
+                <label for="a-ins">Institución <span class="req">*</span></label>
+                <InputSelect id="a-ins" @bind-Value="modelo.InstitucionId">
+                    <option value="0">Selecciona una institución</option>
+                    @foreach (var i in DatosDemo.Instituciones) { <option value="@i.Id">@i.Nombre (@i.Pais)</option> }
+                </InputSelect>
+                <ValidationMessage For="() => modelo.InstitucionId" />
+            </div>
+            <div class="form-grid">
+                <div class="field"><label for="a-ini">Año de inicio</label><InputNumber id="a-ini" @bind-Value="modelo.AnioInicio" /><ValidationMessage For="() => modelo.AnioInicio" /></div>
+                <div class="field"><label for="a-fin">Año de fin</label><InputNumber id="a-fin" @bind-Value="modelo.AnioFin" /><ValidationMessage For="() => modelo.AnioFin" /></div>
+            </div>
+            <div class="field"><label for="a-desc">Descripción</label><InputTextArea id="a-desc" @bind-Value="modelo.Descripcion" placeholder="Ej. Educación secundaria completa" /><ValidationMessage For="() => modelo.Descripcion" /></div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Quitar antecedente" Mensaje="Se quitará este antecedente de tu perfil." TextoConfirmar="Quitar"
+               OnCancelar="() => pendiente = null" OnConfirmar="Quitar" />
+
+@code {
+    private List<Antecedente> lista = [];
+    private bool abierto;
+    private Formulario modelo = new();
+    private Antecedente? pendiente;
+
+    protected override void OnInitialized() =>
+        lista = DatosDemo.Antecedentes.Where(a => a.PostulanteId == DatosDemo.PostulanteActualId).ToList();
+
+    private void Nuevo() { modelo = new(); abierto = true; }
+    private void Editar(Antecedente a) { modelo = new() { Id = a.Id, InstitucionId = a.InstitucionId, AnioInicio = a.AnioInicio, AnioFin = a.AnioFin, Descripcion = a.Descripcion }; abierto = true; }
+    private void Cerrar() => abierto = false;
+    private void Guardar() { abierto = false; Avisos.Exito("Antecedente guardado"); }
+    private void Quitar() { pendiente = null; Avisos.Exito("Antecedente quitado"); }
+
+    private sealed class Formulario : IValidatableObject
+    {
+        public int Id { get; set; }
+        [Range(1, int.MaxValue, ErrorMessage = "Selecciona una institución.")]
+        public int InstitucionId { get; set; }
+        public int? AnioInicio { get; set; } = 2019;
+        public int? AnioFin { get; set; } = 2023;
+        [StringLength(255)]
+        public string Descripcion { get; set; } = "";
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext contexto)
+        {
+            int actual = DatosDemo.Hoy.Year;
+            if (AnioInicio is { } i && (i < 1950 || i > actual))
+                yield return new ValidationResult("El año de inicio no es válido.", [nameof(AnioInicio)]);
+            if (AnioFin is { } f && (f < 1950 || f > actual + 1))
+                yield return new ValidationResult("El año de fin no es válido.", [nameof(AnioFin)]);
+            if (AnioInicio is { } a && AnioFin is { } b && b < a)
+                yield return new ValidationResult("El año de fin no puede ser anterior al de inicio.", [nameof(AnioFin)]);
+        }
+    }
+}

@@ -53,6 +53,11 @@ else
                     }
                 </ul>
             </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><div><h2>Historial de estados</h2><p>Los cambios de tu postulación.</p></div></div>
+                <HistorialEstados PostulacionId="p.Id" />
+            </section>
         </div>
 
         <aside class="stack">
@@ -72,7 +77,7 @@ else
                     </div>
                     @if (pago.Estado == EstadoPago.Pendiente)
                     {
-                        <button type="button" class="btn btn-primary" style="width:100%;margin-top:18px" @onclick='() => Avisos.Exito("Redirigiendo a la pasarela de pago")'><Icon Name="credit-card" Size="16" />Pagar ahora</button>
+                        <a class="btn btn-primary" style="width:100%;margin-top:18px" href="/postulante/pago"><Icon Name="upload" Size="16" />Ir a Mi pago</a>
                     }
                 }
             </section>

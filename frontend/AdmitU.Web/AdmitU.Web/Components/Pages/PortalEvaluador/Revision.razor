@@ -36,8 +36,17 @@ else
                             <div style="flex-basis:100%;display:flex;gap:8px;flex-wrap:wrap;padding-left:54px">
                                 <button type="button" class="btn btn-ghost btn-sm" @onclick='() => Avisos.Exito("Abriendo documento")'><Icon Name="eye" Size="14" />Ver</button>
                                 <button type="button" class="btn btn-ghost btn-sm" disabled="@(!Editable)" @onclick="() => Marcar(doc, EstadoDocumento.Aprobado)"><Icon Name="check" Size="14" />Aprobar</button>
-                                <button type="button" class="btn btn-ghost btn-sm" disabled="@(!Editable)" @onclick="() => Marcar(doc, EstadoDocumento.Observado)"><Icon Name="alert" Size="14" />Observar</button>
+                                <button type="button" class="btn btn-ghost btn-sm" disabled="@(!Editable)" @onclick="() => ObservarDoc(doc)"><Icon Name="alert" Size="14" />Observar</button>
                             </div>
+                            @foreach (var o in ObservacionesDe(doc))
+                            {
+                                <div style="flex-basis:100%;padding-left:54px">
+                                    <div class="notice" style="@(o.Estado == EstadoObservacion.Subsanada ? "background:var(--success-soft);color:var(--success)" : "")">
+                                        <Icon Name="@(o.Estado == EstadoObservacion.Subsanada ? "check-circle" : "alert")" Size="18" />
+                                        <div><strong>@o.Tipo.Etiqueta() · @o.Estado.Etiqueta()</strong><p>@o.Descripcion@(o.ComentarioSubsanacion is null ? "" : " — Respuesta: " + o.ComentarioSubsanacion)</p></div>
+                                    </div>
+                                </div>
+                            }
                         </li>
                     }
                 </ul>
@@ -95,8 +104,61 @@ else
     </div>
 }
 
+<Drawer Abierto="@(observando is not null)" Titulo="Observar documento" Descripcion="@observando?.Requisito" OnCerrar="() => observando = null">
+    <form class="drawer-form" @onsubmit="GuardarObservacion" @onsubmit:preventDefault>
+        <div class="drawer-body">
+            <div class="field">
+                <label for="obs-tipo">Tipo de observación</label>
+                <select id="obs-tipo" @bind="tipoObs">
+                    @foreach (var t in Enum.GetValues<TipoObservacion>()) { <option value="@t">@t.Etiqueta()</option> }
+                </select>
+            </div>
+            <div class="field">
+                <label for="obs-desc">Descripción <span class="req">*</span></label>
+                <textarea id="obs-desc" @bind="descObs" maxlength="255" placeholder="Indica qué debe corregir el postulante"></textarea>
+                @if (errorObs) { <span class="validation-message">Describe la observación para que el postulante pueda subsanarla.</span> }
+            </div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="() => observando = null">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="alert" Size="16" />Registrar observación</button>
+        </div>
+    </form>
+</Drawer>
+
 @code {
     [Parameter] public int Id { get; set; }
+
+    private Documento? observando;
+    private TipoObservacion tipoObs = TipoObservacion.Ilegible;
+    private string descObs = "";
+    private bool errorObs;
+    private readonly List<ObservacionDocumento> nuevas = [];
+
+    private IEnumerable<ObservacionDocumento> ObservacionesDe(Documento d) =>
+        DatosDemo.Observaciones.Where(o => o.DocumentoId == d.Id).Concat(nuevas.Where(o => o.DocumentoId == d.Id));
+
+    private void ObservarDoc(Documento d)
+    {
+        observando = d;
+        descObs = "";
+        errorObs = false;
+        tipoObs = TipoObservacion.Ilegible;
+    }
+
+    private void GuardarObservacion()
+    {
+        if (string.IsNullOrWhiteSpace(descObs)) { errorObs = true; return; }
+        var d = observando!;
+        d.Estado = EstadoDocumento.Observado;
+        nuevas.Add(new ObservacionDocumento
+        {
+            Id = 1000 + nuevas.Count, DocumentoId = d.Id, EvaluadorId = DatosDemo.EvaluadorActualId, Tipo = tipoObs,
+            Descripcion = descObs.Trim(), Fecha = DatosDemo.Hoy, Estado = EstadoObservacion.Pendiente
+        });
+        observando = null;
+        Avisos.Exito("Observación registrada");
+    }
 
     private Postulacion? p;
     private Postulante? persona;

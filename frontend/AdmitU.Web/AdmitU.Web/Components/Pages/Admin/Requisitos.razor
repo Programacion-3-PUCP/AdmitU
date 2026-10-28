@@ -1,0 +1,65 @@
+@page "/admin/requisitos"
+@inject ToastService Avisos
+
+<PageTitle>Requisitos · AdmitU</PageTitle>
+
+<PageHeader Titulo="Requisitos documentales" Subtitulo="Catálogo base de documentos. Luego se asignan a cada convocatoria y modalidad desde el detalle de la convocatoria."
+            Migas="@(["Requisitos"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nuevo"><Icon Name="plus" Size="16" />Nuevo requisito</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="Requisito" Items="DatosDemo.Requisitos" TextoBusqueda="@(r => $"{r.Codigo} {r.Nombre} {r.Descripcion}")" Marcador="Buscar por código o nombre">
+    <Encabezado><th>Código</th><th>Requisito</th><th>Tipo de archivo</th><th>Tamaño máx.</th><th>Usado en</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="r">
+        <tr>
+            <td><span class="mono">@r.Codigo</span></td>
+            <td><span class="cell-title">@r.Nombre</span><span class="cell-sub">@r.Descripcion</span></td>
+            <td>@r.TipoArchivo</td>
+            <td class="num">@r.TamanioMaximoMb MB</td>
+            <td>@DatosDemo.RequisitosAsignados.Count(a => a.RequisitoId == r.Id) modalidad(es)</td>
+            <td><StatusBadge Texto="@(r.Activo ? "Activo" : "Inactivo")" Tono="@(r.Activo ? "success" : "neutral")" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <button type="button" class="icon-btn brand" title="Editar" aria-label="Editar @r.Nombre" @onclick="() => Editar(r)"><Icon Name="pencil" Size="17" /></button>
+                    <button type="button" class="icon-btn danger" title="Desactivar" aria-label="Desactivar @r.Nombre" disabled="@(!r.Activo)" @onclick="() => pendiente = r"><Icon Name="trash" Size="17" /></button>
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nuevo requisito" : "Editar requisito")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field"><label for="r-codigo">Código <span class="req">*</span></label><InputText id="r-codigo" @bind-Value="modelo.Codigo" placeholder="Ej. CERT-EST" /><ValidationMessage For="() => modelo.Codigo" /></div>
+            <div class="field"><label for="r-nombre">Nombre <span class="req">*</span></label><InputText id="r-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Certificado de estudios" /><ValidationMessage For="() => modelo.Nombre" /></div>
+            <div class="field"><label for="r-desc">Descripción</label><InputTextArea id="r-desc" @bind-Value="modelo.Descripcion" placeholder="Indicaciones para el postulante" /><ValidationMessage For="() => modelo.Descripcion" /></div>
+            <div class="field">
+                <label for="r-tipo">Tipo de archivo requerido</label>
+                <InputSelect id="r-tipo" @bind-Value="modelo.TipoArchivo"><option>PDF</option><option>IMAGEN</option><option>CUALQUIERA</option></InputSelect>
+            </div>
+            <div class="field"><label for="r-tam">Tamaño máximo (MB) <span class="req">*</span></label><InputNumber id="r-tam" @bind-Value="modelo.TamanioMaximoMb" /><ValidationMessage For="() => modelo.TamanioMaximoMb" /></div>
+            <label class="switch"><InputCheckbox @bind-Value="modelo.Activo" /><span><strong>Requisito activo</strong><small>Solo los activos pueden asignarse a una convocatoria.</small></span></label>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Desactivar requisito" Mensaje="@($"{pendiente?.Nombre} dejará de poder asignarse a nuevas convocatorias. Las ya asignadas se conservan.")" TextoConfirmar="Desactivar"
+               OnCancelar="() => pendiente = null" OnConfirmar="Desactivar" />
+
+@code {
+    private bool abierto;
+    private Requisito modelo = new();
+    private Requisito? pendiente;
+
+    private void Nuevo() { modelo = new(); abierto = true; }
+    private void Editar(Requisito r) { modelo = new() { Id = r.Id, Codigo = r.Codigo, Nombre = r.Nombre, Descripcion = r.Descripcion, TipoArchivo = r.TipoArchivo, TamanioMaximoMb = r.TamanioMaximoMb, Activo = r.Activo }; abierto = true; }
+    private void Cerrar() => abierto = false;
+    private void Guardar() { abierto = false; Avisos.Exito("Requisito guardado"); }
+    private void Desactivar() { pendiente = null; Avisos.Exito("Requisito desactivado"); }
+}

@@ -92,10 +92,21 @@
                 <div class="field">
                     <label for="medio">Medio de pago</label>
                     <select id="medio" @bind="medio">
-                        <option>Tarjeta</option><option>Transferencia</option><option>Pasarela web</option>
+                        <option>Transferencia</option><option>Yape</option><option>Tarjeta</option>
                     </select>
                 </div>
                 <div class="pay-total"><span>Derecho de inscripción</span><strong>@Formato.Soles(modalidadId == 3 ? 320m : 250m)</strong></div>
+                @if (medio == "Transferencia")
+                {
+                    <div class="field">
+                        <label>Voucher de la transferencia <span class="muted">(puedes subirlo después en «Mi pago»)</span></label>
+                        <ZonaCarga Etiqueta="Subir voucher" OnArchivo="nombre => voucher = nombre" />
+                    </div>
+                }
+                else
+                {
+                    <p class="hint">Recibirás las instrucciones de pago al enviar tu postulación.</p>
+                }
             </div>
         </div>
         <label class="switch" style="margin-top:20px">
@@ -138,7 +149,8 @@
     private int carreraId;
     private int modalidadId = DatosDemo.Modalidades[0].Id;
     private int sedeId = DatosDemo.Sedes[0].Id;
-    private string medio = "Tarjeta";
+    private string medio = "Transferencia";
+    private string? voucher;
     private bool acepta;
     private string? error;
     private readonly Dictionary<string, string> archivos = [];

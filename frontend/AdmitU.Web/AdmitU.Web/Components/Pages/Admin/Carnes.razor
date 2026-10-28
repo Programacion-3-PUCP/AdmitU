@@ -1,0 +1,122 @@
+@page "/admin/carnes"
+@inject ToastService Avisos
+
+<PageTitle>Carnés · AdmitU</PageTitle>
+
+<PageHeader Titulo="Carnés de postulante" Subtitulo="Emisión y anulación de los carnés que habilitan el ingreso a la evaluación." Migas="@(["Carnés"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Emitir"><Icon Name="plus" Size="16" />Emitir carné</button></Acciones>
+</PageHeader>
+
+<section class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:22px">
+    <StatCard Etiqueta="Carnés vigentes" Valor="@DatosDemo.Carnes.Count(c => !c.Anulado).ToString()" Icono="id-card" Tono="success" />
+    <StatCard Etiqueta="Carnés anulados" Valor="@DatosDemo.Carnes.Count(c => c.Anulado).ToString()" Icono="x" Tono="danger" />
+    <StatCard Etiqueta="Pendientes de emisión" Valor="@Elegibles().Count.ToString()" Icono="clock" Tono="warning" />
+</section>
+
+<div class="chips" role="group" aria-label="Filtrar por estado">
+    <button type="button" class="chip @(filtro == "" ? "is-active" : "")" @onclick='() => filtro = ""'>Todos<em>@DatosDemo.Carnes.Count</em></button>
+    <button type="button" class="chip @(filtro == "vigente" ? "is-active" : "")" @onclick='() => filtro = "vigente"'>Vigentes<em>@DatosDemo.Carnes.Count(c => !c.Anulado)</em></button>
+    <button type="button" class="chip @(filtro == "anulado" ? "is-active" : "")" @onclick='() => filtro = "anulado"'>Anulados<em>@DatosDemo.Carnes.Count(c => c.Anulado)</em></button>
+</div>
+
+<DataTable TItem="Carne" Items="Filtrados" TextoBusqueda="@(c => $"{c.Codigo} {Persona(c)?.NombreCompleto} {c.Aula}")" Marcador="Buscar por carné, postulante o aula">
+    <Encabezado><th>Carné</th><th>Postulante</th><th>Sede y aula</th><th>Vigencia</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="c">
+        <tr>
+            <td><span class="mono">@c.Codigo</span></td>
+            <td><div class="cell-person"><Avatar Nombre="@(Persona(c)?.NombreCompleto ?? "?")" Tamano="sm" /><span><strong>@Persona(c)?.NombreCompleto</strong><small>@DatosDemo.Postulacion(c.PostulacionId)?.Codigo</small></span></div></td>
+            <td>@DatosDemo.Sede(c.SedeId)?.Nombre<span class="cell-sub">Aula @c.Aula</span></td>
+            <td>@Formato.FechaCorta(c.VigenciaInicio) – @Formato.Fecha(c.VigenciaFin)</td>
+            <td><StatusBadge Texto="@(c.Anulado ? "Anulado" : "Vigente")" Tono="@(c.Anulado ? "danger" : "success")" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <button type="button" class="icon-btn brand" title="Ver carné" aria-label="Ver carné @c.Codigo" @onclick="() => verCarne = c"><Icon Name="eye" Size="17" /></button>
+                    <button type="button" class="icon-btn danger" title="Anular" aria-label="Anular carné @c.Codigo" disabled="@c.Anulado" @onclick="() => anular = c"><Icon Name="x" Size="17" /></button>
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="emitiendo" Titulo="Emitir carné" Descripcion="Solo aparecen postulaciones con el pago aprobado y sin carné." OnCerrar="() => emitiendo = false">
+    <form class="drawer-form" @onsubmit="Confirmar" @onsubmit:preventDefault>
+        <div class="drawer-body">
+            @if (Elegibles().Count == 0)
+            {
+                <EmptyState Icono="check-circle" Titulo="Todo emitido" Mensaje="No hay postulaciones pendientes de carné." />
+            }
+            else
+            {
+                <div class="field">
+                    <label for="c-post">Postulación</label>
+                    <select id="c-post">@foreach (var p in Elegibles()) { <option value="@p.Id">@p.Codigo · @DatosDemo.Postulante(p.PostulanteId)?.NombreCompleto</option> }</select>
+                </div>
+                <div class="field"><label for="c-sede">Sede de evaluación</label><select id="c-sede">@foreach (var s in DatosDemo.Sedes.Where(s => s.Activo)) { <option value="@s.Id">@s.Nombre</option> }</select></div>
+                <div class="field"><label for="c-aula">Aula</label><input id="c-aula" type="text" maxlength="30" placeholder="Ej. A-204" /></div>
+                <div class="form-grid">
+                    <div class="field"><label for="c-ini">Vigente desde</label><input id="c-ini" type="date" value="2026-12-01" /></div>
+                    <div class="field"><label for="c-fin">Vigente hasta</label><input id="c-fin" type="date" value="2026-12-06" /></div>
+                </div>
+            }
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="() => emitiendo = false">Cancelar</button>
+            <button type="submit" class="btn btn-primary" disabled="@(Elegibles().Count == 0)"><Icon Name="check" Size="16" />Emitir</button>
+        </div>
+    </form>
+</Drawer>
+
+<Drawer Abierto="@(verCarne is not null)" Titulo="Vista del carné" OnCerrar="() => verCarne = null">
+    <div class="drawer-body">
+        @if (verCarne is not null)
+        {
+            <CarneTarjeta Carne="verCarne" />
+            @if (verCarne.Anulado) { <div class="notice"><Icon Name="alert" Size="20" /><div><strong>Carné anulado</strong><p>@verCarne.MotivoAnulacion</p></div></div> }
+            <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Carné descargado en PDF")'><Icon Name="download" Size="16" />Descargar PDF</button>
+        }
+    </div>
+</Drawer>
+
+<Drawer Abierto="@(anular is not null)" Titulo="Anular carné" Descripcion="@($"Carné {anular?.Codigo}")" OnCerrar="() => anular = null">
+    <form class="drawer-form" @onsubmit="ConfirmarAnulacion" @onsubmit:preventDefault>
+        <div class="drawer-body">
+            <div class="notice"><Icon Name="alert" Size="20" /><div><strong>Esta acción inhabilita el ingreso</strong><p>El postulante no podrá rendir la evaluación con este carné.</p></div></div>
+            <div class="field"><label for="a-motivo">Motivo de la anulación <span class="req">*</span></label><textarea id="a-motivo" @bind="motivo" maxlength="255" placeholder="Explica por qué se anula el carné"></textarea>
+                @if (errorMotivo) { <span class="validation-message">Ingresa el motivo de la anulación.</span> }</div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="() => anular = null">Cancelar</button>
+            <button type="submit" class="btn btn-danger">Anular carné</button>
+        </div>
+    </form>
+</Drawer>
+
+@code {
+    private string filtro = "";
+    private bool emitiendo;
+    private Carne? verCarne, anular;
+    private string motivo = "";
+    private bool errorMotivo;
+
+    private IEnumerable<Carne> Filtrados => DatosDemo.Carnes.Where(c => filtro == "" || (filtro == "anulado") == c.Anulado);
+
+    private static Postulante? Persona(Carne c) => DatosDemo.Postulante(DatosDemo.Postulacion(c.PostulacionId)?.PostulanteId ?? 0);
+
+    private static List<Postulacion> Elegibles() => DatosDemo.Postulaciones
+        .Where(p => p.Estado is EstadoPostulacion.Enviada or EstadoPostulacion.EnRevision or EstadoPostulacion.Admitida)
+        .Where(p => DatosDemo.Pagos.Any(x => x.PostulacionId == p.Id && x.Estado == EstadoPago.Aprobado))
+        .Where(p => DatosDemo.Carnes.All(c => c.PostulacionId != p.Id)).ToList();
+
+    private void Emitir() => emitiendo = true;
+
+    private void Confirmar() { emitiendo = false; Avisos.Exito("Carné emitido"); }
+
+    private void ConfirmarAnulacion()
+    {
+        if (string.IsNullOrWhiteSpace(motivo)) { errorMotivo = true; return; }
+        errorMotivo = false;
+        anular = null;
+        motivo = "";
+        Avisos.Exito("Carné anulado");
+    }
+}

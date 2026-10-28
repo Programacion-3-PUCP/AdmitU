@@ -23,21 +23,22 @@ public static class Presentacion
         _ => "danger"
     };
 
-    public static string Etiqueta(this EstadoPago e) => e switch
-    {
-        EstadoPago.Pendiente => "Pendiente",
-        EstadoPago.Pagado => "Pagado",
-        EstadoPago.Observado => "Observado",
-        _ => "Anulado"
-    };
+    public static string Etiqueta(this EstadoPago e) => e.ToString();
 
     public static string Tono(this EstadoPago e) => e switch
     {
+        EstadoPago.Generado => "neutral",
         EstadoPago.Pendiente => "warning",
-        EstadoPago.Pagado => "success",
-        EstadoPago.Observado => "violet",
-        _ => "neutral"
+        EstadoPago.Aprobado => "success",
+        EstadoPago.Rechazado => "danger",
+        _ => "violet"
     };
+
+    public static string Etiqueta(this TipoObservacion t) => t.ToString();
+
+    public static string Etiqueta(this EstadoObservacion e) => e.ToString();
+
+    public static string Tono(this EstadoObservacion e) => e == EstadoObservacion.Pendiente ? "warning" : "success";
 
     public static string Etiqueta(this EstadoDocumento e) => e.ToString();
 

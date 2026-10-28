@@ -1,0 +1,120 @@
+@page "/admin/reportes/observados"
+@inject ToastService Avisos
+
+<PageTitle>Expedientes observados · AdmitU</PageTitle>
+
+<PageHeader Titulo="Expedientes observados" Subtitulo="Documentos con observaciones emitidas por los evaluadores y su estado de subsanación."
+            Migas="@(["Reportes", "Expedientes observados"])" />
+
+<section class="card card-pad">
+    <div class="filters">
+        <div class="field">
+            <label for="o-tipo">Tipo de observación</label>
+            <select id="o-tipo" @bind="tipo">
+                <option value="">Todos los tipos</option>
+                @foreach (var t in Enum.GetValues<TipoObservacion>()) { <option value="@t">@t.Etiqueta()</option> }
+            </select>
+        </div>
+        <div class="field">
+            <label for="o-estado">Estado</label>
+            <select id="o-estado" @bind="estado">
+                <option value="">Todos</option>
+                @foreach (var e in Enum.GetValues<EstadoObservacion>()) { <option value="@e">@e.Etiqueta()</option> }
+            </select>
+        </div>
+        <div class="field">
+            <label for="o-eval">Evaluador</label>
+            <select id="o-eval" @bind="evaluadorId">
+                <option value="0">Todos los evaluadores</option>
+                @foreach (var e in DatosDemo.Evaluadores.Where(e => e.Activo)) { <option value="@e.Id">@e.Nombre</option> }
+            </select>
+        </div>
+    </div>
+    <div class="filters-actions">
+        <button type="button" class="btn btn-primary" @onclick="Generar"><Icon Name="filter" Size="16" />Generar reporte</button>
+        <button type="button" class="btn btn-ghost" @onclick="Limpiar">Limpiar filtros</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Reporte de observados exportado en PDF")'><Icon Name="download" Size="16" />PDF</button>
+        <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Reporte de observados exportado en Excel")'><Icon Name="download" Size="16" />Excel</button>
+    </div>
+</section>
+
+<section class="card card-pad report-paper">
+    <div class="report-head">
+        <div><h2>Reporte de expedientes observados</h2><p>Convocatoria Admisión 2027-I · emitido el @Formato.Fecha(DatosDemo.Hoy)</p></div>
+        <div class="report-meta">
+            <StatusBadge Texto="@(aplicado.Tipo == "" ? "Todos los tipos" : aplicado.Tipo)" Tono="brand" Punto="false" />
+            <StatusBadge Texto="@(aplicado.Estado == "" ? "Todos los estados" : aplicado.Estado)" Tono="neutral" Punto="false" />
+        </div>
+    </div>
+
+    <div class="report-kpis">
+        <div class="kpi"><strong>@filas.Count</strong><span>Observaciones</span></div>
+        <div class="kpi"><strong>@filas.Count(x => x.Estado == EstadoObservacion.Pendiente)</strong><span>Pendientes de subsanar</span></div>
+        <div class="kpi"><strong>@filas.Count(x => x.Estado == EstadoObservacion.Subsanada)</strong><span>Subsanadas</span></div>
+        <div class="kpi"><strong>@filas.Select(x => Expediente(x)?.Id).Distinct().Count()</strong><span>Expedientes afectados</span></div>
+    </div>
+
+    <div style="margin-bottom:22px"><h3 style="margin-bottom:12px">Observaciones por tipo</h3><DonutChart Segmentos="segmentos" Titulo="observaciones" /></div>
+
+    @if (filas.Count == 0)
+    {
+        <EmptyState Icono="check-circle" Titulo="Sin expedientes observados" Mensaje="No hay observaciones con los filtros aplicados." />
+    }
+    else
+    {
+        <div class="table-inline"><div class="table-scroll">
+            <table class="table">
+                <thead><tr><th>Expediente</th><th>Postulante</th><th>Documento</th><th>Tipo</th><th>Descripción</th><th>Fecha</th><th>Evaluador</th><th>Estado</th></tr></thead>
+                <tbody>
+                    @foreach (var o in filas)
+                    {
+                        var exp = Expediente(o);
+                        var doc = DatosDemo.Documentos.First(d => d.Id == o.DocumentoId);
+                        <tr>
+                            <td><a class="mono" href="/admin/postulaciones/@exp?.Id">@exp?.Codigo</a></td>
+                            <td>@DatosDemo.Postulante(exp?.PostulanteId ?? 0)?.NombreCompleto</td>
+                            <td>@doc.Requisito</td>
+                            <td>@o.Tipo.Etiqueta()</td>
+                            <td style="white-space:normal;min-width:240px">@o.Descripcion</td>
+                            <td>@Formato.Fecha(o.Fecha)</td>
+                            <td>@DatosDemo.Evaluadores.FirstOrDefault(e => e.Id == o.EvaluadorId)?.Nombre</td>
+                            <td><StatusBadge Texto="@o.Estado.Etiqueta()" Tono="@o.Estado.Tono()" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div></div>
+    }
+</section>
+
+@code {
+    private sealed record Filtro(string Tipo, string Estado, int Evaluador);
+
+    private string tipo = "", estado = "";
+    private int evaluadorId;
+    private Filtro aplicado = new("", "", 0);
+    private List<ObservacionDocumento> filas = [];
+    private List<DonutChart.Segmento> segmentos = [];
+
+    protected override void OnInitialized() => Calcular();
+
+    private static Postulacion? Expediente(ObservacionDocumento o) =>
+        DatosDemo.Postulacion(DatosDemo.Documentos.First(d => d.Id == o.DocumentoId).PostulacionId);
+
+    private void Generar() { aplicado = new(tipo, estado, evaluadorId); Calcular(); Avisos.Exito("Reporte generado"); }
+
+    private void Limpiar() { tipo = estado = ""; evaluadorId = 0; aplicado = new("", "", 0); Calcular(); }
+
+    private void Calcular()
+    {
+        filas = DatosDemo.Observaciones
+            .Where(o => aplicado.Tipo == "" || o.Tipo.ToString() == aplicado.Tipo)
+            .Where(o => aplicado.Estado == "" || o.Estado.ToString() == aplicado.Estado)
+            .Where(o => aplicado.Evaluador == 0 || o.EvaluadorId == aplicado.Evaluador)
+            .OrderBy(o => o.Estado).ThenByDescending(o => o.Fecha).ToList();
+        string[] colores = ["var(--c-3)", "var(--c-1)", "var(--c-6)", "var(--c-4)"];
+        segmentos = Enum.GetValues<TipoObservacion>()
+            .Select((t, i) => new DonutChart.Segmento(t.Etiqueta(), filas.Count(o => o.Tipo == t), colores[i])).ToList();
+    }
+}

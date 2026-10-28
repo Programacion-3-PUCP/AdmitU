@@ -68,6 +68,46 @@ else
                     </ul>
                 }
             </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Apoderado</h2></div>
+                @if (apoderado is null)
+                {
+                    <p class="muted">Este postulante no registra apoderado.</p>
+                }
+                else
+                {
+                    <dl class="dl">
+                        <div><dt>Nombre</dt><dd>@apoderado.NombreCompleto</dd></div>
+                        <div><dt>Parentesco</dt><dd>@apoderado.Parentesco</dd></div>
+                        <div><dt>Documento</dt><dd>DNI · @apoderado.Documento</dd></div>
+                        <div><dt>Correo</dt><dd>@apoderado.Correo</dd></div>
+                        <div><dt>Teléfono</dt><dd>@(apoderado.Telefono ?? "No registrado")</dd></div>
+                    </dl>
+                }
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Antecedentes académicos</h2></div>
+                @if (antecedentes.Count == 0)
+                {
+                    <p class="muted">No registra antecedentes académicos.</p>
+                }
+                else
+                {
+                    <ul class="list-rows">
+                        @foreach (var a in antecedentes)
+                        {
+                            var ins = DatosDemo.Instituciones.First(x => x.Id == a.InstitucionId);
+                            <li>
+                                <span class="feed-icon"><Icon Name="graduation-cap" Size="18" /></span>
+                                <div class="file-meta"><strong>@ins.Nombre</strong><small>@(a.AnioInicio?.ToString() ?? "—") – @(a.AnioFin?.ToString() ?? "—") · @a.Descripcion</small></div>
+                                <StatusBadge Texto="@(ins.Tipo == "COLEGIO" ? "Colegio" : "Universidad")" Tono="@(ins.Tipo == "COLEGIO" ? "info" : "violet")" Punto="false" />
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
         </div>
 
         <aside class="stack">
@@ -87,10 +127,14 @@ else
 
     private Postulante? postulante;
     private List<Postulacion> postulaciones = [];
+    private Apoderado? apoderado;
+    private List<Antecedente> antecedentes = [];
 
     protected override void OnParametersSet()
     {
         postulante = DatosDemo.Postulante(Id);
+        apoderado = DatosDemo.ApoderadoDe(Id);
+        antecedentes = DatosDemo.Antecedentes.Where(a => a.PostulanteId == Id).ToList();
         postulaciones = DatosDemo.Postulaciones.Where(p => p.PostulanteId == Id).ToList();
     }
 }

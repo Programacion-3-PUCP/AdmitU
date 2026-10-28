@@ -108,7 +108,7 @@
         avance = Math.Round((DatosDemo.Hoy.DayNumber - conv.Inicio.DayNumber) * 100.0 / (conv.Fin.DayNumber - conv.Inicio.DayNumber));
         enviadas = Postulaciones.Count(p => p.Estado != EstadoPostulacion.Borrador);
         pendientes = DatosDemo.Pagos.Count(p => p.Estado == EstadoPago.Pendiente);
-        recaudado = DatosDemo.Pagos.Where(p => p.Estado == EstadoPago.Pagado).Sum(p => p.Monto);
+        recaudado = DatosDemo.Pagos.Where(p => p.Estado == EstadoPago.Aprobado).Sum(p => p.Monto);
         vacantes = DatosDemo.Carreras.Where(c => c.Activo).Sum(c => c.Vacantes);
 
         string[] colores = ["var(--c-3)", "var(--c-1)", "var(--c-4)", "var(--c-6)", "var(--c-5)", "var(--c-2)"];

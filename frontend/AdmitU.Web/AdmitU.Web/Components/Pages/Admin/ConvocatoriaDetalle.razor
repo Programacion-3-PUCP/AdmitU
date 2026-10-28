@@ -1,0 +1,211 @@
+@page "/admin/convocatorias/{Id:int}"
+@inject ToastService Avisos
+
+@if (c is null)
+{
+    <PageTitle>Convocatoria no encontrada · AdmitU</PageTitle>
+    <PageHeader Titulo="Convocatoria no encontrada" Migas="@(["Convocatorias", "No encontrada"])" Enlaces="@(["/admin/convocatorias"])" />
+    <section class="card"><EmptyState Titulo="No existe esta convocatoria" Mensaje="Revisa el enlace o vuelve al listado.">
+        <a class="btn btn-primary" style="margin-top:14px" href="/admin/convocatorias">Volver al listado</a>
+    </EmptyState></section>
+}
+else
+{
+    <PageTitle>@c.Nombre · AdmitU</PageTitle>
+    <PageHeader Titulo="@c.Nombre" Subtitulo="@($"{c.Codigo} · {Formato.Fecha(c.Inicio)} al {Formato.Fecha(c.Fin)}")" Migas="@(["Convocatorias", c.Nombre])" Enlaces="@(["/admin/convocatorias"])">
+        <Acciones>
+            <a class="btn btn-ghost" href="/admin/convocatorias"><Icon Name="arrow-left" Size="16" />Volver</a>
+            <StatusBadge Texto="@c.Estado.Etiqueta()" Tono="@c.Estado.Tono()" />
+        </Acciones>
+    </PageHeader>
+
+    <div class="tabs chips" role="tablist" aria-label="Secciones de la convocatoria">
+        @foreach (var (clave, texto, icono) in secciones)
+        {
+            var actual = clave;
+            <button type="button" role="tab" aria-selected="@(seccion == actual)" class="chip @(seccion == actual ? "is-active" : "")" @onclick="() => seccion = actual">@texto</button>
+        }
+    </div>
+
+    @if (seccion == "etapas")
+    {
+        <section class="card card-pad">
+            <div class="card-head"><div><h2>Etapas del proceso</h2><p>Cronograma de la convocatoria.</p></div>
+                <button type="button" class="btn btn-primary btn-sm" @onclick='() => drawer = "etapa"'><Icon Name="plus" Size="14" />Agregar etapa</button></div>
+            @if (etapas.Count == 0) { <EmptyState Icono="calendar" Titulo="Sin etapas" Mensaje="Agrega las etapas que componen este proceso." /> }
+            else
+            {
+                <div class="table-inline"><div class="table-scroll"><table class="table">
+                    <thead><tr><th>Etapa</th><th>Descripción</th><th>Inicio</th><th>Fin</th><th class="th-actions"></th></tr></thead>
+                    <tbody>
+                        @foreach (var e in etapas)
+                        {
+                            var et = DatosDemo.Etapas.First(x => x.Id == e.EtapaId);
+                            <tr><td><span class="cell-title">@et.Nombre</span></td><td style="white-space:normal">@et.Descripcion</td><td>@Formato.Fecha(e.Inicio)</td><td>@Formato.Fecha(e.Fin)</td>
+                                <td class="td-actions"><button type="button" class="icon-btn danger" aria-label="Quitar @et.Nombre" @onclick='() => Avisos.Exito("Etapa quitada")'><Icon Name="trash" Size="17" /></button></td></tr>
+                        }
+                    </tbody></table></div></div>
+            }
+        </section>
+    }
+    else if (seccion == "modalidades")
+    {
+        <section class="card card-pad">
+            <div class="card-head"><div><h2>Modalidades habilitadas</h2><p>Costo de inscripción por modalidad.</p></div>
+                <button type="button" class="btn btn-primary btn-sm" @onclick='() => drawer = "modalidad"'><Icon Name="plus" Size="14" />Habilitar modalidad</button></div>
+            <div class="table-inline"><div class="table-scroll"><table class="table">
+                <thead><tr><th>Modalidad</th><th>Observación</th><th style="text-align:right">Costo</th><th>Requisitos</th><th class="th-actions"></th></tr></thead>
+                <tbody>
+                    @foreach (var m in modalidades)
+                    {
+                        var mod = DatosDemo.Modalidad(m.ModalidadId);
+                        <tr><td><span class="cell-title">@mod?.Nombre</span></td><td style="white-space:normal">@(m.Observacion ?? "—")</td>
+                            <td class="num" style="text-align:right">@Formato.Soles(m.Costo)</td>
+                            <td><button type="button" class="btn btn-ghost btn-sm" @onclick="() => IrARequisitos(m.ModalidadId)">@DatosDemo.RequisitosAsignados.Count(r => r.ConvocatoriaId == Id && r.ModalidadId == m.ModalidadId) requisitos</button></td>
+                            <td class="td-actions"><button type="button" class="icon-btn danger" aria-label="Quitar modalidad" @onclick='() => Avisos.Exito("Modalidad deshabilitada")'><Icon Name="trash" Size="17" /></button></td></tr>
+                    }
+                </tbody></table></div></div>
+        </section>
+    }
+    else if (seccion == "carreras")
+    {
+        <section class="card card-pad">
+            <div class="card-head"><div><h2>Oferta de carreras</h2><p>Vacantes disponibles por carrera.</p></div>
+                <button type="button" class="btn btn-primary btn-sm" @onclick='() => drawer = "carrera"'><Icon Name="plus" Size="14" />Ofertar carrera</button></div>
+            <div class="table-inline"><div class="table-scroll"><table class="table">
+                <thead><tr><th>Carrera</th><th>Facultad</th><th style="text-align:right">Vacantes</th><th class="th-actions"></th></tr></thead>
+                <tbody>
+                    @foreach (var o in ofertas)
+                    {
+                        var car = DatosDemo.Carrera(o.CarreraId);
+                        <tr><td><span class="cell-title">@car?.Nombre</span></td><td>@DatosDemo.Facultad(car?.FacultadId ?? 0)?.Nombre</td><td class="num" style="text-align:right">@o.Vacantes</td>
+                            <td class="td-actions"><button type="button" class="icon-btn danger" aria-label="Quitar oferta" @onclick='() => Avisos.Exito("Oferta quitada")'><Icon Name="trash" Size="17" /></button></td></tr>
+                    }
+                </tbody>
+                <tfoot><tr><td colspan="2">Total de vacantes</td><td class="num" style="text-align:right">@ofertas.Sum(o => o.Vacantes)</td><td></td></tr></tfoot></table></div></div>
+        </section>
+    }
+    else
+    {
+        <section class="card card-pad">
+            <div class="card-head"><div><h2>Requisitos por modalidad</h2><p>Documentos que debe presentar el postulante según su modalidad.</p></div>
+                <button type="button" class="btn btn-primary btn-sm" @onclick='() => drawer = "requisito"'><Icon Name="plus" Size="14" />Asignar requisito</button></div>
+            <div class="chips" role="group" aria-label="Modalidad">
+                @foreach (var m in modalidades)
+                {
+                    var actual = m.ModalidadId;
+                    <button type="button" class="chip @(modalidadId == actual ? "is-active" : "")" @onclick="() => modalidadId = actual">@DatosDemo.Modalidad(actual)?.Nombre</button>
+                }
+            </div>
+            @if (requisitos.Count == 0) { <EmptyState Icono="folder" Titulo="Sin requisitos asignados" Mensaje="Asigna los documentos que se exigirán en esta modalidad." /> }
+            else
+            {
+                <div class="table-inline"><div class="table-scroll"><table class="table">
+                    <thead><tr><th style="width:70px">Orden</th><th>Requisito</th><th>Tipo</th><th>Obligatorio</th><th class="th-actions"></th></tr></thead>
+                    <tbody>
+                        @foreach (var r in requisitos)
+                        {
+                            var req = DatosDemo.Requisitos.First(x => x.Id == r.RequisitoId);
+                            <tr><td class="num">@r.Orden</td><td><span class="cell-title">@req.Nombre</span><span class="cell-sub">@req.Descripcion</span></td><td>@req.TipoArchivo · @req.TamanioMaximoMb MB</td>
+                                <td><StatusBadge Texto="@(r.Obligatorio ? "Obligatorio" : "Opcional")" Tono="@(r.Obligatorio ? "info" : "neutral")" /></td>
+                                <td class="td-actions"><button type="button" class="icon-btn danger" aria-label="Quitar @req.Nombre" @onclick='() => Avisos.Exito("Requisito quitado")'><Icon Name="trash" Size="17" /></button></td></tr>
+                        }
+                    </tbody></table></div></div>
+            }
+        </section>
+    }
+
+    <Drawer Abierto="@(drawer == "etapa")" Titulo="Agregar etapa" OnCerrar="CerrarDrawer">
+        <form class="drawer-form" @onsubmit="Confirmar" @onsubmit:preventDefault>
+            <div class="drawer-body">
+                <div class="field"><label for="d-etapa">Etapa</label><select id="d-etapa">@foreach (var e in DatosDemo.Etapas) { <option value="@e.Id">@e.Nombre</option> }</select></div>
+                <div class="field"><label for="d-ini">Fecha de inicio</label><input id="d-ini" type="date" /></div>
+                <div class="field"><label for="d-fin">Fecha de fin</label><input id="d-fin" type="date" /></div>
+            </div>
+            <div class="drawer-foot"><button type="button" class="btn btn-ghost" @onclick="CerrarDrawer">Cancelar</button><button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Agregar</button></div>
+        </form>
+    </Drawer>
+    <Drawer Abierto="@(drawer == "modalidad")" Titulo="Habilitar modalidad" OnCerrar="CerrarDrawer">
+        <form class="drawer-form" @onsubmit="Confirmar" @onsubmit:preventDefault>
+            <div class="drawer-body">
+                <div class="field"><label for="d-mod">Modalidad</label><select id="d-mod">@foreach (var m in DatosDemo.Modalidades.Where(m => m.Activo)) { <option value="@m.Id">@m.Nombre</option> }</select></div>
+                <div class="field"><label for="d-costo">Costo de inscripción (S/)</label><input id="d-costo" type="number" min="0" step="0.01" value="250" /></div>
+                <div class="field"><label for="d-obs">Observación</label><textarea id="d-obs" maxlength="255"></textarea></div>
+            </div>
+            <div class="drawer-foot"><button type="button" class="btn btn-ghost" @onclick="CerrarDrawer">Cancelar</button><button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Habilitar</button></div>
+        </form>
+    </Drawer>
+    <Drawer Abierto="@(drawer == "carrera")" Titulo="Ofertar carrera" OnCerrar="CerrarDrawer">
+        <form class="drawer-form" @onsubmit="Confirmar" @onsubmit:preventDefault>
+            <div class="drawer-body">
+                <div class="field"><label for="d-car">Carrera</label><select id="d-car">@foreach (var k in DatosDemo.Carreras.Where(k => k.Activo)) { <option value="@k.Id">@k.Nombre</option> }</select></div>
+                <div class="field"><label for="d-vac">Cantidad de vacantes</label><input id="d-vac" type="number" min="1" value="40" /></div>
+            </div>
+            <div class="drawer-foot"><button type="button" class="btn btn-ghost" @onclick="CerrarDrawer">Cancelar</button><button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Ofertar</button></div>
+        </form>
+    </Drawer>
+    <Drawer Abierto="@(drawer == "requisito")" Titulo="Asignar requisito" Descripcion="@($"Modalidad: {DatosDemo.Modalidad(modalidadId)?.Nombre}")" OnCerrar="CerrarDrawer">
+        <form class="drawer-form" @onsubmit="Confirmar" @onsubmit:preventDefault>
+            <div class="drawer-body">
+                <div class="field"><label for="d-req">Requisito</label><select id="d-req">@foreach (var r in DatosDemo.Requisitos.Where(r => r.Activo)) { <option value="@r.Id">@r.Nombre</option> }</select></div>
+                <div class="field"><label for="d-ord">Orden de presentación</label><input id="d-ord" type="number" min="1" value="@(requisitos.Count + 1)" /></div>
+                <label class="switch"><input type="checkbox" checked /><span><strong>Obligatorio</strong><small>Los obligatorios deben estar aprobados para continuar.</small></span></label>
+            </div>
+            <div class="drawer-foot"><button type="button" class="btn btn-ghost" @onclick="CerrarDrawer">Cancelar</button><button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Asignar</button></div>
+        </form>
+    </Drawer>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private static readonly (string, string, string)[] secciones =
+    [
+        ("etapas", "Etapas", "calendar"), ("modalidades", "Modalidades", "list-checks"),
+        ("carreras", "Carreras ofertadas", "book-open"), ("requisitos", "Requisitos", "folder")
+    ];
+
+    private Convocatoria? c;
+    private string seccion = "etapas";
+    private string? drawer;
+    private int modalidadId;
+    private List<EtapaConvocatoria> etapas = [];
+    private List<ModalidadConvocatoria> modalidades = [];
+    private List<OfertaCarrera> ofertas = [];
+    private List<RequisitoAsignado> requisitos => RequisitosDe(modalidadId);
+
+    protected override void OnParametersSet()
+    {
+        c = DatosDemo.Convocatoria(Id);
+        etapas = DatosDemo.EtapasConvocatoria.Where(e => e.ConvocatoriaId == Id).OrderBy(e => e.Inicio).ToList();
+        modalidades = DatosDemo.ModalidadesConvocatoria.Where(m => m.ConvocatoriaId == Id).ToList();
+        ofertas = DatosDemo.Ofertas.Where(o => o.ConvocatoriaId == Id).ToList();
+        if (modalidadId == 0 || !modalidades.Any(m => m.ModalidadId == modalidadId))
+            modalidadId = modalidades.FirstOrDefault()?.ModalidadId ?? 0;
+    }
+
+    private List<RequisitoAsignado> RequisitosDe(int modalidad) =>
+        DatosDemo.RequisitosAsignados.Where(r => r.ConvocatoriaId == Id && r.ModalidadId == modalidad).OrderBy(r => r.Orden).ToList();
+
+
+    private void IrARequisitos(int modalidad)
+    {
+        modalidadId = modalidad;
+        seccion = "requisitos";
+    }
+
+    private void CerrarDrawer() => drawer = null;
+
+    private void Confirmar()
+    {
+        var mensaje = drawer switch
+        {
+            "etapa" => "Etapa agregada",
+            "modalidad" => "Modalidad habilitada",
+            "carrera" => "Carrera ofertada",
+            _ => "Requisito asignado"
+        };
+        drawer = null;
+        Avisos.Exito(mensaje);
+    }
+}

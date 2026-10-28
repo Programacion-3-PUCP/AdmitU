@@ -1,0 +1,155 @@
+@page "/admin/reportes/ingresos"
+@inject ToastService Avisos
+
+<PageTitle>Ingresos por vouchers · AdmitU</PageTitle>
+
+<PageHeader Titulo="Ingresos por vouchers" Subtitulo="Monto recaudado por derechos de inscripción cuyos vouchers fueron aprobados."
+            Migas="@(["Reportes", "Ingresos por vouchers"])" />
+
+<section class="card card-pad">
+    <div class="filters">
+        <div class="field">
+            <label for="f-conv">Convocatoria</label>
+            <select id="f-conv" @bind="convocatoriaId">
+                @foreach (var c in DatosDemo.Convocatorias) { <option value="@c.Id">@c.Nombre</option> }
+            </select>
+        </div>
+        <div class="field"><label for="f-desde">Pagado desde</label><InputDate id="f-desde" @bind-Value="desde" /></div>
+        <div class="field"><label for="f-hasta">Pagado hasta</label><InputDate id="f-hasta" @bind-Value="hasta" /></div>
+        <div class="field">
+            <label for="f-medio">Medio de pago</label>
+            <select id="f-medio" @bind="medio">
+                <option value="">Todos los medios</option>
+                <option>Transferencia</option><option>Yape</option><option>Tarjeta</option>
+            </select>
+        </div>
+    </div>
+    <div class="filters-actions">
+        <button type="button" class="btn btn-primary" @onclick="Generar"><Icon Name="filter" Size="16" />Generar reporte</button>
+        <button type="button" class="btn btn-ghost" @onclick="Limpiar">Limpiar filtros</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Reporte de ingresos exportado en PDF")'><Icon Name="download" Size="16" />PDF</button>
+        <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Reporte de ingresos exportado en Excel")'><Icon Name="download" Size="16" />Excel</button>
+    </div>
+</section>
+
+<section class="card card-pad report-paper">
+    <div class="report-head">
+        <div>
+            <h2>Reporte de ingresos por vouchers</h2>
+            <p>@DatosDemo.Convocatoria(aplicada.Conv)?.Nombre · del @Formato.Fecha(aplicada.Desde) al @Formato.Fecha(aplicada.Hasta)</p>
+        </div>
+        <div class="report-meta">
+            <StatusBadge Texto="@(aplicada.Medio == "" ? "Todos los medios" : aplicada.Medio)" Tono="brand" Punto="false" />
+            <StatusBadge Texto="@($"Emitido el {Formato.Fecha(DatosDemo.Hoy)}")" Tono="neutral" Punto="false" />
+        </div>
+    </div>
+
+    <div class="report-kpis">
+        <div class="kpi"><strong>@Formato.Soles(total)</strong><span>Total recaudado</span></div>
+        <div class="kpi"><strong>@filas.Count</strong><span>Vouchers aprobados</span></div>
+        <div class="kpi"><strong>@Formato.Soles(promedio)</strong><span>Monto promedio</span></div>
+        <div class="kpi"><strong>@pendientes</strong><span>Por validar (@Formato.Soles(montoPendiente))</span></div>
+    </div>
+
+    <div class="grid-eq" style="margin:0 0 22px">
+        <div><h3 style="margin-bottom:12px">Ingresos por medio de pago</h3><DonutChart Segmentos="segmentos" Titulo="vouchers" /></div>
+        <div><h3 style="margin-bottom:12px">Ingresos por semana</h3><ColumnChart Valores="semanas" Etiquetas="etiquetasSemana" Titulo="Ingresos por semana" /></div>
+    </div>
+
+    @if (filas.Count == 0)
+    {
+        <EmptyState Icono="wallet" Titulo="Sin ingresos en este periodo" Mensaje="Ajusta las fechas o el medio de pago y vuelve a generar el reporte." />
+    }
+    else
+    {
+        <div class="table-inline"><div class="table-scroll">
+            <table class="table">
+                <thead><tr><th>Código</th><th>Fecha de pago</th><th>Postulante</th><th>Medio</th><th>Voucher</th><th style="text-align:right">Monto</th></tr></thead>
+                <tbody>
+                    @foreach (var x in filas)
+                    {
+                        <tr>
+                            <td><span class="mono">@x.Codigo</span></td>
+                            <td>@Formato.Fecha(x.FechaPago)</td>
+                            <td>@Persona(x)</td>
+                            <td>@x.Medio</td>
+                            <td>@(x.Voucher ?? "—")</td>
+                            <td class="num" style="text-align:right"><strong>@Formato.Soles(x.Monto)</strong></td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot><tr><td colspan="5">Total</td><td class="num" style="text-align:right">@Formato.Soles(total)</td></tr></tfoot>
+            </table>
+        </div></div>
+    }
+</section>
+
+@code {
+    private sealed record Filtro(int Conv, DateOnly Desde, DateOnly Hasta, string Medio);
+
+    private int convocatoriaId = 1;
+    private DateOnly desde = new(2026, 9, 1);
+    private DateOnly hasta = DatosDemo.Hoy;
+    private string medio = "";
+    private Filtro aplicada = new(1, new(2026, 9, 1), DatosDemo.Hoy, "");
+
+    private List<Pago> filas = [];
+    private List<DonutChart.Segmento> segmentos = [];
+    private List<int> semanas = [];
+    private List<string> etiquetasSemana = [];
+    private decimal total, promedio, montoPendiente;
+    private int pendientes;
+
+    protected override void OnInitialized() => Calcular();
+
+    private void Generar()
+    {
+        if (desde > hasta)
+        {
+            Avisos.Mostrar("La fecha inicial no puede ser posterior a la final.", "info");
+            return;
+        }
+        aplicada = new(convocatoriaId, desde, hasta, medio);
+        Calcular();
+        Avisos.Exito("Reporte generado");
+    }
+
+    private void Limpiar()
+    {
+        convocatoriaId = 1; desde = new(2026, 9, 1); hasta = DatosDemo.Hoy; medio = "";
+        aplicada = new(convocatoriaId, desde, hasta, medio);
+        Calcular();
+    }
+
+    private static string Persona(Pago x) => DatosDemo.Postulante(DatosDemo.Postulacion(x.PostulacionId)?.PostulanteId ?? 0)?.NombreCompleto ?? "—";
+
+    private void Calcular()
+    {
+        var delPeriodo = DatosDemo.Pagos
+            .Where(x => DatosDemo.Postulacion(x.PostulacionId)?.ConvocatoriaId == aplicada.Conv)
+            .Where(x => aplicada.Medio == "" || x.Medio == aplicada.Medio).ToList();
+
+        filas = delPeriodo.Where(x => x.Estado == EstadoPago.Aprobado && x.FechaPago is { } f && f >= aplicada.Desde && f <= aplicada.Hasta)
+            .OrderBy(x => x.FechaPago).ToList();
+        total = filas.Sum(x => x.Monto);
+        promedio = filas.Count == 0 ? 0 : total / filas.Count;
+        var porValidar = delPeriodo.Where(x => x.Estado == EstadoPago.Pendiente).ToList();
+        pendientes = porValidar.Count;
+        montoPendiente = porValidar.Sum(x => x.Monto);
+
+        string[] colores = ["var(--c-1)", "var(--c-2)", "var(--c-3)"];
+        segmentos = new[] { "Transferencia", "Yape", "Tarjeta" }
+            .Select((m, i) => new DonutChart.Segmento(m, filas.Count(x => x.Medio == m), colores[i])).ToList();
+
+        // Siete bloques de 7 días hacia atrás desde la fecha final del reporte.
+        semanas = []; etiquetasSemana = [];
+        for (int s = 6; s >= 0; s--)
+        {
+            var fin = aplicada.Hasta.AddDays(-7 * s);
+            var ini = fin.AddDays(-6);
+            semanas.Add(filas.Count(x => x.FechaPago >= ini && x.FechaPago <= fin));
+            etiquetasSemana.Add(Formato.FechaCorta(fin));
+        }
+    }
+}

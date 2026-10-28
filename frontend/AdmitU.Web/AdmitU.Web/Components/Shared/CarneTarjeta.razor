@@ -1,0 +1,24 @@
+<article class="carne @(Carne.Anulado ? "is-anulado" : "")" aria-label="Carné de postulante">
+    <span class="carne-brand">admit<em>U</em></span>
+    <div class="carne-photo" aria-hidden="true">@Presentacion.Iniciales(Persona?.NombreCompleto ?? "?")</div>
+    <div>
+        <h3>@Persona?.NombreCompleto</h3>
+        <small>@Persona?.TipoDocumento · @Persona?.NumeroDocumento</small>
+        <dl>
+            <div><dt>Carné</dt><dd>@Carne.Codigo</dd></div>
+            <div><dt>Aula</dt><dd>@Carne.Aula</dd></div>
+            <div><dt>Sede</dt><dd>@DatosDemo.Sede(Carne.SedeId)?.Nombre</dd></div>
+            <div><dt>Carrera</dt><dd>@DatosDemo.Carrera(Postulacion?.CarreraId ?? 0)?.Nombre</dd></div>
+            <div><dt>Vigencia</dt><dd>@Formato.FechaCorta(Carne.VigenciaInicio) – @Formato.Fecha(Carne.VigenciaFin)</dd></div>
+            <div><dt>Expediente</dt><dd>@Postulacion?.Codigo</dd></div>
+        </dl>
+    </div>
+    @if (Carne.Anulado) { <span class="carne-stamp">ANULADO</span> }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public Carne Carne { get; set; } = default!;
+
+    private Postulacion? Postulacion => DatosDemo.Postulacion(Carne.PostulacionId);
+    private Postulante? Persona => DatosDemo.Postulante(Postulacion?.PostulanteId ?? 0);
+}

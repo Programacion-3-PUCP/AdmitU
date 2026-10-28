@@ -1,0 +1,46 @@
+@page "/postulante/carne"
+@inject ToastService Avisos
+
+<PageTitle>Mi carné · AdmitU</PageTitle>
+
+<PageHeader Titulo="Mi carné" Subtitulo="Preséntalo junto con tu documento de identidad el día de la evaluación." Migas="@(["Mi carné"])">
+    <Acciones>
+        @if (carne is not null && !carne.Anulado)
+        {
+            <button type="button" class="btn btn-primary" @onclick='() => Avisos.Exito("Carné descargado en PDF")'><Icon Name="download" Size="16" />Descargar PDF</button>
+        }
+    </Acciones>
+</PageHeader>
+
+@if (carne is null)
+{
+    <section class="card"><EmptyState Icono="id-card" Titulo="Tu carné aún no está disponible" Mensaje="Lo emitiremos cuando tu pago esté aprobado. Revisa el estado en la sección Mi pago.">
+        <a class="btn btn-primary" style="margin-top:14px" href="/postulante/pago">Ir a Mi pago</a></EmptyState></section>
+}
+else
+{
+    @if (carne.Anulado)
+    {
+        <div class="notice" style="margin-bottom:18px" role="alert"><Icon Name="alert" Size="20" /><div><strong>Tu carné fue anulado</strong><p>@carne.MotivoAnulacion Comunícate con la oficina de admisión.</p></div></div>
+    }
+    <CarneTarjeta Carne="carne" />
+
+    <section class="card card-pad" style="margin-top:22px;max-width:560px">
+        <div class="card-head"><h2>Indicaciones para el día de la evaluación</h2></div>
+        <ul class="steps">
+            <li class="is-done"><span class="steps-mark"><Icon Name="check" Size="16" /></span><div><strong>Llega con 45 minutos de anticipación</strong><small>Sede @DatosDemo.Sede(carne.SedeId)?.Nombre, aula @carne.Aula.</small></div></li>
+            <li class="is-done"><span class="steps-mark"><Icon Name="check" Size="16" /></span><div><strong>Trae tu carné y tu documento de identidad</strong><small>Sin ellos no podrás ingresar.</small></div></li>
+            <li class="is-done"><span class="steps-mark"><Icon Name="check" Size="16" /></span><div><strong>Vigencia: @Formato.Fecha(carne.VigenciaInicio) al @Formato.Fecha(carne.VigenciaFin)</strong><small>Fuera de ese periodo el carné no es válido.</small></div></li>
+        </ul>
+    </section>
+}
+
+@code {
+    private Carne? carne;
+
+    protected override void OnInitialized()
+    {
+        var post = DatosDemo.Postulaciones.FirstOrDefault(x => x.PostulanteId == DatosDemo.PostulanteActualId);
+        carne = post is null ? null : DatosDemo.Carnes.FirstOrDefault(c => c.PostulacionId == post.Id);
+    }
+}

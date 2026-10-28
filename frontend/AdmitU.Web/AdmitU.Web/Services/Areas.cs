@@ -38,12 +38,14 @@ public static class Areas
                     new("Postulantes", "/admin/postulantes", "users"),
                     new("Postulaciones", "/admin/postulaciones", "file-text", Conteo: revision),
                     new("Pagos", "/admin/pagos", "credit-card"),
-                    new("Documentos", "/admin/documentos", "folder")
+                    new("Documentos", "/admin/documentos", "folder"),
+                    new("Carnés", "/admin/carnes", "id-card")
                 ]),
                 new("Proceso de admisión",
                 [
                     new("Convocatorias", "/admin/convocatorias", "calendar"),
                     new("Modalidades", "/admin/modalidades", "list-checks"),
+                    new("Requisitos", "/admin/requisitos", "paperclip"),
                     new("Evaluadores", "/admin/evaluadores", "user-check")
                 ]),
                 new("Catálogos",
@@ -51,6 +53,12 @@ public static class Areas
                     new("Facultades", "/admin/facultades", "landmark"),
                     new("Carreras", "/admin/carreras", "book-open"),
                     new("Sedes", "/admin/sedes", "map-pin")
+                ]),
+                new("Reportes",
+                [
+                    new("Ingresos por vouchers", "/admin/reportes/ingresos", "wallet"),
+                    new("Expedientes observados", "/admin/reportes/observados", "alert"),
+                    new("Vacantes", "/admin/reportes/vacantes", "trending-up")
                 ]),
                 new("Comunicación",
                 [
@@ -75,11 +83,15 @@ public static class Areas
                 [
                     new("Inicio", "/postulante", "dashboard", Exacto: true),
                     new("Mi postulación", "/postulante/mi-postulacion", "file-text"),
+                    new("Mis documentos", "/postulante/documentos", "folder"),
+                    new("Mi pago", "/postulante/pago", "credit-card"),
+                    new("Mi carné", "/postulante/carne", "id-card"),
                     new("Convocatorias", "/postulante/convocatorias", "calendar")
                 ]),
                 new("Mi cuenta",
                 [
-                    new("Mi perfil", "/postulante/perfil", "id-card"),
+                    new("Mi perfil", "/postulante/perfil", "users"),
+                    new("Antecedentes académicos", "/postulante/antecedentes", "graduation-cap"),
                     new("Notificaciones", "/postulante/notificaciones", "bell", Conteo: sinLeer, Alerta: true)
                 ])
             ]);
@@ -93,6 +105,8 @@ public static class Areas
             var yo = DatosDemo.Evaluadores.First(e => e.Id == DatosDemo.EvaluadorActualId);
             int pendientes = DatosDemo.Postulaciones.Count(p => p.EvaluadorId == yo.Id && p.Estado is EstadoPostulacion.Enviada or EstadoPostulacion.EnRevision);
             int sinLeer = DatosDemo.Notificaciones.Count(n => n.Rol == "Evaluador" && !n.Leida);
+            var mias = DatosDemo.Postulaciones.Where(p => p.EvaluadorId == yo.Id).Select(p => p.Id).ToHashSet();
+            int vouchers = DatosDemo.Pagos.Count(x => x.Voucher is not null && x.Estado == EstadoPago.Pendiente && mias.Contains(x.PostulacionId));
             return new("evaluador", "Evaluador", "/evaluador", yo.Nombre, $"Evaluador · {yo.Especialidad}",
                 "Pendientes de revisión", $"Tienes {pendientes} postulaciones por evaluar.",
                 "/evaluador/postulaciones", "Buscar por código, postulante o carrera",
@@ -101,6 +115,7 @@ public static class Areas
                 [
                     new("Resumen", "/evaluador", "dashboard", Exacto: true),
                     new("Mis postulaciones", "/evaluador/postulaciones", "file-text", Conteo: pendientes),
+                    new("Vouchers de pago", "/evaluador/vouchers", "credit-card", Conteo: vouchers),
                     new("Historial", "/evaluador/historial", "check-circle")
                 ]),
                 new("Comunicación",

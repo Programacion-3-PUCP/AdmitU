@@ -3,7 +3,7 @@ using AdmitU.Web.Models;
 namespace AdmitU.Web.Data;
 
 // Datos de ejemplo fijos para maquetar la interfaz. No se modifican ni se guardan.
-public static class DatosDemo
+public static partial class DatosDemo
 {
     public static readonly DateOnly Hoy = new(2026, 10, 24);
 
@@ -164,25 +164,28 @@ public static class DatosDemo
 
     private static List<Pago> CrearPagos()
     {
-        string[] medios = ["Tarjeta", "Transferencia", "Pasarela web", "Efectivo"];
         var lista = new List<Pago>();
         foreach (var p in Postulaciones.Where(x => x.Estado != EstadoPostulacion.Borrador))
         {
             var estado = p.Id % 5 == 0 ? EstadoPago.Pendiente
-                : p.Id % 7 == 0 ? EstadoPago.Observado
-                : p.Id % 11 == 0 ? EstadoPago.Anulado
+                : p.Id % 7 == 0 ? EstadoPago.Rechazado
+                : p.Id % 11 == 0 ? EstadoPago.Vencido
                 : p.Id % 4 == 0 ? EstadoPago.Pendiente
-                : EstadoPago.Pagado;
+                : EstadoPago.Aprobado;
+            // El pago se acredita con el comprobante de una transferencia externa; Yape y tarjeta son minoría.
+            var medio = p.Id % 6 == 0 ? "Yape" : p.Id % 8 == 0 ? "Tarjeta" : "Transferencia";
             lista.Add(new Pago
             {
                 Id = lista.Count + 1,
                 Codigo = $"PAG-{20_000 + p.Id * 37}",
                 PostulacionId = p.Id,
-                Medio = medios[p.Id % medios.Length],
+                Medio = medio,
                 Monto = p.ModalidadId == 3 ? 320m : 250m,
                 FechaGeneracion = p.FechaEnvio ?? p.FechaRegistro,
-                FechaPago = estado == EstadoPago.Pagado ? (p.FechaEnvio ?? p.FechaRegistro).AddDays(1) : null,
-                Estado = estado
+                FechaPago = estado == EstadoPago.Aprobado ? (p.FechaEnvio ?? p.FechaRegistro).AddDays(1) : null,
+                Estado = estado,
+                Voucher = medio == "Transferencia" ? $"voucher_{p.Id:00}.jpg" : null,
+                ComentarioVoucher = estado == EstadoPago.Rechazado ? "El monto del voucher no coincide con el derecho de inscripción." : null
             });
         }
         return lista;

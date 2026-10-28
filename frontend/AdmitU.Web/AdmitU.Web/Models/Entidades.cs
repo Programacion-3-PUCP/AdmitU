@@ -4,7 +4,9 @@ using AdmitU.Web.Data;
 namespace AdmitU.Web.Models;
 
 public enum EstadoPostulacion { Borrador, Enviada, EnRevision, Observada, Admitida, NoAdmitida }
-public enum EstadoPago { Pendiente, Pagado, Observado, Anulado }
+public enum EstadoPago { Generado, Pendiente, Aprobado, Rechazado, Vencido }
+public enum TipoObservacion { Faltante, Ilegible, Vencido, Otro }
+public enum EstadoObservacion { Pendiente, Subsanada }
 public enum EstadoDocumento { Pendiente, Aprobado, Observado, Rechazado }
 public enum EstadoConvocatoria { Borrador, Publicada, Cerrada }
 
@@ -114,6 +116,8 @@ public class Pago
     public DateOnly FechaGeneracion { get; set; }
     public DateOnly? FechaPago { get; set; }
     public EstadoPago Estado { get; set; }
+    public string? Voucher { get; set; }
+    public string? ComentarioVoucher { get; set; }
 }
 
 public class Documento
@@ -153,3 +157,84 @@ public class Notificacion
 }
 
 public record Hito(string Nombre, DateOnly Fecha, string Detalle);
+
+public class Requisito
+{
+    public int Id { get; set; }
+    [Required(ErrorMessage = "Ingrese el código.")] [StringLength(20)]
+    public string Codigo { get; set; } = "";
+    [Required(ErrorMessage = "Ingrese el nombre del requisito.")] [StringLength(150)]
+    public string Nombre { get; set; } = "";
+    [StringLength(255)]
+    public string Descripcion { get; set; } = "";
+    public string TipoArchivo { get; set; } = "PDF";
+    [Range(1, 50, ErrorMessage = "El tamaño máximo debe estar entre 1 y 50 MB.")]
+    public int TamanioMaximoMb { get; set; } = 5;
+    public bool Activo { get; set; } = true;
+}
+
+public record Etapa(int Id, string Codigo, string Nombre, string Descripcion);
+public record EtapaConvocatoria(int ConvocatoriaId, int EtapaId, DateOnly Inicio, DateOnly Fin);
+public record ModalidadConvocatoria(int ConvocatoriaId, int ModalidadId, decimal Costo, string? Observacion);
+public record OfertaCarrera(int ConvocatoriaId, int CarreraId, int Vacantes);
+public record RequisitoAsignado(int ConvocatoriaId, int ModalidadId, int RequisitoId, bool Obligatorio, int Orden);
+
+public class Institucion
+{
+    public int Id { get; set; }
+    public string Pais { get; set; } = "Perú";
+    public string Codigo { get; set; } = "";
+    public string Nombre { get; set; } = "";
+    public string Tipo { get; set; } = "COLEGIO";
+}
+
+public class Antecedente
+{
+    public int Id { get; set; }
+    public int PostulanteId { get; set; }
+    public int InstitucionId { get; set; }
+    public int? AnioInicio { get; set; }
+    public int? AnioFin { get; set; }
+    public string Descripcion { get; set; } = "";
+}
+
+public class Apoderado
+{
+    public int PostulanteId { get; set; }
+    public string Nombres { get; set; } = "";
+    public string Apellidos { get; set; } = "";
+    public string Parentesco { get; set; } = "PADRE";
+    public string Documento { get; set; } = "";
+    public string Correo { get; set; } = "";
+    public string? Telefono { get; set; }
+    public string NombreCompleto => $"{Nombres} {Apellidos}".Trim();
+}
+
+public record CambioEstado(int PostulacionId, string? Anterior, string Actual, DateOnly Fecha, string Responsable, string Motivo);
+
+public class Carne
+{
+    public int Id { get; set; }
+    public int PostulacionId { get; set; }
+    public int SedeId { get; set; }
+    public string Codigo { get; set; } = "";
+    public DateOnly FechaGeneracion { get; set; }
+    public DateOnly VigenciaInicio { get; set; }
+    public DateOnly VigenciaFin { get; set; }
+    public string Aula { get; set; } = "";
+    public bool Anulado { get; set; }
+    public string? MotivoAnulacion { get; set; }
+}
+
+public class ObservacionDocumento
+{
+    public int Id { get; set; }
+    public int DocumentoId { get; set; }
+    public int EvaluadorId { get; set; }
+    public TipoObservacion Tipo { get; set; }
+    public string Descripcion { get; set; } = "";
+    public DateOnly Fecha { get; set; }
+    public EstadoObservacion Estado { get; set; }
+    public DateOnly? FechaSubsanacion { get; set; }
+    public string? ComentarioSubsanacion { get; set; }
+}

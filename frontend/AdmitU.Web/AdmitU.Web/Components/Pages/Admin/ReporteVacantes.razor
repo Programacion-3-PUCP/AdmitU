@@ -1,0 +1,109 @@
+@page "/admin/reportes/vacantes"
+@using System.Globalization
+@inject ToastService Avisos
+
+<PageTitle>Vacantes · AdmitU</PageTitle>
+
+<PageHeader Titulo="Análisis de vacantes" Subtitulo="Vacantes ofertadas frente a postulaciones y admitidos por carrera."
+            Migas="@(["Reportes", "Vacantes"])" />
+
+<section class="card card-pad">
+    <div class="filters">
+        <div class="field">
+            <label for="v-conv">Convocatoria</label>
+            <select id="v-conv" @bind="convocatoriaId">
+                @foreach (var c in DatosDemo.Convocatorias) { <option value="@c.Id">@c.Nombre</option> }
+            </select>
+        </div>
+        <div class="field">
+            <label for="v-fac">Facultad</label>
+            <select id="v-fac" @bind="facultadId">
+                <option value="0">Todas las facultades</option>
+                @foreach (var f in DatosDemo.Facultades) { <option value="@f.Id">@f.Nombre</option> }
+            </select>
+        </div>
+    </div>
+    <div class="filters-actions">
+        <button type="button" class="btn btn-primary" @onclick="Generar"><Icon Name="filter" Size="16" />Generar reporte</button>
+        <button type="button" class="btn btn-ghost" @onclick="Limpiar">Limpiar filtros</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Reporte de vacantes exportado en PDF")'><Icon Name="download" Size="16" />PDF</button>
+        <button type="button" class="btn btn-ghost" @onclick='() => Avisos.Exito("Reporte de vacantes exportado en Excel")'><Icon Name="download" Size="16" />Excel</button>
+    </div>
+</section>
+
+<section class="card card-pad report-paper">
+    <div class="report-head">
+        <div><h2>Reporte analítico de vacantes</h2><p>@DatosDemo.Convocatoria(aplicada.Conv)?.Nombre · emitido el @Formato.Fecha(DatosDemo.Hoy)</p></div>
+        <div class="report-meta"><StatusBadge Texto="@(aplicada.Fac == 0 ? "Todas las facultades" : DatosDemo.Facultad(aplicada.Fac)?.Nombre ?? "")" Tono="brand" Punto="false" /></div>
+    </div>
+
+    <div class="report-kpis">
+        <div class="kpi"><strong>@filas.Sum(f => f.Vacantes)</strong><span>Vacantes ofertadas</span></div>
+        <div class="kpi"><strong>@filas.Sum(f => f.Postulaciones)</strong><span>Postulaciones</span></div>
+        <div class="kpi"><strong>@filas.Sum(f => f.Admitidos)</strong><span>Admitidos</span></div>
+        <div class="kpi"><strong>@Ocupacion(filas.Sum(f => f.Admitidos), filas.Sum(f => f.Vacantes))%</strong><span>Ocupación global</span></div>
+    </div>
+
+    @if (filas.Count == 0)
+    {
+        <EmptyState Icono="book-open" Titulo="Sin oferta para esta selección" Mensaje="La convocatoria elegida no tiene carreras ofertadas en esa facultad." />
+    }
+    else
+    {
+        <div style="margin-bottom:22px"><h3 style="margin-bottom:12px">Postulaciones por carrera</h3>
+            <RankingBars Items="ranking" /></div>
+
+        <div class="table-inline"><div class="table-scroll">
+            <table class="table">
+                <thead><tr><th>Carrera</th><th>Facultad</th><th style="text-align:right">Vacantes</th><th style="text-align:right">Postulaciones</th><th style="text-align:right">Admitidos</th><th style="text-align:right">Disponibles</th><th style="min-width:160px">Ocupación</th></tr></thead>
+                <tbody>
+                    @foreach (var f in filas)
+                    {
+                        var pct = Ocupacion(f.Admitidos, f.Vacantes);
+                        <tr>
+                            <td><span class="cell-title">@f.Carrera</span></td>
+                            <td>@f.Facultad</td>
+                            <td class="num" style="text-align:right">@f.Vacantes</td>
+                            <td class="num" style="text-align:right">@f.Postulaciones</td>
+                            <td class="num" style="text-align:right">@f.Admitidos</td>
+                            <td class="num" style="text-align:right">@(Math.Max(0, f.Vacantes - f.Admitidos))</td>
+                            <td><div class="conv-bar"><i style="width:@pct.ToString(CultureInfo.InvariantCulture)%"></i></div><span class="cell-sub">@pct%</span></td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot><tr><td colspan="2">Total</td><td class="num" style="text-align:right">@filas.Sum(f => f.Vacantes)</td><td class="num" style="text-align:right">@filas.Sum(f => f.Postulaciones)</td><td class="num" style="text-align:right">@filas.Sum(f => f.Admitidos)</td><td class="num" style="text-align:right">@(Math.Max(0, filas.Sum(f => f.Vacantes) - filas.Sum(f => f.Admitidos)))</td><td></td></tr></tfoot>
+            </table>
+        </div></div>
+    }
+</section>
+
+@code {
+    private sealed record Fila(string Carrera, string Facultad, int Vacantes, int Postulaciones, int Admitidos);
+    private sealed record Filtro(int Conv, int Fac);
+
+    private int convocatoriaId = 1, facultadId;
+    private Filtro aplicada = new(1, 0);
+    private List<Fila> filas = [];
+    private List<(string Etiqueta, int Valor)> ranking = [];
+
+    protected override void OnInitialized() => Calcular();
+
+    private static int Ocupacion(int admitidos, int vacantes) => vacantes == 0 ? 0 : (int)Math.Round(admitidos * 100.0 / vacantes);
+
+    private void Generar() { aplicada = new(convocatoriaId, facultadId); Calcular(); Avisos.Exito("Reporte generado"); }
+
+    private void Limpiar() { convocatoriaId = 1; facultadId = 0; aplicada = new(1, 0); Calcular(); }
+
+    private void Calcular()
+    {
+        filas = DatosDemo.Ofertas.Where(o => o.ConvocatoriaId == aplicada.Conv)
+            .Select(o => (Oferta: o, Carrera: DatosDemo.Carrera(o.CarreraId)))
+            .Where(x => x.Carrera is not null && (aplicada.Fac == 0 || x.Carrera.FacultadId == aplicada.Fac))
+            .Select(x => new Fila(x.Carrera!.Nombre, DatosDemo.Facultad(x.Carrera.FacultadId)?.Codigo ?? "", x.Oferta.Vacantes,
+                DatosDemo.Postulaciones.Count(p => p.ConvocatoriaId == aplicada.Conv && p.CarreraId == x.Carrera.Id),
+                DatosDemo.Postulaciones.Count(p => p.ConvocatoriaId == aplicada.Conv && p.CarreraId == x.Carrera.Id && p.Estado == EstadoPostulacion.Admitida)))
+            .ToList();
+        ranking = filas.OrderByDescending(f => f.Postulaciones).Take(6).Select(f => (f.Carrera, f.Postulaciones)).ToList();
+    }
+}

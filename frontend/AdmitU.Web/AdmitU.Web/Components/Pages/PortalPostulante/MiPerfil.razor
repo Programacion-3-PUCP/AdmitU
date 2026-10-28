@@ -61,6 +61,21 @@
             </div>
         </div>
 
+        <div class="form-section">
+            <div class="form-section-head"><span class="step">4</span><div><h2>Apoderado</h2><p class="page-sub" style="margin:2px 0 0">Opcional. Obligatorio si eres menor de edad.</p></div></div>
+            <div class="form-grid">
+                <div class="field"><label for="ap-nom">Nombres</label><InputText id="ap-nom" @bind-Value="modelo.ApoNombres" /><ValidationMessage For="() => modelo.ApoNombres" /></div>
+                <div class="field"><label for="ap-ape">Apellidos</label><InputText id="ap-ape" @bind-Value="modelo.ApoApellidos" /><ValidationMessage For="() => modelo.ApoApellidos" /></div>
+                <div class="field">
+                    <label for="ap-par">Parentesco</label>
+                    <InputSelect id="ap-par" @bind-Value="modelo.ApoParentesco"><option value="PADRE">Padre</option><option value="MADRE">Madre</option><option value="TUTOR">Tutor</option><option value="OTRO">Otro</option></InputSelect>
+                </div>
+                <div class="field"><label for="ap-doc">DNI</label><InputText id="ap-doc" @bind-Value="modelo.ApoDocumento" placeholder="8 dígitos" /><ValidationMessage For="() => modelo.ApoDocumento" /></div>
+                <div class="field"><label for="ap-cor">Correo electrónico</label><InputText id="ap-cor" type="email" @bind-Value="modelo.ApoCorreo" /><ValidationMessage For="() => modelo.ApoCorreo" /></div>
+                <div class="field"><label for="ap-tel">Teléfono</label><InputText id="ap-tel" type="tel" @bind-Value="modelo.ApoTelefono" /><ValidationMessage For="() => modelo.ApoTelefono" /></div>
+            </div>
+        </div>
+
         <div class="form-footer">
             <a class="btn btn-ghost" href="/postulante">Cancelar</a>
             <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar cambios</button>
@@ -83,6 +98,11 @@
             Telefono = p.Telefono, FechaNacimiento = p.FechaNacimiento,
             TieneDiscapacidad = p.TieneDiscapacidad, CarnetConadis = p.CarnetConadis
         };
+        if (DatosDemo.ApoderadoDe(p.Id) is { } a)
+        {
+            modelo.ApoNombres = a.Nombres; modelo.ApoApellidos = a.Apellidos; modelo.ApoParentesco = a.Parentesco;
+            modelo.ApoDocumento = a.Documento; modelo.ApoCorreo = a.Correo; modelo.ApoTelefono = a.Telefono;
+        }
     }
 
     private void Guardar() => Avisos.Exito("Tu perfil fue actualizado");
@@ -104,6 +124,12 @@
         public DateOnly? FechaNacimiento { get; set; }
         public bool TieneDiscapacidad { get; set; }
         public string? CarnetConadis { get; set; }
+        public string? ApoNombres { get; set; }
+        public string? ApoApellidos { get; set; }
+        public string ApoParentesco { get; set; } = "PADRE";
+        public string? ApoDocumento { get; set; }
+        public string? ApoCorreo { get; set; }
+        public string? ApoTelefono { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext contexto)
         {
@@ -118,6 +144,21 @@
                 yield return new ValidationResult("Ingresa un teléfono válido.", [nameof(Telefono)]);
             if (TieneDiscapacidad && string.IsNullOrWhiteSpace(CarnetConadis))
                 yield return new ValidationResult("Ingresa el número de carné CONADIS.", [nameof(CarnetConadis)]);
+
+            // El apoderado es opcional; si se registra, sus datos deben estar completos y ser válidos.
+            bool conApoderado = !string.IsNullOrWhiteSpace(ApoNombres) || !string.IsNullOrWhiteSpace(ApoApellidos)
+                || !string.IsNullOrWhiteSpace(ApoDocumento) || !string.IsNullOrWhiteSpace(ApoCorreo);
+            if (conApoderado)
+            {
+                if (string.IsNullOrWhiteSpace(ApoNombres)) yield return new ValidationResult("Ingresa los nombres del apoderado.", [nameof(ApoNombres)]);
+                if (string.IsNullOrWhiteSpace(ApoApellidos)) yield return new ValidationResult("Ingresa los apellidos del apoderado.", [nameof(ApoApellidos)]);
+                if (!System.Text.RegularExpressions.Regex.IsMatch(ApoDocumento ?? "", "^[0-9]{8}$"))
+                    yield return new ValidationResult("El DNI del apoderado debe tener 8 dígitos.", [nameof(ApoDocumento)]);
+                if (!System.Text.RegularExpressions.Regex.IsMatch(ApoCorreo ?? "", @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                    yield return new ValidationResult("Ingresa un correo válido para el apoderado.", [nameof(ApoCorreo)]);
+                if (!string.IsNullOrWhiteSpace(ApoTelefono) && !System.Text.RegularExpressions.Regex.IsMatch(ApoTelefono, @"^\+?[0-9 ]{6,18}$"))
+                    yield return new ValidationResult("Ingresa un teléfono válido.", [nameof(ApoTelefono)]);
+            }
         }
     }
 }

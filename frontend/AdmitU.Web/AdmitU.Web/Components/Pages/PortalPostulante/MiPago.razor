@@ -1,0 +1,96 @@
+@page "/postulante/pago"
+@inject ToastService Avisos
+
+<PageTitle>Mi pago · AdmitU</PageTitle>
+
+<PageHeader Titulo="Mi pago" Subtitulo="Paga tu derecho de inscripción por transferencia y sube el voucher para que un evaluador lo valide."
+            Migas="@(["Mi pago"])" />
+
+@if (pago is null)
+{
+    <section class="card"><EmptyState Icono="credit-card" Titulo="Aún no tienes un pago" Mensaje="El pago se genera al enviar tu postulación.">
+        <a class="btn btn-primary" style="margin-top:14px" href="/postulante/postular">Iniciar postulación</a></EmptyState></section>
+}
+else
+{
+    @if (pago.Estado == EstadoPago.Rechazado)
+    {
+        <div class="notice" style="margin-bottom:18px" role="alert">
+            <Icon Name="alert" Size="20" />
+            <div><strong>Tu voucher fue rechazado</strong><p>@pago.ComentarioVoucher Sube un nuevo comprobante para continuar.</p></div>
+        </div>
+    }
+    else if (pago.Estado == EstadoPago.Aprobado)
+    {
+        <div class="notice" style="margin-bottom:18px;background:var(--success-soft);color:var(--success)">
+            <Icon Name="check-circle" Size="20" />
+            <div><strong>Pago aprobado</strong><p>Validamos tu voucher el @Formato.Fecha(pago.FechaPago). Ya puedes ver tu carné cuando esté emitido.</p></div>
+        </div>
+    }
+
+    <div class="detail-grid">
+        <div class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><div><h2>Cómo pagar</h2><p>Realiza una transferencia desde tu banco o billetera.</p></div></div>
+                <ol class="steps" style="list-style:none;padding:0;margin:0">
+                    <li class="is-done"><span class="steps-mark">1</span><div><strong>Transfiere @Formato.Soles(pago.Monto)</strong><small>A la cuenta recaudadora de AdmitU. Indica tu código de pago como referencia.</small></div></li>
+                    <li class="is-done"><span class="steps-mark">2</span><div><strong>Guarda el comprobante</strong><small>Captura de pantalla o PDF de la operación, con monto y fecha visibles.</small></div></li>
+                    <li class="is-now"><span class="steps-mark">3</span><div><strong>Sube tu voucher</strong><small>Un evaluador lo revisará y te avisaremos del resultado.</small></div></li>
+                </ol>
+                <div class="summary-rows" style="margin-top:20px;padding:16px;border-radius:14px;background:var(--surface-2)">
+                    <div><span>Banco</span><strong>Banco AdmitU</strong></div>
+                    <div><span>Cuenta recaudadora</span><strong class="mono">191-0000000-0-00</strong></div>
+                    <div><span>CCI</span><strong class="mono">002-191-000000000000-00</strong></div>
+                    <div><span>Referencia</span><strong class="mono">@pago.Codigo</strong></div>
+                </div>
+            </section>
+
+            @if (pago.Estado is EstadoPago.Pendiente or EstadoPago.Rechazado or EstadoPago.Generado)
+            {
+                <section class="card card-pad">
+                    <div class="card-head"><div><h2>@(pago.Voucher is null ? "Subir voucher" : "Reemplazar voucher")</h2><p>Formatos PDF, JPG o PNG de hasta 5 MB.</p></div></div>
+                    <ZonaCarga Etiqueta="Selecciona el voucher de la transferencia" OnArchivo="Cargado" />
+                    <div class="form-footer">
+                        <button type="button" class="btn btn-primary" disabled="@(archivo is null)" @onclick="Enviar"><Icon Name="upload" Size="16" />Enviar voucher</button>
+                    </div>
+                </section>
+            }
+        </div>
+
+        <aside class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><h2>Estado del pago</h2><StatusBadge Texto="@pago.Estado.Etiqueta()" Tono="@pago.Estado.Tono()" /></div>
+                <div class="summary-rows">
+                    <div><span>Código</span><strong class="mono">@pago.Codigo</strong></div>
+                    <div><span>Monto</span><strong>@Formato.Soles(pago.Monto)</strong></div>
+                    <div><span>Medio</span><strong>@pago.Medio</strong></div>
+                    <div><span>Generado</span><strong>@Formato.Fecha(pago.FechaGeneracion)</strong></div>
+                    <div><span>Voucher</span><strong>@(pago.Voucher ?? "Sin enviar")</strong></div>
+                </div>
+            </section>
+            <section class="card card-pad">
+                <div class="card-head"><h2>Historial</h2></div>
+                <ul class="feed">
+                    <li><span class="feed-icon t-pago"><Icon Name="credit-card" Size="18" /></span><div class="feed-text"><strong>Pago generado</strong><p>@Formato.Fecha(pago.FechaGeneracion)</p></div></li>
+                    @if (pago.Voucher is not null) { <li><span class="feed-icon t-documento"><Icon Name="upload" Size="18" /></span><div class="feed-text"><strong>Voucher enviado</strong><p>@pago.Voucher</p></div></li> }
+                    @if (pago.Estado is EstadoPago.Aprobado or EstadoPago.Rechazado) { <li><span class="feed-icon"><Icon Name="@(pago.Estado == EstadoPago.Aprobado ? "check-circle" : "x")" Size="18" /></span><div class="feed-text"><strong>Voucher @pago.Estado.Etiqueta().ToLowerInvariant()</strong><p>@(pago.ComentarioVoucher ?? Formato.Fecha(pago.FechaPago))</p></div></li> }
+                </ul>
+            </section>
+        </aside>
+    </div>
+}
+
+@code {
+    private Pago? pago;
+    private string? archivo;
+
+    protected override void OnInitialized()
+    {
+        var post = DatosDemo.Postulaciones.FirstOrDefault(x => x.PostulanteId == DatosDemo.PostulanteActualId);
+        pago = post is null ? null : DatosDemo.Pagos.FirstOrDefault(x => x.PostulacionId == post.Id);
+    }
+
+    private void Cargado(string nombre) => archivo = nombre;
+
+    private void Enviar() => Avisos.Exito("Voucher enviado para validación");
+}
