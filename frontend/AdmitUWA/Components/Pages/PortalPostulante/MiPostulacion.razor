@@ -1,0 +1,155 @@
+@page "/postulante/mi-postulacion"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+@inject IJSRuntime Js
+
+<PageTitle>Mi postulación · AdmitU</PageTitle>
+
+@if (p is null)
+{
+    <PageHeader Titulo="Mi postulación" Migas="@(["Mi postulación"])" />
+    <section class="card">
+        <EmptyState Icono="file-text" Titulo="Aún no tienes una postulación" Mensaje="Elige tu carrera y modalidad para comenzar.">
+            @if (Datos.ConvocatoriaVigente is { } conv) { <a class="btn btn-primary empty-cta" href="/postulante/postular/@conv.Id"><Icon Name="plus" Size="16" />Iniciar postulación</a> }
+        </EmptyState>
+    </section>
+}
+else
+{
+    var pago = Datos.PagoDe(p.Id);
+    var carne = Datos.CarneVigenteDe(p.Id);
+    <PageHeader Titulo="@p.Codigo" Subtitulo="@($"{Datos.Carrera(p.CarreraId)?.Nombre} · {Datos.Modalidad(p.ModalidadId)?.Nombre} · {Datos.Convocatoria(p.ConvocatoriaId)?.Nombre}")" Migas="@(["Mi postulación"])" />
+
+    @if (mias.Count > 1)
+    {
+        <div class="chips" role="group" aria-label="Mis postulaciones">
+            @foreach (var x in mias)
+            {
+                var actual = x;
+                <button type="button" class="chip @(actual.Id == p.Id ? "is-active" : "")" @onclick="() => Seleccionar(actual)">@actual.Codigo · @Datos.Convocatoria(actual.ConvocatoriaId)?.Periodo</button>
+            }
+        </div>
+    }
+
+    @if (p.Estado == EstadoPostulacion.Observada && !string.IsNullOrWhiteSpace(p.Observacion))
+    {
+        <div class="notice" style="margin-bottom:18px" role="status">
+            <Icon Name="alert" Size="20" />
+            <div><strong>Necesitamos que corrijas tu postulación</strong><p>@p.Observacion</p></div>
+        </div>
+    }
+
+    <div class="detail-grid">
+        <div class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><h2>Estado de mi postulación</h2><StatusBadge Texto="@p.Estado.Etiqueta()" Tono="@p.Estado.Tono()" /></div>
+                <ProgresoPostulacion Postulacion="p" />
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><div><h2>Mis documentos</h2><p>Si un documento está observado, sube una nueva versión para que vuelva a revisarse.</p></div></div>
+                <ul class="list-rows">
+                    @foreach (var d in documentos)
+                    {
+                        var doc = d;
+                        var requisito = Datos.Requisitos.FirstOrDefault(r => r.ConvocatoriaId == p.ConvocatoriaId && r.ModalidadId == p.ModalidadId && r.Nombre == doc.Requisito);
+                        <li class="doc-item">
+                            <span class="file-icon">@doc.Tipo</span>
+                            <div class="file-meta"><strong>@doc.Requisito</strong><small>@doc.Archivo · versión @doc.Version · cargado el @Formato.Fecha(doc.FechaCarga)</small></div>
+                            <StatusBadge Texto="@doc.Estado.Etiqueta()" Tono="@doc.Estado.Tono()" />
+                            @if (doc.Estado == EstadoDocumento.Observado)
+                            {
+                                <div class="doc-fix">
+                                    @if (!string.IsNullOrWhiteSpace(doc.Comentario)) { <p class="inline-note is-warning"><Icon Name="flag" Size="16" /><span>@doc.Comentario</span></p> }
+                                    <ZonaCarga Etiqueta="Subir nueva versión" Formato="@(requisito?.Formato ?? FormatoArchivo.Cualquiera)" OnArchivo="nombre => nuevos[doc.Id] = nombre" />
+                                    <div><button type="button" class="btn btn-primary btn-sm" disabled="@(!nuevos.TryGetValue(doc.Id, out var n) || n is null)" @onclick="() => Reemplazar(doc)"><Icon Name="upload" Size="14" />Enviar nueva versión</button></div>
+                                </div>
+                            }
+                        </li>
+                    }
+                </ul>
+            </section>
+        </div>
+
+        <aside class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><h2>Carné de postulante</h2></div>
+                @if (carne is null)
+                {
+                    <p class="muted">Se emite automáticamente cuando tu expediente es apto y tu pago está validado.</p>
+                }
+                else
+                {
+                    <div class="carne">
+                        <div class="carne-head"><Logo Tamano="36" /><div><strong>AdmitU · Carné de postulante</strong><small>@Datos.Convocatoria(p.ConvocatoriaId)?.Nombre</small></div></div>
+                        <span class="carne-code">@carne.Codigo</span>
+                        <div class="summary-rows">
+                            <div><span>Sede</span><strong>@Datos.Sede(carne.SedeId)?.Nombre</strong></div>
+                            <div><span>Aula</span><strong>@carne.Aula</strong></div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-ghost no-print" style="margin-top:12px;width:100%" @onclick="Imprimir"><Icon Name="printer" Size="16" />Imprimir carné</button>
+                }
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Pago de inscripción</h2></div>
+                @if (pago is null)
+                {
+                    <p class="muted">Se generará al enviar tu postulación.</p>
+                }
+                else
+                {
+                    <div class="summary-rows">
+                        <div><span>Código de pago</span><strong class="mono">@pago.Codigo</strong></div>
+                        <div><span>Monto</span><strong>@Formato.Soles(pago.Monto)</strong></div>
+                        <div><span>Estado</span><StatusBadge Texto="@pago.Estado.Etiqueta()" Tono="@pago.Estado.Tono()" /></div>
+                    </div>
+                    @if (pago.Estado is EstadoPago.Generado or EstadoPago.Rechazado)
+                    {
+                        <a class="btn btn-primary" href="/postulante/vouchers" style="width:100%;margin-top:16px"><Icon Name="credit-card" Size="16" />@(pago.Estado == EstadoPago.Rechazado ? "Adjuntar un nuevo voucher" : "Adjuntar voucher de transferencia")</a>
+                    }
+                }
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Resumen</h2></div>
+                <div class="summary-rows">
+                    <div><span>Facultad</span><strong>@Datos.Facultad(Datos.Carrera(p.CarreraId)?.FacultadId ?? 0)?.Nombre</strong></div>
+                    <div><span>Sede de evaluación</span><strong>@Datos.Sede(p.SedeId)?.Nombre</strong></div>
+                    <div><span>Enviada</span><strong>@Formato.Fecha(p.FechaEnvio)</strong></div>
+                </div>
+            </section>
+        </aside>
+    </div>
+}
+
+@code {
+    private List<Postulacion> mias = [];
+    private Postulacion? p;
+    private List<Documento> documentos = [];
+    private readonly Dictionary<int, string?> nuevos = [];
+
+    protected override void OnInitialized()
+    {
+        mias = Datos.Postulaciones.Where(x => x.PostulanteId == Datos.PostulanteActualId).OrderByDescending(x => x.FechaRegistro).ToList();
+        Seleccionar(Datos.PostulacionActualDelPostulante());
+    }
+
+    private void Seleccionar(Postulacion? x)
+    {
+        p = x;
+        documentos = p is null ? [] : Datos.DocumentosDe(p.Id);
+        nuevos.Clear();
+    }
+
+    private void Reemplazar(Documento doc)
+    {
+        if (!nuevos.TryGetValue(doc.Id, out var archivo) || archivo is null) return;
+        Datos.SubirNuevaVersion(doc, archivo);
+        nuevos.Remove(doc.Id);
+        Avisos.Exito($"{doc.Requisito}: nueva versión enviada a revisión");
+    }
+
+    private async Task Imprimir() => await Js.InvokeVoidAsync("print");
+}

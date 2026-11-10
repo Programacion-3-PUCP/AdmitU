@@ -1,0 +1,48 @@
+@inject DatosSesion Datos
+
+<ol class="timeline">
+    @foreach (var paso in Pasos())
+    {
+        <li class="@paso.Clase">
+            <span class="tl-dot"><Icon Name="@paso.Icono" Size="16" /></span>
+            <div class="tl-body"><strong>@paso.Titulo</strong><small>@paso.Detalle</small></div>
+        </li>
+    }
+</ol>
+
+@code {
+    [Parameter, EditorRequired] public Postulacion Postulacion { get; set; } = default!;
+
+    private sealed record Paso(string Titulo, string Detalle, string Icono, string Clase);
+
+    private IEnumerable<Paso> Pasos()
+    {
+        var p = Postulacion;
+        var e = p.Estado;
+        var carne = Datos.CarneVigenteDe(p.Id);
+
+        yield return new("Borrador creado", $"Registrada el {Formato.Fecha(p.FechaRegistro)}", "check", "is-done");
+
+        yield return e == EstadoPostulacion.Borrador
+            ? new("Postulación enviada", "Pendiente de envío", "upload", "is-now")
+            : new("Postulación enviada", $"Enviada el {Formato.Fecha(p.FechaEnvio)}", "check", "is-done");
+
+        if (e == EstadoPostulacion.Borrador) { yield return new("Revisión del expediente", "Documentos y pago", "eye", "is-todo"); }
+        else if (e.EsPendiente()) { yield return new("Revisión del expediente", "El evaluador valida documentos y pago", "eye", "is-now"); }
+        else if (e == EstadoPostulacion.Observada) { yield return new("Expediente observado", "Hay documentos por corregir", "alert", "is-warn"); }
+        else if (e == EstadoPostulacion.NoApta) { yield return new("Expediente no apto", p.Observacion ?? "No cumple los requisitos", "x", "is-bad"); }
+        else { yield return new("Expediente apto", "Documentos y pago conformes", "check", "is-done"); }
+
+        bool apta = e is EstadoPostulacion.Apta or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
+        yield return carne is not null
+            ? new("Carné emitido", $"{carne.Codigo} · {Datos.Sede(carne.SedeId)?.Nombre}, aula {carne.Aula}", "check", "is-done")
+            : new("Carné de postulante", apta ? "Se emite al validarse el pago" : "Se emite automáticamente al ser apto", "id-card", apta ? "is-now" : "is-todo");
+
+        yield return e switch
+        {
+            EstadoPostulacion.Admitida => new("Resultado de admisión", "Ingresó a la carrera", "check", "is-done"),
+            EstadoPostulacion.NoAdmitida => new("Resultado de admisión", "No alcanzó vacante en esta convocatoria", "x", "is-bad"),
+            _ => new("Resultado de admisión", "Se publicará al cierre del proceso", "graduation-cap", "is-todo")
+        };
+    }
+}

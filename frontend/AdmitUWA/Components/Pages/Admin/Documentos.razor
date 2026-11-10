@@ -1,0 +1,116 @@
+@page "/admin/documentos"
+@inject DatosSesion Datos
+@inject NavigationManager Navegacion
+
+<PageTitle>Documentos · AdmitU</PageTitle>
+
+<PageHeader Titulo="Documentos por expediente" Subtitulo="Un expediente por postulación de la convocatoria. Por defecto se muestran primero los que esperan revisión hace más tiempo." Migas="@(["Documentos"])" />
+
+<div class="chips" role="group" aria-label="Filtrar expedientes">
+    @foreach (var (clave, texto) in vistas)
+    {
+        var actual = clave;
+        <button type="button" class="chip @(vista == actual ? "is-active" : "")" @onclick="() => Ir(vista: actual)">@texto<em>@expedientes.Count(e => Cumple(e, actual))</em></button>
+    }
+</div>
+
+<DataTable TItem="Expediente" Items="@expedientes.Where(e => Cumple(e, vista))" TextoBusqueda="@(e => $"{e.P.Codigo} {e.Persona?.NombreCompleto} {e.Persona?.NumeroDocumento}")" Marcador="Buscar por código, postulante o documento de identidad"
+           TituloVacio="No hay expedientes en esta vista" MensajeVacio="Cambia el filtro o la convocatoria.">
+    <Filtros>
+        <select class="select" aria-label="Convocatoria" value="@convId" @onchange='e => Ir(conv: int.Parse(e.Value!.ToString()!))'>
+            @foreach (var c in Datos.Convocatorias.OrderByDescending(c => c.Inicio))
+            {
+                <option value="@c.Id">@c.Nombre</option>
+            }
+        </select>
+    </Filtros>
+    <Encabezado><th>Postulación</th><th>Postulante</th><th>Documentos</th><th>Esperando revisión</th><th>Expediente</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="e">
+        <tr class="@(e.DiasEspera > 2 ? "is-highlight" : "")">
+            <td><a class="mono" href="/admin/postulaciones/@e.P.Id">@e.P.Codigo</a></td>
+            <td><span class="cell-title">@e.Persona?.NombreCompleto</span><span class="cell-sub">@Datos.Carrera(e.P.CarreraId)?.Nombre · @Datos.Modalidad(e.P.ModalidadId)?.Nombre</span></td>
+            <td>
+                <span class="doc-dots" aria-hidden="true">@foreach (var d in e.Docs) { <i class="t-@d.Estado.Tono()" title="@d.Requisito: @d.Estado.Etiqueta()"></i> }</span>
+                <span class="num">@e.Docs.Count(d => d.Estado == EstadoDocumento.Aprobado)/@e.Docs.Count aprobados</span>
+            </td>
+            <td>@(e.PendienteDesde is { } f ? Formato.Antiguedad(f, Datos.Hoy) : "—")</td>
+            <td><StatusBadge Texto="@e.P.Estado.Etiqueta()" Tono="@e.P.Estado.Tono()" /></td>
+            <td class="td-actions"><span class="row-actions"><BotonAccion Tipo="BotonAccion.Accion.Ver" Texto="Ver documentos" Sobre="@e.P.Codigo" OnClick="() => abierto = e" /></span></td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto is not null" Titulo="@($"Documentos de {abierto?.P.Codigo}")" Descripcion="@abierto?.Persona?.NombreCompleto" OnCerrar="() => abierto = null">
+    @if (abierto is not null)
+    {
+        <div class="drawer-body">
+            <ul class="list-rows">
+                @foreach (var d in abierto.Docs)
+                {
+                    <li>
+                        <span class="file-icon">@d.Tipo</span>
+                        <div class="file-meta">
+                            <strong>@d.Requisito</strong>
+                            <small>@d.Archivo · v@(d.Version) · @Formato.Tamanio(d.TamanioKb) · cargado @Formato.Antiguedad(d.FechaCarga, Datos.Hoy)</small>
+                            @if (d.Comentario is not null) { <small class="cell-sub">Observación: @d.Comentario</small> }
+                        </div>
+                        <StatusBadge Texto="@d.Estado.Etiqueta()" Tono="@d.Estado.Tono()" />
+                    </li>
+                }
+            </ul>
+            <p class="inline-note"><Icon Name="info" Size="16" /><span>La revisión la realiza el evaluador asignado: @(Datos.Evaluador(abierto.P.EvaluadorId)?.Nombre ?? "sin asignar").</span></p>
+        </div>
+        <div class="drawer-foot">
+            <a class="btn btn-primary" href="/admin/postulaciones/@abierto.P.Id">Ir a la postulación</a>
+        </div>
+    }
+</Drawer>
+
+@code {
+    private sealed record Expediente(Postulacion P, Postulante? Persona, List<Documento> Docs, DateOnly? PendienteDesde, int DiasEspera);
+
+    private static readonly (string Clave, string Texto)[] vistas =
+    [
+        ("pendientes", "Por revisar"), ("observados", "Con observaciones"), ("completos", "Completos"), ("todos", "Todos")
+    ];
+
+    [SupplyParameterFromQuery(Name = "conv")] public int? Conv { get; set; }
+    [SupplyParameterFromQuery(Name = "vista")] public string? Vista { get; set; }
+
+    private int convId;
+    private string vista = "pendientes";
+    private List<Expediente> expedientes = [];
+    private Expediente? abierto;
+
+    protected override void OnParametersSet()
+    {
+        convId = Conv ?? Datos.ConvocatoriaPorDefecto;
+        vista = Vista ?? "pendientes";
+        expedientes = Datos.PostulacionesDeConvocatoria(convId)
+            .Where(p => p.Estado != EstadoPostulacion.Borrador)
+            .Select(p =>
+            {
+                var docs = Datos.DocumentosDe(p.Id);
+                DateOnly? desde = docs.Where(d => d.Estado == EstadoDocumento.Pendiente).Select(d => (DateOnly?)d.FechaCarga).Min();
+                return new Expediente(p, Datos.PersonaDe(p), docs, desde, desde is { } f ? Datos.Hoy.DayNumber - f.DayNumber : 0);
+            })
+            .OrderBy(e => e.PendienteDesde ?? DateOnly.MaxValue)
+            .ThenBy(e => e.P.Codigo)
+            .ToList();
+    }
+
+    private static bool Cumple(Expediente e, string vista) => vista switch
+    {
+        "pendientes" => e.Docs.Any(d => d.Estado == EstadoDocumento.Pendiente),
+        "observados" => e.Docs.Any(d => d.Estado == EstadoDocumento.Observado),
+        "completos" => e.Docs.Count > 0 && e.Docs.All(d => d.Estado == EstadoDocumento.Aprobado),
+        _ => true
+    };
+
+    private void Ir(int? conv = null, string? vista = null) =>
+        Navegacion.NavigateTo(Navegacion.GetUriWithQueryParameters(new Dictionary<string, object?>
+        {
+            ["conv"] = conv ?? convId,
+            ["vista"] = vista ?? this.vista
+        }));
+}

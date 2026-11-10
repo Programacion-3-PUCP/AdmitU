@@ -1,0 +1,110 @@
+@page "/admin/carreras"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Carreras · AdmitU</PageTitle>
+
+<PageHeader Titulo="Carreras" Subtitulo="Catálogo de carreras por facultad. Las vacantes se definen en cada convocatoria." Migas="@(["Carreras"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva carrera</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="Carrera" Items="Filtradas" TextoBusqueda="@(c => $"{c.Codigo} {c.Nombre} {Datos.Facultad(c.FacultadId)?.Nombre}")" Marcador="Buscar por carrera o facultad">
+    <Filtros>
+        <select class="select" aria-label="Filtrar por facultad" @bind="facultadId">
+            <option value="0">Todas las facultades</option>
+            @foreach (var f in Datos.Facultades) { <option value="@f.Id">@f.Nombre</option> }
+        </select>
+    </Filtros>
+    <Encabezado><th>Código</th><th>Carrera</th><th>Facultad</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="c">
+        <tr>
+            <td><span class="mono">@c.Codigo</span></td>
+            <td><span class="cell-title">@c.Nombre</span></td>
+            <td>@Datos.Facultad(c.FacultadId)?.Nombre</td>
+            <td><EstadoActivo Activo="c.Activo" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@c.Nombre" OnClick="() => Editar(c)" />
+                    @if (c.Activo)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Desactivar" Sobre="@c.Nombre" OnClick="() => pendiente = c" />
+                    }
+                    else
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Reactivar" Sobre="@c.Nombre" OnClick="() => Reactivar(c)" />
+                    }
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nueva carrera" : "Editar carrera")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field">
+                <label for="c-fac">Facultad <span class="req">*</span></label>
+                <InputSelect id="c-fac" @bind-Value="modelo.FacultadId">
+                    <option value="0">Selecciona una facultad</option>
+                    @foreach (var f in Datos.Facultades.Where(f => f.Activo || f.Id == modelo.FacultadId)) { <option value="@f.Id">@f.Nombre</option> }
+                </InputSelect>
+                <ValidationMessage For="() => modelo.FacultadId" />
+            </div>
+            <div class="field">
+                <label for="c-codigo">Código <span class="req">*</span> @if (modelo.Id != 0) { <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span> }</label>
+                <InputText id="c-codigo" @bind-Value="modelo.Codigo" placeholder="Ej. INF" disabled="@(modelo.Id != 0)" />
+                <ValidationMessage For="() => modelo.Codigo" />
+                @if (errorCodigo is not null) { <p class="validation-message">@errorCodigo</p> }
+            </div>
+            <div class="field"><label for="c-nombre">Nombre <span class="req">*</span></label><InputText id="c-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Ingeniería Informática" /><ValidationMessage For="() => modelo.Nombre" /></div>
+            <p class="inline-note"><Icon Name="info" Size="16" /><span>Las vacantes se configuran en cada convocatoria, desde <a href="/admin/convocatorias">Convocatorias</a>.</span></p>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Desactivar carrera" Mensaje="@($"{pendiente?.Nombre} dejará de ofrecerse en nuevas convocatorias. Su historial se conserva y podrás reactivarla.")" TextoConfirmar="Desactivar"
+               OnCancelar="() => pendiente = null" OnConfirmar="Desactivar" />
+
+@code {
+    private bool abierto;
+    private int facultadId;
+    private Carrera modelo = new();
+    private Carrera? pendiente;
+    private string? errorCodigo;
+
+    private IEnumerable<Carrera> Filtradas => Datos.Carreras.Where(c => facultadId == 0 || c.FacultadId == facultadId);
+
+    private void Nueva() { modelo = new(); errorCodigo = null; abierto = true; }
+    private void Editar(Carrera c) { modelo = new() { Id = c.Id, FacultadId = c.FacultadId, Codigo = c.Codigo, Nombre = c.Nombre, Activo = c.Activo }; errorCodigo = null; abierto = true; }
+    private void Cerrar() => abierto = false;
+
+    private void Guardar()
+    {
+        if (modelo.Id == 0 && Datos.Carreras.Any(x => x.Codigo.Equals(modelo.Codigo.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            errorCodigo = "Ya existe una carrera con ese código.";
+            return;
+        }
+        Datos.GuardarCarrera(modelo);
+        abierto = false;
+        Avisos.Exito("Carrera guardada");
+    }
+
+    private void Desactivar()
+    {
+        if (pendiente is not null) Datos.CambiarEstadoCarrera(pendiente, false);
+        Avisos.Exito($"{pendiente?.Nombre} desactivada");
+        pendiente = null;
+    }
+
+    private void Reactivar(Carrera c)
+    {
+        Datos.CambiarEstadoCarrera(c, true);
+        Avisos.Exito($"{c.Nombre} reactivada");
+    }
+}

@@ -1,0 +1,48 @@
+@page "/admin/historial-estados"
+@inject DatosSesion Datos
+
+<PageTitle>Historial de estados · AdmitU</PageTitle>
+
+<PageHeader Titulo="Historial de estados" Subtitulo="Registro automático de cada cambio de estado de las postulaciones: quién lo hizo, cuándo y por qué. Es de solo consulta." Migas="@(["Historial de estados"])" />
+
+<DataTable TItem="MovimientoEstado" Items="Movimientos" TextoBusqueda="@(m => $"{Datos.Postulacion(m.PostulacionId)?.Codigo} {Datos.PersonaDePostulacion(m.PostulacionId)?.NombreCompleto} {m.Responsable} {m.Motivo} {m.Nuevo.Etiqueta()}")"
+           Marcador="Buscar por postulación, postulante, responsable o motivo">
+    <Filtros>
+        <select class="select" aria-label="Convocatoria" @bind="convId">
+            @foreach (var c in Datos.Convocatorias.OrderByDescending(c => c.Inicio)) { <option value="@c.Id">@c.Nombre</option> }
+        </select>
+        <select class="select" aria-label="Estado nuevo" @bind="estado">
+            <option value="">Cualquier estado nuevo</option>
+            @foreach (var e in Enum.GetValues<EstadoPostulacion>()) { <option value="@e">@e.Etiqueta()</option> }
+        </select>
+    </Filtros>
+    <Encabezado><th>Fecha</th><th>Postulación</th><th>Estado anterior</th><th>Estado nuevo</th><th>Responsable</th><th>Motivo</th></Encabezado>
+    <Fila Context="m">
+        <tr>
+            <td>@Formato.FechaHora(m.Fecha)</td>
+            <td><a class="mono" href="/admin/postulaciones/@m.PostulacionId">@Datos.Postulacion(m.PostulacionId)?.Codigo</a><span class="cell-sub">@Datos.PersonaDePostulacion(m.PostulacionId)?.NombreCompleto</span></td>
+            <td>@(m.Anterior is { } a ? a.Etiqueta() : "—")</td>
+            <td><StatusBadge Texto="@m.Nuevo.Etiqueta()" Tono="@m.Nuevo.Tono()" /></td>
+            <td>@m.Responsable</td>
+            <td class="wrap">@m.Motivo</td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    private int convId;
+    private string estado = "";
+
+    protected override void OnInitialized() => convId = Datos.ConvocatoriaPorDefecto;
+
+    private IEnumerable<MovimientoEstado> Movimientos
+    {
+        get
+        {
+            var ids = Datos.PostulacionesDeConvocatoria(convId).Select(p => p.Id).ToHashSet();
+            return Datos.Historial
+                .Where(m => ids.Contains(m.PostulacionId) && (estado == "" || m.Nuevo.ToString() == estado))
+                .OrderByDescending(m => m.Fecha).ThenByDescending(m => m.Id);
+        }
+    }
+}

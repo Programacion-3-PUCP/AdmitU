@@ -1,0 +1,75 @@
+@* Selector de archivo único: valida formato y tamaño antes de aceptarlo. El servidor validará el contenido real. *@
+<div class="dropzone @(archivo is null ? "" : "has-file") @(error is null ? "" : "has-error") @(Deshabilitado ? "is-disabled" : "")">
+    <label>
+        <InputFile OnChange="Elegido" accept="@Formato.Extensiones()" class="dropzone-input" disabled="@Deshabilitado" />
+        <span class="dropzone-icon"><Icon Name="@(archivo is null ? "upload" : "check-circle")" Size="20" /></span>
+        <span class="dropzone-text">
+            @if (archivo is null)
+            {
+                <strong>@Etiqueta</strong>
+                <small>Haz clic para elegir el archivo · @Formato.Etiqueta() hasta @MaximoMb MB</small>
+            }
+            else
+            {
+                <strong>@archivo</strong>
+                <small>Archivo listo · haz clic para cambiarlo</small>
+            }
+        </span>
+    </label>
+    @if (error is not null)
+    {
+        <p class="validation-message" role="alert">@error</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Etiqueta { get; set; } = "";
+    [Parameter] public FormatoArchivo Formato { get; set; } = FormatoArchivo.Cualquiera;
+    [Parameter] public int MaximoMb { get; set; } = 5;
+    [Parameter] public bool Deshabilitado { get; set; }
+    /// <summary>Nombre del archivo ya cargado, si existe.</summary>
+    [Parameter] public string? Valor { get; set; }
+    [Parameter] public EventCallback<string?> OnArchivo { get; set; }
+
+    private string? archivo;
+    private string? error;
+    private string? ultimoValor;
+
+    protected override void OnParametersSet()
+    {
+        if (Valor != ultimoValor)
+        {
+            ultimoValor = Valor;
+            archivo = Valor;
+            error = null;
+        }
+    }
+
+    private async Task Elegido(InputFileChangeEventArgs e)
+    {
+        var f = e.File;
+        var extension = Path.GetExtension(f.Name).ToLowerInvariant();
+        var permitidas = Formato.Extensiones().Split(',');
+        if (!permitidas.Contains(extension))
+        {
+            Rechazar($"El archivo debe ser {Formato.Etiqueta()}.");
+        }
+        else if (f.Size > MaximoMb * 1024L * 1024L)
+        {
+            Rechazar($"El archivo supera los {MaximoMb} MB permitidos.");
+        }
+        else
+        {
+            archivo = f.Name;
+            error = null;
+        }
+        ultimoValor = archivo;
+        await OnArchivo.InvokeAsync(archivo);
+    }
+
+    private void Rechazar(string mensaje)
+    {
+        archivo = null;
+        error = mensaje;
+    }
+}

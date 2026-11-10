@@ -1,0 +1,291 @@
+@page "/evaluador/observaciones"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Observaciones · AdmitU</PageTitle>
+
+<PageHeader Titulo="Seguimiento de observaciones" Subtitulo="Registra, consulta, modifica, subsana o elimina observaciones sobre los documentos de las postulaciones." Migas="@(["Observaciones"])">
+    <Acciones>
+        <button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva observación</button>
+    </Acciones>
+</PageHeader>
+
+<div class="chips" role="group" aria-label="Filtrar por estado">
+    <button type="button" class="chip @(estado is null ? "is-active" : "")" @onclick="() => estado = null">Todas<em>@base_.Count</em></button>
+    @foreach (var e in Enum.GetValues<EstadoObservacion>())
+    {
+        var actual = e;
+        <button type="button" class="chip @(estado == actual ? "is-active" : "")" @onclick="() => estado = actual">@actual.Etiqueta()<em>@base_.Count(o => o.Estado == actual)</em></button>
+    }
+</div>
+
+<DataTable TItem="Observacion" Items="@base_.Where(o => (estado is null || o.Estado == estado) && (tipo == "" || o.Tipo.ToString() == tipo))"
+           TextoBusqueda="@(o => $"{Postulacion(o)?.Codigo} {Datos.PersonaDe(Postulacion(o))?.NombreCompleto} {Datos.Documento(o.DocumentoId)?.Requisito} {o.Descripcion} {o.ComentarioSubsanacion}")"
+           Marcador="Buscar por postulación, postulante, documento o descripción" TituloVacio="Sin observaciones" MensajeVacio="No hay observaciones con estos filtros.">
+    <Filtros>
+        <select class="select" aria-label="Alcance" @bind="soloMias">
+            <option value="true">Mis expedientes</option>
+            <option value="false">Todos los evaluadores</option>
+        </select>
+        <select class="select" aria-label="Tipo de observación" @bind="tipo">
+            <option value="">Cualquier tipo</option>
+            @foreach (var t in Enum.GetValues<TipoObservacion>()) { <option value="@t">@t.Etiqueta()</option> }
+        </select>
+    </Filtros>
+    <Encabezado><th>Fecha</th><th>Postulación</th><th>Documento</th><th>Tipo</th><th>Qué debe corregir</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="o">
+        @{ var p = Postulacion(o); var doc = Datos.Documento(o.DocumentoId); }
+        <tr>
+            <td>@Formato.Fecha(o.Fecha)</td>
+            <td><span class="mono">@p?.Codigo</span><span class="cell-sub">@Datos.PersonaDe(p)?.NombreCompleto</span></td>
+            <td><span class="cell-title">@doc?.Requisito</span><span class="cell-sub">@doc?.Archivo</span></td>
+            <td>@o.Tipo.Etiqueta()</td>
+            <td class="wrap">
+                @o.Descripcion
+                @if (!string.IsNullOrWhiteSpace(o.ComentarioSubsanacion))
+                {
+                    <span class="cell-sub">Subsanación: @o.ComentarioSubsanacion (@Formato.Fecha(o.FechaSubsanacion))</span>
+                }
+            </td>
+            <td><StatusBadge Texto="@o.Estado.Etiqueta()" Tono="@o.Estado.Tono()" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    @if (p is not null)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Ver" Texto="Abrir revisión" Sobre="@p.Codigo" Href="@($"/evaluador/postulaciones/{p.Id}")" />
+                    }
+                    <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@(doc?.Requisito ?? "Observación")" OnClick="() => Editar(o)" />
+                    @if (o.Estado == EstadoObservacion.Abierta)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Aprobar" Texto="Marcar como subsanada" Sobre="@(doc?.Requisito ?? "Observación")" OnClick="() => Subsanar(o)" />
+                    }
+                    <BotonAccion Tipo="BotonAccion.Accion.Eliminar" Sobre="@(doc?.Requisito ?? "Observación")" OnClick="() => porEliminar = o" />
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(editando is null ? "Nueva observación" : "Editar observación")"
+        Descripcion="@(editando is null ? "Filtra por convocatoria, expediente y documento para registrar la observación." : "Modifica el detalle o el estado de la observación.")"
+        OnCerrar="Cerrar">
+    <form class="drawer-form" @onsubmit="Guardar" @onsubmit:preventDefault>
+        <div class="drawer-body">
+            <div class="field">
+                <label for="o-conv">Convocatoria @if (editando is not null) { <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span> }</label>
+                <select id="o-conv" @bind="convSeleccionadaId" @bind:after="AlCambiarConvocatoria" disabled="@(editando is not null)">
+                    @foreach (var c in Datos.Convocatorias.OrderByDescending(c => c.Inicio))
+                    {
+                        <option value="@c.Id">@c.Nombre (@c.Periodo)</option>
+                    }
+                </select>
+            </div>
+
+            @if (editando is null)
+            {
+                <div class="field">
+                    <label for="o-buscar">Filtrar postulante o código de expediente</label>
+                    <input id="o-buscar" type="search" @bind="filtroExpediente" @bind:event="oninput" @bind:after="AlFiltrarExpediente" placeholder="Escribe nombre, DNI o código (ej. INS-2026)..." />
+                </div>
+            }
+
+            <div class="field">
+                <label for="o-post">Expediente / Postulante <span class="req">*</span> @if (editando is not null) { <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span> }</label>
+                <select id="o-post" @bind="postSeleccionadaId" @bind:after="AlCambiarPostulacion" disabled="@(editando is not null)">
+                    <option value="0">Selecciona una postulación</option>
+                    @foreach (var p in PostulacionesFiltradas)
+                    {
+                        var per = Datos.PersonaDe(p);
+                        <option value="@p.Id">@p.Codigo · @per?.NombreCompleto (@per?.NumeroDocumento)</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="o-doc">Documento del expediente <span class="req">*</span> @if (editando is not null) { <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span> }</label>
+                <select id="o-doc" @bind="docSeleccionadoId" disabled="@(editando is not null)">
+                    <option value="0">Selecciona un documento</option>
+                    @foreach (var d in DocumentosFiltrados)
+                    {
+                        <option value="@d.Id">@d.Requisito — @d.Archivo (v@(d.Version))</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="o-tipo">Tipo de observación <span class="req">*</span></label>
+                <select id="o-tipo" @bind="formTipo">
+                    @foreach (var t in Enum.GetValues<TipoObservacion>())
+                    {
+                        <option value="@t">@t.Etiqueta()</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="o-desc">Qué debe corregir el postulante <span class="req">*</span></label>
+                <textarea id="o-desc" @bind="formDescripcion" maxlength="255" placeholder="Describe con claridad qué debe corregir el postulante."></textarea>
+            </div>
+
+            @if (editando is not null)
+            {
+                <div class="field">
+                    <label for="o-est">Estado de la observación</label>
+                    <select id="o-est" @bind="formEstado">
+                        @foreach (var e in Enum.GetValues<EstadoObservacion>())
+                        {
+                            <option value="@e">@e.Etiqueta()</option>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="o-sub">Comentario de subsanación</label>
+                    <input id="o-sub" @bind="formComentarioSubsanacion" maxlength="255" placeholder="Opcional: detalle de la subsanación" />
+                </div>
+            }
+
+            @if (errorForm is not null)
+            {
+                <p class="validation-message" role="alert">@errorForm</p>
+            }
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </form>
+</Drawer>
+
+<ConfirmDialog Abierto="porEliminar is not null" Titulo="Eliminar observación"
+               Mensaje="@($"Se eliminará la observación sobre «{Datos.Documento(porEliminar?.DocumentoId ?? 0)?.Requisito}».")"
+               TextoConfirmar="Eliminar" OnCancelar="() => porEliminar = null" OnConfirmar="ConfirmarEliminar" />
+
+@code {
+    private EstadoObservacion? estado;
+    private string tipo = "";
+    private bool soloMias = true;
+
+    private bool abierto;
+    private Observacion? editando;
+    private Observacion? porEliminar;
+
+    private int convSeleccionadaId;
+    private string filtroExpediente = "";
+    private int postSeleccionadaId;
+    private int docSeleccionadoId;
+    private TipoObservacion formTipo = TipoObservacion.Ilegible;
+    private string formDescripcion = "";
+    private EstadoObservacion formEstado = EstadoObservacion.Abierta;
+    private string? formComentarioSubsanacion;
+    private string? errorForm;
+
+    private List<Observacion> base_ => Datos.Observaciones
+        .Where(o => !soloMias || Postulacion(o)?.EvaluadorId == Datos.EvaluadorActualId || o.EvaluadorId == Datos.EvaluadorActualId)
+        .OrderByDescending(o => o.Fecha).ThenByDescending(o => o.Id).ToList();
+
+    private Postulacion? Postulacion(Observacion o) => Datos.Postulacion(Datos.Documento(o.DocumentoId)?.PostulacionId ?? 0);
+
+    private IEnumerable<Postulacion> PostulacionesFiltradas =>
+        Datos.PostulacionesDeConvocatoria(convSeleccionadaId)
+            .Where(p => string.IsNullOrWhiteSpace(filtroExpediente)
+                || p.Codigo.Contains(filtroExpediente, StringComparison.OrdinalIgnoreCase)
+                || (Datos.PersonaDe(p)?.NombreCompleto.Contains(filtroExpediente, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (Datos.PersonaDe(p)?.NumeroDocumento.Contains(filtroExpediente, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    private IEnumerable<Documento> DocumentosFiltrados =>
+        postSeleccionadaId == 0 ? [] : Datos.DocumentosDe(postSeleccionadaId);
+
+    private void Nueva()
+    {
+        editando = null;
+        convSeleccionadaId = Datos.ConvocatoriaPorDefecto;
+        filtroExpediente = "";
+        postSeleccionadaId = PostulacionesFiltradas.FirstOrDefault()?.Id ?? 0;
+        docSeleccionadoId = DocumentosFiltrados.FirstOrDefault()?.Id ?? 0;
+        formTipo = TipoObservacion.Ilegible;
+        formDescripcion = "";
+        formEstado = EstadoObservacion.Abierta;
+        formComentarioSubsanacion = null;
+        errorForm = null;
+        abierto = true;
+    }
+
+    private void Editar(Observacion o)
+    {
+        editando = o;
+        var doc = Datos.Documento(o.DocumentoId);
+        var post = doc is null ? null : Datos.Postulacion(doc.PostulacionId);
+        convSeleccionadaId = post?.ConvocatoriaId ?? Datos.ConvocatoriaPorDefecto;
+        filtroExpediente = "";
+        postSeleccionadaId = post?.Id ?? 0;
+        docSeleccionadoId = o.DocumentoId;
+        formTipo = o.Tipo;
+        formDescripcion = o.Descripcion;
+        formEstado = o.Estado;
+        formComentarioSubsanacion = o.ComentarioSubsanacion;
+        errorForm = null;
+        abierto = true;
+    }
+
+    private void AlCambiarConvocatoria()
+    {
+        postSeleccionadaId = PostulacionesFiltradas.FirstOrDefault()?.Id ?? 0;
+        docSeleccionadoId = DocumentosFiltrados.FirstOrDefault()?.Id ?? 0;
+    }
+
+    private void AlFiltrarExpediente()
+    {
+        if (!PostulacionesFiltradas.Any(p => p.Id == postSeleccionadaId))
+        {
+            postSeleccionadaId = PostulacionesFiltradas.FirstOrDefault()?.Id ?? 0;
+            docSeleccionadoId = DocumentosFiltrados.FirstOrDefault()?.Id ?? 0;
+        }
+    }
+
+    private void AlCambiarPostulacion()
+    {
+        docSeleccionadoId = DocumentosFiltrados.FirstOrDefault()?.Id ?? 0;
+    }
+
+    private void Cerrar() => abierto = false;
+
+    private void Guardar()
+    {
+        if (docSeleccionadoId <= 0 || Datos.Documento(docSeleccionadoId) is not { } doc)
+        {
+            errorForm = "Selecciona un expediente y un documento válido.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(formDescripcion))
+        {
+            errorForm = "Describe qué debe corregir el postulante.";
+            return;
+        }
+
+        if (editando is null)
+        {
+            Datos.ObservarDocumento(doc, formTipo, formDescripcion.Trim(), Datos.EvaluadorActualId, Datos.EvaluadorActual.Nombre);
+            Avisos.Exito("Observación registrada en el documento");
+        }
+        else
+        {
+            Datos.ModificarObservacion(editando, formTipo, formDescripcion.Trim(), formEstado, formComentarioSubsanacion);
+            Avisos.Exito("Observación actualizada");
+        }
+        abierto = false;
+    }
+
+    private void Subsanar(Observacion o)
+    {
+        Datos.SubsanarObservacion(o, "Observación verificada y subsanada por el evaluador");
+        Avisos.Exito("Observación marcada como subsanada");
+    }
+
+    private void ConfirmarEliminar()
+    {
+        if (porEliminar is null) return;
+        Datos.EliminarObservacion(porEliminar);
+        Avisos.Exito("Observación eliminada");
+        porEliminar = null;
+    }
+}

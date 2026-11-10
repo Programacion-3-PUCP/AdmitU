@@ -1,0 +1,97 @@
+@page "/postulante/antecedentes"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Antecedentes académicos · AdmitU</PageTitle>
+
+<PageHeader Titulo="Antecedentes académicos" Subtitulo="Certificados de tu colegio o universidad de procedencia." Migas="@(["Antecedentes académicos"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nuevo"><Icon Name="plus" Size="16" />Agregar certificado</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="Antecedente" Items="Mios" MostrarBarra="false" TituloVacio="Aún no registras certificados" MensajeVacio="Agrega el certificado de estudios de tu colegio o universidad.">
+    <Encabezado><th>Tipo</th><th>Institución</th><th>Archivo</th><th>Registrado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="a">
+        <tr>
+            <td>@a.Tipo</td>
+            <td>@a.Institucion</td>
+            <td>@a.Archivo</td>
+            <td>@Formato.Fecha(a.Fecha)</td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@a.Institucion" OnClick="() => Editar(a)" />
+                    <BotonAccion Tipo="BotonAccion.Accion.Eliminar" Sobre="@a.Institucion" OnClick="() => porEliminar = a" />
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Agregar certificado" : "Editar certificado")" OnCerrar="() => abierto = false">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field">
+                <label for="a-tipo">Tipo de certificado</label>
+                <InputSelect id="a-tipo" @bind-Value="modelo.Tipo">
+                    <option>Certificado de notas</option>
+                    <option>Constancia de estudios</option>
+                    <option>Certificado universitario</option>
+                </InputSelect>
+            </div>
+            <div class="field"><label for="a-inst">Institución de procedencia <span class="req">*</span></label><InputText id="a-inst" @bind-Value="modelo.Institucion" placeholder="Nombre del colegio o universidad" /><ValidationMessage For="() => modelo.Institucion" /></div>
+            <div class="field">
+                <span class="label">Archivo PDF <span class="req">*</span></span>
+                <ZonaCarga Etiqueta="Subir certificado" Formato="FormatoArchivo.Pdf" Valor="@(modelo.Archivo == "" ? null : modelo.Archivo)" OnArchivo="n => modelo.Archivo = n ?? string.Empty" />
+                <ValidationMessage For="() => modelo.Archivo" />
+            </div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="() => abierto = false">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="porEliminar is not null" Titulo="Eliminar certificado" Mensaje="@($"Se eliminará el certificado de {porEliminar?.Institucion}.")" TextoConfirmar="Eliminar"
+               OnCancelar="() => porEliminar = null" OnConfirmar="Eliminar" />
+
+@code {
+    private sealed class FormularioAntecedente
+    {
+        public int Id { get; set; }
+        public string Tipo { get; set; } = "Certificado de notas";
+        [Required(ErrorMessage = "Ingresa la institución de procedencia.")]
+        [StringLength(120, ErrorMessage = "La institución admite como máximo {1} caracteres.")]
+        public string Institucion { get; set; } = "";
+        [Required(ErrorMessage = "Adjunta el certificado en PDF.")]
+        public string Archivo { get; set; } = "";
+    }
+
+    private bool abierto;
+    private FormularioAntecedente modelo = new();
+    private Antecedente? porEliminar;
+
+    private IEnumerable<Antecedente> Mios => Datos.Antecedentes.Where(a => a.PostulanteId == Datos.PostulanteActualId).OrderByDescending(a => a.Fecha);
+
+    private void Nuevo() { modelo = new(); abierto = true; }
+    private void Editar(Antecedente a) { modelo = new() { Id = a.Id, Tipo = a.Tipo, Institucion = a.Institucion, Archivo = a.Archivo }; abierto = true; }
+
+    private void Guardar()
+    {
+        Datos.GuardarAntecedente(new Antecedente
+        {
+            Id = modelo.Id, PostulanteId = Datos.PostulanteActualId,
+            Tipo = modelo.Tipo, Institucion = modelo.Institucion.Trim(), Archivo = modelo.Archivo, Fecha = Datos.Hoy
+        });
+        abierto = false;
+        Avisos.Exito("Certificado guardado");
+    }
+
+    private void Eliminar()
+    {
+        if (porEliminar is null) return;
+        Datos.EliminarAntecedente(porEliminar);
+        Avisos.Exito("Certificado eliminado");
+        porEliminar = null;
+    }
+}

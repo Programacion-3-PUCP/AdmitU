@@ -1,0 +1,43 @@
+@inject DatosSesion Datos
+
+<aside class="sidebar" aria-label="Navegación principal">
+    <a class="brand" href="@Area.Inicio" aria-label="AdmitU, ir al inicio">
+        <Logo />
+        <span class="brand-text">
+            <strong>Admit<em>U</em></strong>
+            <small>Portal @Area.Nombre.ToLowerInvariant()</small>
+        </span>
+    </a>
+
+    <nav class="nav">
+        @foreach (var grupo in Area.Menu)
+        {
+            <p class="nav-title">@grupo.Titulo</p>
+            @foreach (var item in grupo.Items)
+            {
+                <NavLink class="nav-link" href="@item.Href" Match="@(item.Exacto ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+                    <Icon Name="@item.Icono" />@item.Texto
+                    @if (item.Conteo > 0)
+                    {
+                        <span class="nav-count @(item.Alerta ? "nav-count-alert" : "")">@item.Conteo</span>
+                    }
+                </NavLink>
+            }
+        }
+    </nav>
+
+    @if (Datos.ConvocatoriaVigente is { } conv)
+    {
+        var cierre = conv.CierreInscripciones ?? conv.Fin;
+        var dias = cierre.DayNumber - Datos.Hoy.DayNumber;
+        <div class="side-card">
+            <span class="side-card-label">Convocatoria vigente</span>
+            <strong>@conv.Nombre</strong>
+            <p>@(dias >= 0 ? $"Inscripciones hasta el {Formato.FechaCorta(cierre)} · {dias} días" : "Inscripciones cerradas")</p>
+        </div>
+    }
+</aside>
+
+@code {
+    [Parameter, EditorRequired] public AreaInfo Area { get; set; } = default!;
+}

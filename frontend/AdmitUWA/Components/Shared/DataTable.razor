@@ -1,0 +1,128 @@
+@typeparam TItem
+
+<section class="card table-card">
+    @if (MostrarBarra)
+    {
+        <div class="table-toolbar">
+            @if (TextoBusqueda is not null)
+            {
+                <label class="search">
+                    <Icon Name="search" Size="16" />
+                    <input type="search" placeholder="@Marcador" value="@texto" @oninput="Buscar" aria-label="@Marcador" />
+                </label>
+            }
+            @if (Filtros is not null)
+            {
+                <div class="toolbar-filters">@Filtros</div>
+            }
+            <span class="table-count">@filtrados.Count @(filtrados.Count == 1 ? "resultado" : "resultados")</span>
+        </div>
+    }
+
+    @if (filtrados.Count == 0)
+    {
+        <EmptyState Titulo="@TituloVacio" Mensaje="@MensajeVacio" Icono="search" />
+    }
+    else
+    {
+        <div class="table-scroll">
+            <table class="table">
+                <thead><tr>@Encabezado</tr></thead>
+                <tbody>
+                    @foreach (var item in filtrados.Skip(indice * TamanoPagina).Take(TamanoPagina))
+                    {
+                        @Fila(item)
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (paginas > 1)
+        {
+            <footer class="pager">
+                <span>Mostrando @(indice * TamanoPagina + 1)–@(Math.Min((indice + 1) * TamanoPagina, filtrados.Count)) de @filtrados.Count</span>
+                <nav class="pager-buttons" aria-label="Paginación">
+                    <button type="button" class="icon-btn" aria-label="Página anterior" disabled="@(indice == 0)" @onclick="() => IrA(indice - 1)"><Icon Name="chevron-left" Size="16" /></button>
+                    @foreach (var p in PaginasVisibles())
+                    {
+                        if (p < 0)
+                        {
+                            <span class="page-gap" aria-hidden="true">…</span>
+                        }
+                        else
+                        {
+                            int destino = p;
+                            <button type="button" class="page-btn @(p == indice ? "is-active" : "")" aria-current="@(p == indice ? "page" : null)" @onclick="() => IrA(destino)">@(p + 1)</button>
+                        }
+                    }
+                    <button type="button" class="icon-btn" aria-label="Página siguiente" disabled="@(indice >= paginas - 1)" @onclick="() => IrA(indice + 1)"><Icon Name="chevron-right" Size="16" /></button>
+                </nav>
+            </footer>
+        }
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public IEnumerable<TItem> Items { get; set; } = [];
+    [Parameter, EditorRequired] public RenderFragment Encabezado { get; set; } = default!;
+    [Parameter, EditorRequired] public RenderFragment<TItem> Fila { get; set; } = default!;
+    [Parameter] public Func<TItem, string>? TextoBusqueda { get; set; }
+    [Parameter] public RenderFragment? Filtros { get; set; }
+    [Parameter] public string Marcador { get; set; } = "Buscar…";
+    [Parameter] public int TamanoPagina { get; set; } = 10;
+    /// <summary>Texto de búsqueda que llega desde la URL (?q=). Se vuelve a aplicar cada vez que cambia.</summary>
+    [Parameter] public string? TextoInicial { get; set; }
+    [Parameter] public bool MostrarBarra { get; set; } = true;
+    [Parameter] public string TituloVacio { get; set; } = "No encontramos resultados";
+    [Parameter] public string MensajeVacio { get; set; } = "Prueba con otra búsqueda o cambia los filtros aplicados.";
+
+    private string texto = "";
+    private string? ultimoTextoInicial;
+    private int indice;
+    private int paginas;
+    private List<TItem> filtrados = [];
+
+    protected override void OnParametersSet()
+    {
+        if (TextoInicial != ultimoTextoInicial)
+        {
+            ultimoTextoInicial = TextoInicial;
+            texto = TextoInicial ?? "";
+            indice = 0;
+        }
+        Filtrar();
+    }
+
+    private void Filtrar()
+    {
+        var busqueda = texto.Trim();
+        filtrados = string.IsNullOrEmpty(busqueda) || TextoBusqueda is null
+            ? Items.ToList()
+            : Items.Where(i => TextoBusqueda(i).Contains(busqueda, StringComparison.OrdinalIgnoreCase)).ToList();
+        paginas = (int)Math.Ceiling(filtrados.Count / (double)TamanoPagina);
+        if (indice >= paginas) indice = Math.Max(0, paginas - 1);
+    }
+
+    private void Buscar(ChangeEventArgs e)
+    {
+        texto = e.Value?.ToString() ?? "";
+        indice = 0;
+        Filtrar();
+    }
+
+    private void IrA(int pagina) => indice = Math.Clamp(pagina, 0, Math.Max(0, paginas - 1));
+
+    /// <summary>Primera, última y vecinas de la actual; -1 representa un salto ("…").</summary>
+    private IEnumerable<int> PaginasVisibles()
+    {
+        int anterior = -2;
+        for (int p = 0; p < paginas; p++)
+        {
+            if (p == 0 || p == paginas - 1 || Math.Abs(p - indice) <= 1)
+            {
+                if (p - anterior > 1 && anterior >= 0) yield return -1;
+                yield return p;
+                anterior = p;
+            }
+        }
+    }
+}

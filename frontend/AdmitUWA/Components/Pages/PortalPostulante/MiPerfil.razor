@@ -1,0 +1,103 @@
+@page "/postulante/perfil"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Mi perfil · AdmitU</PageTitle>
+
+<PageHeader Titulo="Mi perfil" Subtitulo="Mantén tus datos de contacto al día. Los campos con asterisco son obligatorios." Migas="@(["Mi perfil"])" />
+
+<EditForm Model="modelo" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+
+    <div class="card card-pad">
+        <div class="profile" style="margin-bottom:24px">
+            <Avatar Nombre="@($"{modelo.Nombres} {modelo.ApellidoPaterno}")" Tamano="lg" />
+            <div>
+                <h2>@modelo.Nombres @modelo.ApellidoPaterno @modelo.ApellidoMaterno</h2>
+                <div class="feed-tags">
+                    <StatusBadge Texto="@(yo.CorreoValidado ? "Correo validado" : "Correo sin validar")" Tono="@(yo.CorreoValidado ? "success" : "warning")" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-head"><span class="step">1</span><div><h2>Datos personales</h2></div></div>
+            <div class="form-grid">
+                <div class="field"><label for="nombres">Nombres <span class="req">*</span></label><InputText id="nombres" @bind-Value="modelo.Nombres" /><ValidationMessage For="() => modelo.Nombres" /></div>
+                <div class="field"><label for="paterno">Apellido paterno <span class="req">*</span></label><InputText id="paterno" @bind-Value="modelo.ApellidoPaterno" /><ValidationMessage For="() => modelo.ApellidoPaterno" /></div>
+                <div class="field"><label for="materno">Apellido materno <span class="req">*</span></label><InputText id="materno" @bind-Value="modelo.ApellidoMaterno" /><ValidationMessage For="() => modelo.ApellidoMaterno" /></div>
+                <div class="field"><label for="nac">Fecha de nacimiento <span class="req">*</span></label><InputDate id="nac" @bind-Value="modelo.FechaNacimiento" /><ValidationMessage For="() => modelo.FechaNacimiento" /></div>
+                <div class="field">
+                    <label for="tipo">Tipo de documento <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span></label>
+                    <InputSelect id="tipo" @bind-Value="modelo.TipoDocumento" disabled>
+                        @foreach (var (valor, texto) in DatosPersonales.TiposDocumento) { <option value="@valor">@texto</option> }
+                    </InputSelect>
+                </div>
+                <div class="field">
+                    <label for="doc">Número de documento <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span></label>
+                    <InputText id="doc" @bind-Value="modelo.NumeroDocumento" disabled />
+                </div>
+                <p class="inline-note full"><Icon Name="info" Size="16" /><span>Tu documento de identidad no se puede cambiar desde aquí. Si hay un error, escríbenos a la oficina de admisión con una copia de tu documento.</span></p>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-head"><span class="step">2</span><div><h2>Contacto</h2></div></div>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="correo">Correo electrónico <span class="req">*</span></label>
+                    <InputText id="correo" type="email" @bind-Value="modelo.Correo" />
+                    <ValidationMessage For="() => modelo.Correo" />
+                    @if (!string.Equals(modelo.Correo.Trim(), yo.Correo, StringComparison.OrdinalIgnoreCase)) { <span class="hint">Al guardar, deberás validar el nuevo correo.</span> }
+                </div>
+                <div class="field"><label for="tel">Teléfono</label><InputText id="tel" type="tel" @bind-Value="modelo.Telefono" placeholder="987 654 321" /><ValidationMessage For="() => modelo.Telefono" /></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-head"><span class="step">3</span><div><h2>Accesibilidad</h2></div></div>
+            <div class="form-grid">
+                <label class="switch full">
+                    <InputCheckbox @bind-Value="modelo.TieneDiscapacidad" />
+                    <span><strong>Registro una discapacidad</strong><small>Nos permite ofrecerte ajustes razonables durante la evaluación.</small></span>
+                </label>
+                @if (modelo.TieneDiscapacidad)
+                {
+                    <div class="field full"><label for="conadis">Número de carné CONADIS <span class="req">*</span></label><InputText id="conadis" @bind-Value="modelo.CarnetConadis" placeholder="CON-00000" /><ValidationMessage For="() => modelo.CarnetConadis" /></div>
+                }
+            </div>
+        </div>
+
+        <div class="form-footer">
+            <a class="btn btn-ghost" href="/postulante">Cancelar</a>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar cambios</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private Postulante yo = default!;
+    private DatosPersonales modelo = new();
+
+    protected override void OnInitialized()
+    {
+        yo = Datos.PostulanteActual;
+        modelo = DatosPersonales.Desde(yo);
+    }
+
+    private void Guardar()
+    {
+        bool cambioCorreo = !string.Equals(modelo.Correo.Trim(), yo.Correo, StringComparison.OrdinalIgnoreCase);
+        yo.Nombres = modelo.Nombres.Trim();
+        yo.ApellidoPaterno = modelo.ApellidoPaterno.Trim();
+        yo.ApellidoMaterno = modelo.ApellidoMaterno.Trim();
+        yo.FechaNacimiento = modelo.FechaNacimiento;
+        yo.Correo = modelo.Correo.Trim();
+        yo.Telefono = string.IsNullOrWhiteSpace(modelo.Telefono) ? null : modelo.Telefono.Trim();
+        yo.TieneDiscapacidad = modelo.TieneDiscapacidad;
+        yo.CarnetConadis = modelo.TieneDiscapacidad ? modelo.CarnetConadis?.Trim() : null;
+        if (cambioCorreo) yo.CorreoValidado = false;
+        Datos.GuardarPerfilPostulante(yo);
+        Avisos.Exito(cambioCorreo ? "Perfil actualizado. Revisa tu nuevo correo para validarlo." : "Perfil actualizado");
+    }
+}

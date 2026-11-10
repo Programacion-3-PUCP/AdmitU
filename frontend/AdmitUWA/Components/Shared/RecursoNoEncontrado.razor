@@ -1,0 +1,17 @@
+@* Pantalla común para un registro inexistente o al que el usuario no tiene acceso. *@
+<PageTitle>@Titulo · AdmitU</PageTitle>
+<PageHeader Titulo="@Titulo" Migas="@([Seccion, "No encontrado"])" Enlaces="@([Volver])" />
+<section class="card">
+    <EmptyState Titulo="@Mensaje" Mensaje="@Detalle">
+        <a class="btn btn-primary empty-cta" href="@Volver">@TextoVolver</a>
+    </EmptyState>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Titulo { get; set; } = "";
+    [Parameter, EditorRequired] public string Seccion { get; set; } = "";
+    [Parameter, EditorRequired] public string Volver { get; set; } = "/";
+    [Parameter] public string TextoVolver { get; set; } = "Volver al listado";
+    [Parameter] public string Mensaje { get; set; } = "No encontramos este registro";
+    [Parameter] public string Detalle { get; set; } = "Puede que el enlace no sea correcto o que el registro ya no exista.";
+}

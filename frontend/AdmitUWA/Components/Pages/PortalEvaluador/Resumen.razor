@@ -1,0 +1,84 @@
+@page "/evaluador"
+@using System.Globalization
+@inject DatosSesion Datos
+
+<PageTitle>Resumen · AdmitU</PageTitle>
+
+<section class="hero" aria-labelledby="saludo">
+    <div>
+        <span class="eyebrow"><i class="dot"></i>@(conv?.Nombre ?? "Sin convocatoria en curso")</span>
+        <h1 id="saludo" class="hero-title">Hola, @yo.Nombre</h1>
+        <p>Tienes <strong>@pendientes.Count expedientes por evaluar</strong>@(atrasados > 0 ? $", {atrasados} de ellos esperan hace más de 48 horas" : "").@(limite is { } l ? $" La revisión termina el {Formato.Fecha(l)}." : "")</p>
+        <div class="hero-actions">
+            <a class="btn btn-light" href="/evaluador/postulaciones">Ir a mi bandeja<Icon Name="arrow-right" Size="16" /></a>
+            <a class="btn btn-outline-light" href="/evaluador/vouchers">Validar vouchers</a>
+        </div>
+    </div>
+    <div class="hero-side">
+        <div class="progress-meta" style="color:#c9d5e6"><span>Expedientes resueltos</span><strong style="color:#fff">@avance%</strong></div>
+        <div class="hero-progress" role="progressbar" aria-label="Expedientes resueltos" aria-valuenow="@avance" aria-valuemin="0" aria-valuemax="100"><i style="width:@avance.ToString(CultureInfo.InvariantCulture)%"></i></div>
+        <div class="hero-dates"><span>@resueltas de @asignadas asignados</span><span>@(limite is { } f ? $"{Math.Max(0, f.DayNumber - Datos.Hoy.DayNumber)} días restantes" : "")</span></div>
+    </div>
+</section>
+
+<section class="kpis" aria-label="Mi trabajo">
+    <StatCard Etiqueta="Por evaluar" Valor="@pendientes.Count.ToString()" Detalle="@($"{atrasados} con más de 48 h")" Icono="inbox" Tono="warning" Href="/evaluador/postulaciones" />
+    <StatCard Etiqueta="Esperando subsanación" Valor="@observadas.ToString()" Detalle="Observados, a la espera del postulante" Icono="flag" Tono="violet" />
+    <StatCard Etiqueta="Resueltos esta semana" Valor="@semana.ToString()" Detalle="Decisiones registradas en 7 días" Icono="check-circle" Tono="success" Href="/evaluador/historial" />
+    <StatCard Etiqueta="Vouchers por validar" Valor="@vouchers.ToString()" Detalle="De todos los postulantes" Icono="credit-card" Tono="brand" Href="/evaluador/vouchers" />
+</section>
+
+<div class="grid-2" style="margin-top:0">
+    <section class="card card-pad">
+        <div class="card-head"><div><h2>Siguientes en mi bandeja</h2><p>Los que esperan hace más tiempo, primero.</p></div><a class="link-more" href="/evaluador/postulaciones">Ver todas<Icon Name="arrow-up-right" Size="14" /></a></div>
+        @if (pendientes.Count == 0)
+        {
+            <EmptyState Icono="check-circle" Titulo="Todo al día" Mensaje="No tienes postulaciones pendientes de revisión." />
+        }
+        else
+        {
+            <ul class="list-rows">
+                @foreach (var p in pendientes.Take(5))
+                {
+                    var persona = Datos.PersonaDe(p);
+                    <li>
+                        <Avatar Nombre="@(persona?.NombreCompleto ?? "?")" />
+                        <div class="file-meta"><strong>@persona?.NombreCompleto</strong><small>@p.Codigo · @Datos.Carrera(p.CarreraId)?.Nombre · esperando @Formato.Antiguedad(p.FechaEnvio ?? p.FechaRegistro, Datos.Hoy)</small></div>
+                        <a class="btn btn-primary btn-sm" href="/evaluador/postulaciones/@p.Id">Revisar</a>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    <section class="card card-pad">
+        <div class="card-head"><div><h2>Avisos</h2><p>Novedades para tu trabajo.</p></div><a class="link-more" href="/evaluador/notificaciones">Ver todo<Icon Name="arrow-up-right" Size="14" /></a></div>
+        <FeedNotificaciones Items="@Datos.NotificacionesDe(RolUsuario.Evaluador)" Maximo="4" />
+    </section>
+</div>
+
+@code {
+    private Evaluador yo = default!;
+    private Convocatoria? conv;
+    private DateOnly? limite;
+    private List<Postulacion> pendientes = [];
+    private int asignadas, resueltas, observadas, atrasados, semana, vouchers, avance;
+
+    protected override void OnInitialized()
+    {
+        yo = Datos.EvaluadorActual;
+        conv = Datos.ConvocatoriaVigente;
+        limite = conv?.LimiteEvaluacion;
+        var mias = Datos.Postulaciones.Where(p => p.EvaluadorId == yo.Id && (conv is null || p.ConvocatoriaId == conv.Id) && p.Estado != EstadoPostulacion.Borrador).ToList();
+        pendientes = mias.Where(p => p.Estado.EsPendiente()).OrderBy(p => p.FechaEnvio ?? p.FechaRegistro).ToList();
+        asignadas = mias.Count;
+        resueltas = mias.Count(p => p.Estado.EsResuelta());
+        observadas = mias.Count(p => p.Estado == EstadoPostulacion.Observada);
+        atrasados = pendientes.Count(p => (p.FechaEnvio ?? p.FechaRegistro) <= Datos.Hoy.AddDays(-2));
+        avance = asignadas == 0 ? 0 : (int)Math.Round(resueltas * 100.0 / asignadas);
+        var desde = DateTime.Now.AddDays(-7);
+        semana = Datos.Historial.Count(m => m.Responsable == yo.Nombre && m.Fecha >= desde
+            && m.Nuevo is EstadoPostulacion.Apta or EstadoPostulacion.NoApta or EstadoPostulacion.Observada);
+        vouchers = Datos.Vouchers.Count(v => v.Estado == EstadoVoucher.Pendiente);
+    }
+}

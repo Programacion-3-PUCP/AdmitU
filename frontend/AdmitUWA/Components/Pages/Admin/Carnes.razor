@@ -1,0 +1,189 @@
+@page "/admin/carnes"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+@inject NavigationManager Navegacion
+
+<PageTitle>Carnés · AdmitU</PageTitle>
+
+<PageHeader Titulo="Carnés de postulante" Subtitulo="Se emiten automáticamente cuando el expediente es apto y el pago está validado. Aquí se consultan y se atienden las excepciones." Migas="@(["Carnés"])" />
+
+<div class="chips" role="group" aria-label="Vista">
+    <button type="button" class="chip @(vista == "vigentes" ? "is-active" : "")" @onclick='() => Ir("vigentes")'>Vigentes<em>@vigentes.Count</em></button>
+    <button type="button" class="chip @(vista == "aptos" ? "is-active" : "")" @onclick='() => Ir("aptos")'>Aptos sin carné<em>@aptosSinCarne.Count</em></button>
+    <button type="button" class="chip @(vista == "anulados" ? "is-active" : "")" @onclick='() => Ir("anulados")'>Anulados<em>@anulados.Count</em></button>
+</div>
+
+@if (vista == "aptos")
+{
+    <p class="inline-note @(aptosSinCarne.Count == 0 ? "is-success" : "is-warning")" style="margin-bottom:14px">
+        <Icon Name="@(aptosSinCarne.Count == 0 ? "check-circle" : "alert")" Size="16" />
+        <span>@(aptosSinCarne.Count == 0 ? "Todos los expedientes aptos con pago validado tienen carné." : "Estos expedientes cumplen los requisitos pero la emisión automática no se completó. Revisa y emite el carné.")</span>
+    </p>
+    <DataTable TItem="Postulacion" Items="aptosSinCarne" TextoBusqueda="@(p => $"{p.Codigo} {Datos.PersonaDe(p)?.NombreCompleto}")" Marcador="Buscar por postulación o postulante" TituloVacio="Sin pendientes" MensajeVacio="No hay expedientes aptos sin carné.">
+        <Encabezado><th>Postulación</th><th>Postulante</th><th>Carrera</th><th>Sede</th><th class="th-actions">Acciones</th></Encabezado>
+        <Fila Context="p">
+            <tr>
+                <td><a class="mono" href="/admin/postulaciones/@p.Id">@p.Codigo</a></td>
+                <td>@Datos.PersonaDe(p)?.NombreCompleto</td>
+                <td>@Datos.Carrera(p.CarreraId)?.Nombre</td>
+                <td>@Datos.Sede(p.SedeId)?.Nombre</td>
+                <td class="td-actions"><span class="row-actions"><BotonAccion Tipo="BotonAccion.Accion.Emitir" Texto="Emitir carné" Sobre="@p.Codigo" OnClick="() => porEmitir = p" /></span></td>
+            </tr>
+        </Fila>
+    </DataTable>
+}
+else
+{
+    <DataTable TItem="Carne" Items="@(vista == "anulados" ? anulados : vigentes)" TextoBusqueda="@(c => $"{c.Codigo} {Datos.Postulacion(c.PostulacionId)?.Codigo} {Datos.PersonaDePostulacion(c.PostulacionId)?.NombreCompleto} {Datos.PersonaDePostulacion(c.PostulacionId)?.NumeroDocumento}")"
+               Marcador="Buscar por carné, postulación, postulante o documento">
+        <Filtros>
+            <select class="select" aria-label="Convocatoria" @bind="convId" @bind:after="Cargar">
+                @foreach (var c in Datos.Convocatorias.OrderByDescending(c => c.Inicio)) { <option value="@c.Id">@c.Nombre</option> }
+            </select>
+        </Filtros>
+        <Encabezado><th>Carné</th><th>Postulante</th><th>Sede · aula</th><th>Emisión</th>@if (vista == "anulados") { <th>Motivo</th> }<th class="th-actions">Acciones</th></Encabezado>
+        <Fila Context="c">
+            @{ var persona = Datos.PersonaDePostulacion(c.PostulacionId); }
+            <tr>
+                <td><span class="mono">@c.Codigo</span><span class="cell-sub"><a href="/admin/postulaciones/@c.PostulacionId">@Datos.Postulacion(c.PostulacionId)?.Codigo</a></span></td>
+                <td><span class="cell-title">@persona?.NombreCompleto</span><span class="cell-sub">@persona?.TipoDocumento @persona?.NumeroDocumento</span></td>
+                <td>@Datos.Sede(c.SedeId)?.Nombre · @c.Aula</td>
+                <td>@Formato.Fecha(c.FechaEmision)<span class="cell-sub">@(c.Automatico ? "Automática" : "Manual")</span></td>
+                @if (vista == "anulados") { <td class="wrap">@c.Motivo</td> }
+                <td class="td-actions">
+                    <span class="row-actions">
+                        <BotonAccion Tipo="BotonAccion.Accion.Ver" Texto="Vista previa" Sobre="@c.Codigo" OnClick="() => vistaPrevia = c" />
+                        @if (c.Estado == EstadoCarne.Vigente)
+                        {
+                            <BotonAccion Tipo="BotonAccion.Accion.Reemitir" Sobre="@c.Codigo" OnClick="() => AbrirReemision(c)" />
+                            <BotonAccion Tipo="BotonAccion.Accion.Anular" Sobre="@c.Codigo" OnClick="() => AbrirAnulacion(c)" />
+                        }
+                    </span>
+                </td>
+            </tr>
+        </Fila>
+    </DataTable>
+}
+
+<Drawer Abierto="vistaPrevia is not null" Titulo="Vista previa del carné" OnCerrar="() => vistaPrevia = null">
+    @if (vistaPrevia is not null)
+    {
+        var p = Datos.Postulacion(vistaPrevia.PostulacionId);
+        var persona = Datos.PersonaDe(p);
+        <div class="drawer-body">
+            <div class="carne">
+                <div class="carne-head"><Logo Tamano="36" /><div><strong>AdmitU · Carné de postulante</strong><small>@Datos.Convocatoria(p?.ConvocatoriaId ?? 0)?.Nombre</small></div></div>
+                <span class="carne-code">@vistaPrevia.Codigo</span>
+                <div class="summary-rows">
+                    <div><span>Postulante</span><strong>@persona?.NombreCompleto</strong></div>
+                    <div><span>Documento</span><strong>@persona?.TipoDocumento @persona?.NumeroDocumento</strong></div>
+                    <div><span>Carrera</span><strong>@Datos.Carrera(p?.CarreraId ?? 0)?.Nombre</strong></div>
+                    <div><span>Sede · aula</span><strong>@Datos.Sede(vistaPrevia.SedeId)?.Nombre · @vistaPrevia.Aula</strong></div>
+                    <div><span>Estado</span><StatusBadge Texto="@vistaPrevia.Estado.Etiqueta()" Tono="@vistaPrevia.Estado.Tono()" /></div>
+                </div>
+            </div>
+        </div>
+    }
+</Drawer>
+
+<Drawer Abierto="porReemitir is not null" Titulo="Reemitir carné" Descripcion="Se anula el carné actual y se emite uno nuevo. Solo se pueden cambiar la sede y el aula." OnCerrar="() => porReemitir = null">
+    <form class="drawer-form" @onsubmit="Reemitir" @onsubmit:preventDefault>
+        <div class="drawer-body">
+            <div class="field"><label for="r-sede">Sede</label><select id="r-sede" @bind="sedeId">@foreach (var s in Datos.Sedes.Where(s => s.Activo)) { <option value="@s.Id">@s.Nombre · @s.Ciudad</option> }</select></div>
+            <div class="field"><label for="r-aula">Aula <span class="req">*</span></label><input id="r-aula" @bind="aula" maxlength="20" /></div>
+            <div class="field"><label for="r-motivo">Motivo <span class="req">*</span></label><textarea id="r-motivo" @bind="motivo" maxlength="200" placeholder="Por ejemplo: cambio de sede solicitado por el postulante"></textarea></div>
+            @if (error is not null) { <p class="validation-message" role="alert">@error</p> }
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="() => porReemitir = null">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="refresh" Size="16" />Reemitir</button>
+        </div>
+    </form>
+</Drawer>
+
+<ConfirmDialog Abierto="porAnular is not null" Titulo="Anular carné" Mensaje="@($"El carné {porAnular?.Codigo} dejará de ser válido para la evaluación.")" TextoConfirmar="Anular" Error="@error"
+               OnCancelar="() => porAnular = null" OnConfirmar="Anular">
+    <div class="field"><label for="a-motivo">Motivo <span class="req">*</span></label><textarea id="a-motivo" @bind="motivo" maxlength="200"></textarea></div>
+</ConfirmDialog>
+
+<ConfirmDialog Abierto="porEmitir is not null" Titulo="Emitir carné" Tono="success" Mensaje="@($"Se emitirá el carné de {porEmitir?.Codigo} con la sede elegida por el postulante.")" TextoConfirmar="Emitir"
+               OnCancelar="() => porEmitir = null" OnConfirmar="Emitir" />
+
+@code {
+    [SupplyParameterFromQuery(Name = "vista")] public string? Vista { get; set; }
+
+    private string vista = "vigentes";
+    private int convId;
+    private List<Carne> vigentes = [], anulados = [];
+    private List<Postulacion> aptosSinCarne = [];
+    private Carne? vistaPrevia, porReemitir, porAnular;
+    private Postulacion? porEmitir;
+    private int sedeId;
+    private string aula = "", motivo = "";
+    private string? error;
+
+    protected override void OnInitialized() => convId = Datos.ConvocatoriaPorDefecto;
+
+    protected override void OnParametersSet()
+    {
+        vista = Vista is "aptos" or "anulados" ? Vista : "vigentes";
+        Cargar();
+    }
+
+    private void Cargar()
+    {
+        var ids = Datos.PostulacionesDeConvocatoria(convId).Select(p => p.Id).ToHashSet();
+        var carnes = Datos.Carnes.Where(c => ids.Contains(c.PostulacionId)).OrderByDescending(c => c.Id).ToList();
+        vigentes = carnes.Where(c => c.Estado == EstadoCarne.Vigente).ToList();
+        anulados = carnes.Where(c => c.Estado == EstadoCarne.Anulado).ToList();
+        aptosSinCarne = Datos.Postulaciones.Where(Datos.AptaSinCarne).ToList();
+    }
+
+    private void Ir(string destino) => Navegacion.NavigateTo($"/admin/carnes?vista={destino}");
+
+    private void AbrirReemision(Carne c)
+    {
+        porReemitir = c;
+        sedeId = c.SedeId;
+        aula = c.Aula;
+        motivo = "";
+        error = null;
+    }
+
+    private void AbrirAnulacion(Carne c)
+    {
+        porAnular = c;
+        motivo = "";
+        error = null;
+    }
+
+    private void Reemitir()
+    {
+        if (porReemitir is null) return;
+        if (string.IsNullOrWhiteSpace(aula) || string.IsNullOrWhiteSpace(motivo)) { error = "Indica el aula y el motivo de la reemisión."; return; }
+        var nuevo = Datos.ReemitirCarne(porReemitir, sedeId, aula, motivo);
+        porReemitir = null;
+        Cargar();
+        Avisos.Exito($"Carné reemitido: {nuevo?.Codigo}");
+    }
+
+    private void Anular()
+    {
+        if (porAnular is null) return;
+        if (string.IsNullOrWhiteSpace(motivo)) { error = "Indica el motivo de la anulación."; return; }
+        Datos.AnularCarne(porAnular, motivo);
+        Avisos.Exito($"Carné {porAnular.Codigo} anulado");
+        porAnular = null;
+        error = null;
+        Cargar();
+    }
+
+    private void Emitir()
+    {
+        if (porEmitir is null) return;
+        var c = Datos.EmitirCarne(porEmitir, automatico: false, motivo: "Emisión manual: la emisión automática no se completó");
+        porEmitir = null;
+        Cargar();
+        Avisos.Exito($"Carné {c.Codigo} emitido");
+    }
+}

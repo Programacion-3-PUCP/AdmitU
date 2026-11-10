@@ -1,0 +1,217 @@
+@page "/evaluador/postulaciones/{Id:int}"
+@inject DatosSesion Datos
+@inject NavigationManager Navegacion
+@inject ToastService Avisos
+
+@if (p is null)
+{
+    <RecursoNoEncontrado Titulo="Postulación no disponible" Seccion="Mi bandeja" Volver="/evaluador/postulaciones" TextoVolver="Volver a mi bandeja"
+                         Mensaje="No tienes acceso a esta postulación" Detalle="Solo puedes revisar las postulaciones que te asignaron." />
+}
+else
+{
+    var persona = Datos.PersonaDe(p);
+    var pago = Datos.PagoDe(p.Id);
+    var motivoNoApta = Datos.MotivoNoApta(p);
+    <PageTitle>Revisión @p.Codigo · AdmitU</PageTitle>
+    <PageHeader Titulo="@($"Revisión de {p.Codigo}")" Subtitulo="@($"{persona?.NombreCompleto} · {Datos.Carrera(p.CarreraId)?.Nombre} · {Datos.Modalidad(p.ModalidadId)?.Nombre}")"
+                Migas="@(["Mi bandeja", p.Codigo])" Enlaces="@(["/evaluador/postulaciones"])">
+        <Acciones>
+            <a class="btn btn-ghost" href="/evaluador/postulaciones"><Icon Name="arrow-left" Size="16" />Volver</a>
+            <StatusBadge Texto="@p.Estado.Etiqueta()" Tono="@p.Estado.Tono()" />
+        </Acciones>
+    </PageHeader>
+
+    <div class="detail-grid">
+        <div class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><div><h2>Documentos del expediente</h2><p>Aprueba cada documento u obsérvalo indicando qué debe corregir el postulante.</p></div><span class="muted">@docs.Count(d => d.Estado == EstadoDocumento.Aprobado) de @docs.Count aprobados</span></div>
+                <ul class="list-rows">
+                    @foreach (var d in docs)
+                    {
+                        var doc = d;
+                        <li>
+                            <span class="file-icon">@doc.Tipo</span>
+                            <div class="file-meta">
+                                <strong>@doc.Requisito</strong>
+                                <small>@doc.Archivo · v@(doc.Version) · @Formato.Tamanio(doc.TamanioKb) · cargado @Formato.Antiguedad(doc.FechaCarga, Datos.Hoy)</small>
+                                @if (doc.Comentario is not null) { <small class="cell-sub">Observación: @doc.Comentario</small> }
+                            </div>
+                            <StatusBadge Texto="@doc.Estado.Etiqueta()" Tono="@doc.Estado.Tono()" />
+                            <span class="row-actions">
+                                <BotonAccion Tipo="BotonAccion.Accion.Descargar" Sobre="@doc.Requisito" OnClick='() => Avisos.Info("Simulación: la descarga del archivo se habilitará con el almacenamiento de documentos.")' />
+                                <BotonAccion Tipo="BotonAccion.Accion.Aprobar" Sobre="@doc.Requisito" Deshabilitado="@(!Editable || doc.Estado == EstadoDocumento.Aprobado)" OnClick="() => Aprobar(doc)" />
+                                <BotonAccion Tipo="BotonAccion.Accion.Observar" Sobre="@doc.Requisito" Deshabilitado="@(!Editable)" OnClick="() => AbrirObservacion(doc)" />
+                            </span>
+                        </li>
+                    }
+                </ul>
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><div><h2>Decisión sobre el expediente</h2><p>@(Editable ? "Declara el expediente apto, obsérvalo o declara que no es apto." : "Este expediente ya fue resuelto.")</p></div></div>
+                @if (Editable)
+                {
+                    @if (motivoNoApta is not null)
+                    {
+                        <p class="inline-note is-warning" style="margin-bottom:14px"><Icon Name="info" Size="16" /><span>Aún no se puede declarar apto: @motivoNoApta</span></p>
+                    }
+                    <div class="field">
+                        <label for="comentario">Comentario para el postulante <span class="hint">(obligatorio si observas o declaras no apto)</span></label>
+                        <textarea id="comentario" @bind="comentario" maxlength="400" placeholder="Explica qué debe corregir o por qué no cumple los requisitos."></textarea>
+                    </div>
+                    @if (error is not null) { <p class="validation-message" role="alert" style="margin-top:10px">@error</p> }
+                    <div class="form-footer">
+                        <button type="button" class="btn btn-ghost" @onclick="() => PedirDecision(EstadoPostulacion.NoApta)"><Icon Name="x-circle" Size="16" />No apto</button>
+                        <button type="button" class="btn btn-ghost" @onclick="() => PedirDecision(EstadoPostulacion.Observada)"><Icon Name="flag" Size="16" />Observar expediente</button>
+                        <button type="button" class="btn btn-primary" disabled="@(motivoNoApta is not null)" title="@motivoNoApta" @onclick="() => PedirDecision(EstadoPostulacion.Apta)"><Icon Name="check" Size="16" />Declarar apto</button>
+                    </div>
+                }
+                else if (!string.IsNullOrWhiteSpace(p.Observacion))
+                {
+                    <p class="inline-note"><Icon Name="info" Size="16" /><span>Comentario registrado: @p.Observacion</span></p>
+                }
+            </section>
+        </div>
+
+        <aside class="stack">
+            <section class="card card-pad">
+                <div class="card-head"><h2>Postulante</h2></div>
+                @if (persona is not null)
+                {
+                    <div class="cell-person"><Avatar Nombre="@persona.NombreCompleto" /><span><strong>@persona.NombreCompleto</strong><small>@persona.TipoDocumento @persona.NumeroDocumento</small></span></div>
+                    @if (persona.TieneDiscapacidad)
+                    {
+                        <p class="inline-note" style="margin-top:14px"><Icon Name="info" Size="16" /><span>Requiere ajustes razonables durante la evaluación.</span></p>
+                    }
+                }
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Pago</h2></div>
+                <div class="summary-rows">
+                    <div><span>Monto</span><strong>@Formato.Soles(pago?.Monto ?? 0)</strong></div>
+                    <div><span>Estado</span><StatusBadge Texto="@(pago?.Estado.Etiqueta() ?? "Sin pago")" Tono="@(pago?.Estado.Tono() ?? "neutral")" /></div>
+                </div>
+                @if (pago?.Estado == EstadoPago.Pendiente) { <a class="link-more" style="margin-top:12px" href="/evaluador/vouchers">Validar voucher<Icon Name="arrow-up-right" Size="14" /></a> }
+            </section>
+
+            <section class="card card-pad">
+                <div class="card-head"><h2>Progreso</h2></div>
+                <ProgresoPostulacion Postulacion="p" />
+            </section>
+        </aside>
+    </div>
+
+    <Drawer Abierto="observando is not null" Titulo="Observar documento" Descripcion="@observando?.Requisito" OnCerrar="() => observando = null">
+        <form class="drawer-form" @onsubmit="Observar" @onsubmit:preventDefault>
+            <div class="drawer-body">
+                <div class="field">
+                    <label for="o-tipo">Tipo de observación</label>
+                    <select id="o-tipo" @bind="tipo">@foreach (var t in Enum.GetValues<TipoObservacion>()) { <option value="@t">@t.Etiqueta()</option> }</select>
+                </div>
+                <div class="field">
+                    <label for="o-desc">Qué debe corregir el postulante <span class="req">*</span></label>
+                    <textarea id="o-desc" @bind="descripcion" maxlength="300" placeholder="Ejemplo: la imagen está borrosa, vuelve a escanearla en PDF."></textarea>
+                </div>
+                @if (errorObs is not null) { <p class="validation-message" role="alert">@errorObs</p> }
+            </div>
+            <div class="drawer-foot">
+                <button type="button" class="btn btn-ghost" @onclick="() => observando = null">Cancelar</button>
+                <button type="submit" class="btn btn-primary"><Icon Name="flag" Size="16" />Registrar observación</button>
+            </div>
+        </form>
+    </Drawer>
+
+    <ConfirmDialog Abierto="decision is not null" Titulo="@TituloDecision()" Mensaje="@MensajeDecision()" TextoConfirmar="Confirmar decisión"
+                   Tono="@(decision == EstadoPostulacion.Apta ? "success" : "danger")" OnCancelar="() => decision = null" OnConfirmar="Decidir" />
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Postulacion? p;
+    private List<Documento> docs = [];
+    private string comentario = "";
+    private string? error;
+    private Documento? observando;
+    private TipoObservacion tipo = TipoObservacion.Ilegible;
+    private string descripcion = "";
+    private string? errorObs;
+    private EstadoPostulacion? decision;
+
+    private bool Editable => p is not null && p.Estado.EsPendiente();
+    private string Yo => Datos.EvaluadorActual.Nombre;
+
+    protected override void OnParametersSet()
+    {
+        p = Datos.Postulaciones.FirstOrDefault(x => x.Id == Id && x.EvaluadorId == Datos.EvaluadorActualId);
+        if (p is null) return;
+        docs = Datos.DocumentosDe(p.Id);
+        comentario = "";
+    }
+
+    private void Aprobar(Documento doc)
+    {
+        Datos.AprobarDocumento(doc, Yo);
+        Avisos.Exito($"{doc.Requisito}: aprobado");
+    }
+
+    private void AbrirObservacion(Documento doc)
+    {
+        observando = doc;
+        tipo = TipoObservacion.Ilegible;
+        descripcion = "";
+        errorObs = null;
+    }
+
+    private void Observar()
+    {
+        if (observando is null) return;
+        if (string.IsNullOrWhiteSpace(descripcion)) { errorObs = "Describe qué debe corregir el postulante."; return; }
+        Datos.ObservarDocumento(observando, tipo, descripcion.Trim(), Datos.EvaluadorActualId, Yo);
+        Avisos.Exito($"{observando.Requisito}: observado");
+        if (string.IsNullOrWhiteSpace(comentario)) comentario = $"{observando.Requisito}: {descripcion.Trim()}";
+        observando = null;
+    }
+
+    private void PedirDecision(EstadoPostulacion d)
+    {
+        error = null;
+        if (d != EstadoPostulacion.Apta && string.IsNullOrWhiteSpace(comentario))
+        {
+            error = "Escribe un comentario que explique la decisión al postulante.";
+            return;
+        }
+        decision = d;
+    }
+
+    private string TituloDecision() => decision switch
+    {
+        EstadoPostulacion.Apta => "Declarar expediente apto",
+        EstadoPostulacion.Observada => "Observar expediente",
+        _ => "Declarar expediente no apto"
+    };
+
+    private string MensajeDecision() => decision switch
+    {
+        EstadoPostulacion.Apta => "El expediente quedará apto y, con el pago validado, se emitirá el carné automáticamente.",
+        EstadoPostulacion.Observada => "El postulante recibirá tu comentario y deberá corregir los documentos observados.",
+        _ => "El postulante quedará fuera de esta convocatoria. Esta decisión no se puede deshacer."
+    };
+
+    private void Decidir()
+    {
+        if (p is null || decision is not { } d) return;
+        var resultado = Datos.Decidir(p, d, comentario, Yo);
+        decision = null;
+        if (resultado is not null)
+        {
+            error = resultado;
+            return;
+        }
+        var carne = Datos.CarneVigenteDe(p.Id);
+        Avisos.Exito(d == EstadoPostulacion.Apta && carne is not null ? $"Expediente apto. Carné {carne.Codigo} emitido automáticamente." : $"Expediente {d.Etiqueta().ToLowerInvariant()}");
+        Navegacion.NavigateTo("/evaluador/postulaciones");
+    }
+}

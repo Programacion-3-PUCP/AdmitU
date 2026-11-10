@@ -1,0 +1,30 @@
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageHeader Titulo="Notificaciones" Subtitulo="@Subtitulo" Migas="@(["Notificaciones"])">
+    <Acciones>
+        <button type="button" class="btn btn-ghost" disabled="@(Datos.SinLeer(Rol) == 0)" @onclick="MarcarLeidas"><Icon Name="check" Size="16" />Marcar todo como leído</button>
+    </Acciones>
+</PageHeader>
+
+<div class="chips" role="group" aria-label="Filtrar notificaciones">
+    <button type="button" class="chip @(soloSinLeer ? "" : "is-active")" @onclick="() => soloSinLeer = false">Todas<em>@Datos.NotificacionesDe(Rol).Count()</em></button>
+    <button type="button" class="chip @(soloSinLeer ? "is-active" : "")" @onclick="() => soloSinLeer = true">Sin leer<em>@Datos.SinLeer(Rol)</em></button>
+</div>
+
+<section class="card card-pad">
+    <FeedNotificaciones Items="@Datos.NotificacionesDe(Rol).Where(n => !soloSinLeer || !n.Leida)" MostrarMedio="true" />
+</section>
+
+@code {
+    [Parameter, EditorRequired] public RolUsuario Rol { get; set; }
+    [Parameter] public string Subtitulo { get; set; } = "";
+
+    private bool soloSinLeer;
+
+    private void MarcarLeidas()
+    {
+        Datos.MarcarLeidas(Rol);
+        Avisos.Exito("Notificaciones marcadas como leídas");
+    }
+}

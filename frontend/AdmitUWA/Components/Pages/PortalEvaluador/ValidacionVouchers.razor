@@ -1,0 +1,112 @@
+@page "/evaluador/vouchers"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Validar vouchers · AdmitU</PageTitle>
+
+<PageHeader Titulo="Validar vouchers" Subtitulo="Comprueba que el voucher de transferencia coincida con el derecho de inscripción y valídalo o recházalo." Migas="@(["Vouchers"])" />
+
+<div class="chips" role="group" aria-label="Filtrar por estado">
+    @foreach (var e in Enum.GetValues<EstadoVoucher>())
+    {
+        var actual = e;
+        <button type="button" class="chip @(estado == actual ? "is-active" : "")" @onclick="() => estado = actual">@actual.Etiqueta()<em>@Datos.Vouchers.Count(v => v.Estado == actual)</em></button>
+    }
+</div>
+
+<DataTable TItem="Voucher" Items="@Datos.Vouchers.Where(v => v.Estado == estado).OrderBy(v => v.FechaRegistro)" TextoBusqueda="@(v => $"{v.CodigoOperacion} {Datos.Postulacion(v.PostulacionId)?.Codigo} {Datos.PersonaDePostulacion(v.PostulacionId)?.NombreCompleto}")"
+           Marcador="Buscar por número de operación, postulación o postulante" TituloVacio="Sin vouchers en esta vista" MensajeVacio="No hay vouchers con este estado.">
+    <Encabezado><th>N.° de operación</th><th>Postulación</th><th class="num">Importe</th><th>Registrado</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="v">
+        @{ var esperado = Datos.PagoDe(v.PostulacionId)?.Monto ?? 0; bool coincide = v.Monto == esperado; }
+        <tr class="@(v.Estado == EstadoVoucher.Pendiente && !coincide ? "is-highlight" : "")">
+            <td><span class="mono">@v.CodigoOperacion</span></td>
+            <td><span class="cell-title">@Datos.PersonaDePostulacion(v.PostulacionId)?.NombreCompleto</span><span class="cell-sub">@Datos.Postulacion(v.PostulacionId)?.Codigo</span></td>
+            <td class="num">@Formato.Soles(v.Monto)<span class="cell-sub">@(coincide ? "Coincide con el derecho" : $"Esperado {Formato.Soles(esperado)}")</span></td>
+            <td>@Formato.Fecha(v.FechaRegistro)</td>
+            <td><StatusBadge Texto="@v.Estado.Etiqueta()" Tono="@v.Estado.Tono()" />@if (v.MotivoRechazo is not null) { <span class="cell-sub">@v.MotivoRechazo</span> }</td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <BotonAccion Tipo="BotonAccion.Accion.Ver" Texto="@($"Ver comprobante ({v.Archivo})")" Sobre="@v.CodigoOperacion" OnClick="() => viendo = v" />
+                    @if (v.Estado == EstadoVoucher.Pendiente)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Aprobar" Sobre="@v.CodigoOperacion" OnClick="() => porAprobar = v" />
+                        <BotonAccion Tipo="BotonAccion.Accion.Rechazar" Sobre="@v.CodigoOperacion" OnClick="() => AbrirRechazo(v)" />
+                    }
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="viendo is not null" Titulo="Comprobante de pago" Descripcion="@($"Operación {viendo?.CodigoOperacion}")" OnCerrar="() => viendo = null">
+    @if (viendo is not null)
+    {
+        var post = Datos.Postulacion(viendo.PostulacionId);
+        var per = Datos.PersonaDe(post);
+        var pago = Datos.PagoDe(viendo.PostulacionId);
+        <div class="drawer-body">
+            <div class="summary-rows">
+                <div><span>Postulante</span><strong>@per?.NombreCompleto (@per?.TipoDocumento @per?.NumeroDocumento)</strong></div>
+                <div><span>Postulación</span><strong class="mono">@post?.Codigo</strong></div>
+                <div><span>Carrera · Modalidad</span><strong>@Datos.Carrera(post?.CarreraId ?? 0)?.Nombre · @Datos.Modalidad(post?.ModalidadId ?? 0)?.Nombre</strong></div>
+                <div><span>Código de pago</span><strong class="mono">@pago?.Codigo</strong></div>
+                <div><span>N.° de operación</span><strong class="mono">@viendo.CodigoOperacion</strong></div>
+                <div><span>Importe transferido</span><strong>@Formato.Soles(viendo.Monto)</strong></div>
+                <div><span>Archivo comprobante</span><strong>@viendo.Archivo</strong></div>
+                <div><span>Fecha de registro</span><strong>@Formato.Fecha(viendo.FechaRegistro)</strong></div>
+                <div><span>Estado</span><StatusBadge Texto="@viendo.Estado.Etiqueta()" Tono="@viendo.Estado.Tono()" /></div>
+            </div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="() => viendo = null">Cerrar</button>
+            @if (viendo.Estado == EstadoVoucher.Pendiente)
+            {
+                <button type="button" class="btn btn-ghost" @onclick="() => { var v = viendo; viendo = null; AbrirRechazo(v); }"><Icon Name="x-circle" Size="16" />Rechazar</button>
+                <button type="button" class="btn btn-primary" @onclick="() => { var v = viendo; viendo = null; porAprobar = v; }"><Icon Name="check" Size="16" />Validar pago</button>
+            }
+        </div>
+    }
+</Drawer>
+
+<ConfirmDialog Abierto="porAprobar is not null" Tono="success" Titulo="Validar voucher" TextoConfirmar="Validar pago"
+               Mensaje="@($"Se validará el pago de {Formato.Soles(porAprobar?.Monto ?? 0)} de {Datos.PersonaDePostulacion(porAprobar?.PostulacionId ?? 0)?.NombreCompleto}. Si su expediente ya es apto, se emitirá su carné.")"
+               OnCancelar="() => porAprobar = null" OnConfirmar="Aprobar" />
+
+<ConfirmDialog Abierto="porRechazar is not null" Titulo="Rechazar voucher" TextoConfirmar="Rechazar" Error="@error"
+               Mensaje="El postulante verá el motivo y deberá adjuntar un nuevo voucher."
+               OnCancelar="() => porRechazar = null" OnConfirmar="Rechazar">
+    <div class="field"><label for="v-motivo">Motivo del rechazo <span class="req">*</span></label><textarea id="v-motivo" @bind="motivo" maxlength="300" placeholder="Ejemplo: el monto no coincide con el derecho de inscripción."></textarea></div>
+</ConfirmDialog>
+
+@code {
+    private EstadoVoucher estado = EstadoVoucher.Pendiente;
+    private Voucher? viendo, porAprobar, porRechazar;
+    private string motivo = "";
+    private string? error;
+
+    private void Aprobar()
+    {
+        if (porAprobar is null) return;
+        Datos.AprobarVoucher(porAprobar, Datos.EvaluadorActual.Nombre);
+        var carne = Datos.CarneVigenteDe(porAprobar.PostulacionId);
+        Avisos.Exito(carne is not null && carne.FechaEmision == Datos.Hoy ? $"Pago validado. Carné {carne.Codigo} emitido automáticamente." : "Pago validado");
+        porAprobar = null;
+    }
+
+    private void AbrirRechazo(Voucher v)
+    {
+        porRechazar = v;
+        motivo = "";
+        error = null;
+    }
+
+    private void Rechazar()
+    {
+        if (porRechazar is null) return;
+        if (string.IsNullOrWhiteSpace(motivo)) { error = "Indica el motivo del rechazo."; return; }
+        Datos.RechazarVoucher(porRechazar, motivo);
+        Avisos.Exito("Voucher rechazado; se notificó al postulante");
+        porRechazar = null;
+    }
+}

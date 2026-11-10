@@ -1,0 +1,55 @@
+@* Botón de acción de fila. La misma acción usa siempre el mismo ícono, texto de ayuda y color en todo el sistema. *@
+@if (Href is not null && !Deshabilitado)
+{
+    <a class="icon-btn @definicion.Clase" href="@Href" title="@definicion.Texto" aria-label="@Etiqueta"><Icon Name="@definicion.Icono" Size="17" /></a>
+}
+else
+{
+    <button type="button" class="icon-btn @definicion.Clase" title="@(MotivoDeshabilitado is not null && Deshabilitado ? MotivoDeshabilitado : definicion.Texto)"
+            aria-label="@Etiqueta" disabled="@Deshabilitado" @onclick="OnClick"><Icon Name="@definicion.Icono" Size="17" /></button>
+}
+
+@code {
+    public enum Accion { Ver, Editar, Desactivar, Reactivar, Eliminar, Aprobar, Rechazar, Observar, Descargar, Anular, Reemitir, Emitir, Asignar, Configurar, Cerrar, Publicar }
+
+    private sealed record Definicion(string Icono, string Texto, string Clase);
+
+    private static readonly Dictionary<Accion, Definicion> Catalogo = new()
+    {
+        [Accion.Ver] = new("eye", "Ver detalle", "brand"),
+        [Accion.Editar] = new("pencil", "Editar", "brand"),
+        [Accion.Desactivar] = new("ban", "Desactivar", "danger"),
+        [Accion.Reactivar] = new("rotate-ccw", "Reactivar", "success"),
+        [Accion.Eliminar] = new("trash", "Eliminar", "danger"),
+        [Accion.Aprobar] = new("check-circle", "Aprobar", "success"),
+        [Accion.Rechazar] = new("x-circle", "Rechazar", "danger"),
+        [Accion.Observar] = new("flag", "Observar", "warning"),
+        [Accion.Descargar] = new("download", "Descargar", "brand"),
+        [Accion.Anular] = new("ban", "Anular", "danger"),
+        [Accion.Reemitir] = new("refresh", "Reemitir", "brand"),
+        [Accion.Emitir] = new("id-card", "Emitir", "success"),
+        [Accion.Asignar] = new("user-check", "Asignar", "brand"),
+        [Accion.Configurar] = new("layers", "Configurar oferta", "brand"),
+        [Accion.Cerrar] = new("x-circle", "Cerrar", "danger"),
+        [Accion.Publicar] = new("send", "Publicar", "success")
+    };
+
+    [Parameter, EditorRequired] public Accion Tipo { get; set; }
+    /// <summary>Nombre del registro, para el texto accesible (por ejemplo, "Editar Ingeniería Civil").</summary>
+    [Parameter] public string? Sobre { get; set; }
+    [Parameter] public string? Texto { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public bool Deshabilitado { get; set; }
+    [Parameter] public string? MotivoDeshabilitado { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private Definicion definicion = Catalogo[Accion.Ver];
+
+    protected override void OnParametersSet()
+    {
+        var baseDef = Catalogo[Tipo];
+        definicion = Texto is null ? baseDef : baseDef with { Texto = Texto };
+    }
+
+    private string Etiqueta => Sobre is null ? definicion.Texto : $"{definicion.Texto}: {Sobre}";
+}

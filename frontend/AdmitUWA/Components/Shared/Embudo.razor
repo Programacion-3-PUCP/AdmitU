@@ -1,0 +1,46 @@
+@* Embudo del proceso: cuántos avanzan de una etapa a la siguiente y dónde se quedan. *@
+<ol class="funnel">
+    @for (int i = 0; i < Etapas.Count; i++)
+    {
+        var e = Etapas[i];
+        var ancho = maximo == 0 ? 0 : e.Valor * 100.0 / maximo;
+        int? previo = i == 0 ? null : Etapas[i - 1].Valor;
+        bool mayorCaida = i == indiceMayorCaida;
+        <li class="@(mayorCaida ? "is-drop" : "")">
+            <a href="@e.Href" class="funnel-row">
+                <span class="funnel-label">@e.Etiqueta</span>
+                <span class="funnel-track"><i style="width:@ancho.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"></i></span>
+                <strong class="num">@e.Valor</strong>
+                <span class="funnel-rate">
+                    @if (previo is { } p)
+                    {
+                        @Formato.Porcentaje(e.Valor, p)
+                        @if (mayorCaida) { <em>mayor caída</em> }
+                    }
+                </span>
+            </a>
+        </li>
+    }
+</ol>
+
+@code {
+    public sealed record Etapa(string Etiqueta, int Valor, string Href);
+
+    [Parameter, EditorRequired] public IReadOnlyList<Etapa> Etapas { get; set; } = [];
+
+    private int maximo;
+    private int indiceMayorCaida = -1;
+
+    protected override void OnParametersSet()
+    {
+        maximo = Etapas.Count == 0 ? 0 : Etapas.Max(e => e.Valor);
+        indiceMayorCaida = -1;
+        double peor = 1.0;
+        for (int i = 1; i < Etapas.Count; i++)
+        {
+            if (Etapas[i - 1].Valor == 0) continue;
+            var tasa = Etapas[i].Valor / (double)Etapas[i - 1].Valor;
+            if (tasa < peor) { peor = tasa; indiceMayorCaida = i; }
+        }
+    }
+}

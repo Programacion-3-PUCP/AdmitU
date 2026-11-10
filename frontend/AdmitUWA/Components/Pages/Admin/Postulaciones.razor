@@ -1,0 +1,108 @@
+@page "/admin/postulaciones"
+@inject DatosSesion Datos
+@inject NavigationManager Navegacion
+
+<PageTitle>Postulaciones · AdmitU</PageTitle>
+
+<PageHeader Titulo="Postulaciones" Subtitulo="Seguimiento de cada postulación de la convocatoria, desde el borrador hasta el resultado." Migas="@(["Postulaciones"])" />
+
+<div class="chips" role="group" aria-label="Filtrar por estado">
+    <button type="button" class="chip @(Estado is null ? "is-active" : "")" @onclick='() => Filtrar(estado: "")'>Todas<em>@base_.Count</em></button>
+    @foreach (var e in Enum.GetValues<EstadoPostulacion>().Where(e => base_.Any(p => p.Estado == e)))
+    {
+        var actual = e;
+        <button type="button" class="chip @(Estado == actual.ToString() ? "is-active" : "")" @onclick="() => Filtrar(estado: actual.ToString())">@actual.Etiqueta()<em>@base_.Count(p => p.Estado == actual)</em></button>
+    }
+</div>
+
+@if (Etapa is not null || Evaluador is not null)
+{
+    <div class="inline-note" style="margin-bottom:14px">
+        <Icon Name="filter" Size="16" />
+        <span>Filtro aplicado: <strong>@DescripcionFiltro()</strong>. <a href="@($"/admin/postulaciones?conv={convId}")">Quitar filtro</a></span>
+    </div>
+}
+
+<DataTable TItem="Postulacion" Items="filtradas" TextoInicial="@Q" TextoBusqueda="@(p => $"{p.Codigo} {Datos.PersonaDe(p)?.NombreCompleto} {Datos.PersonaDe(p)?.NumeroDocumento} {Datos.Carrera(p.CarreraId)?.Nombre}")" Marcador="Buscar por código, postulante, documento o carrera">
+    <Filtros>
+        <select class="select" aria-label="Convocatoria" value="@convId" @onchange='e => Filtrar(conv: e.Value?.ToString())'>
+            @foreach (var c in Datos.Convocatorias.OrderByDescending(c => c.Inicio))
+            {
+                <option value="@c.Id">@c.Nombre</option>
+            }
+        </select>
+    </Filtros>
+    <Encabezado>
+        <th>Código</th><th>Postulante</th><th>Carrera · modalidad</th><th>Evaluador</th><th>Envío</th><th>Estado</th><th class="th-actions">Acciones</th>
+    </Encabezado>
+    <Fila Context="p">
+        @{ var persona = Datos.PersonaDe(p); }
+        <tr>
+            <td><a class="mono" href="/admin/postulaciones/@p.Id">@p.Codigo</a></td>
+            <td><div class="cell-person"><Avatar Nombre="@(persona?.NombreCompleto ?? "?")" Tamano="sm" /><span><strong>@persona?.NombreCompleto</strong><small>@persona?.TipoDocumento @persona?.NumeroDocumento</small></span></div></td>
+            <td><span class="cell-title">@Datos.Carrera(p.CarreraId)?.Nombre</span><span class="cell-sub">@Datos.Modalidad(p.ModalidadId)?.Nombre</span></td>
+            <td>@(Datos.Evaluador(p.EvaluadorId)?.Nombre ?? "Sin asignar")</td>
+            <td>@Formato.Fecha(p.FechaEnvio)</td>
+            <td><StatusBadge Texto="@p.Estado.Etiqueta()" Tono="@p.Estado.Tono()" /></td>
+            <td class="td-actions"><span class="row-actions"><BotonAccion Tipo="BotonAccion.Accion.Ver" Sobre="@p.Codigo" Href="@($"/admin/postulaciones/{p.Id}")" /></span></td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    [SupplyParameterFromQuery(Name = "q")] public string? Q { get; set; }
+    [SupplyParameterFromQuery(Name = "conv")] public int? Conv { get; set; }
+    [SupplyParameterFromQuery(Name = "estado")] public string? Estado { get; set; }
+    [SupplyParameterFromQuery(Name = "evaluador")] public int? Evaluador { get; set; }
+    [SupplyParameterFromQuery(Name = "etapa")] public string? Etapa { get; set; }
+
+    private int convId;
+    private List<Postulacion> base_ = [];
+    private List<Postulacion> filtradas = [];
+
+    protected override void OnParametersSet()
+    {
+        convId = Conv ?? Datos.ConvocatoriaPorDefecto;
+        base_ = Datos.PostulacionesDeConvocatoria(convId)
+            .Where(p => Evaluador is null || (Evaluador == 0 ? p.EvaluadorId is null && p.Estado.EsPendiente() : p.EvaluadorId == Evaluador))
+            .Where(CumpleEtapa)
+            .OrderByDescending(p => p.FechaRegistro).ToList();
+        filtradas = base_.Where(p => string.IsNullOrEmpty(Estado) || p.Estado.ToString() == Estado).ToList();
+    }
+
+    private bool CumpleEtapa(Postulacion p) => Etapa switch
+    {
+        "enviadas" => p.Estado != EstadoPostulacion.Borrador,
+        "pago" => p.Estado != EstadoPostulacion.Borrador && Datos.PagoAprobado(p.Id),
+        "documentos" => p.Estado != EstadoPostulacion.Borrador && Datos.DocumentosCompletos(p.Id),
+        "aptas" => p.Estado is EstadoPostulacion.Apta or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida,
+        "carne" => Datos.CarneVigenteDe(p.Id) is not null,
+        _ => true
+    };
+
+    private string DescripcionFiltro()
+    {
+        var partes = new List<string>();
+        if (Etapa is not null)
+            partes.Add(Etapa switch
+            {
+                "enviadas" => "enviadas", "pago" => "con pago validado", "documentos" => "con documentos completos",
+                "aptas" => "con expediente apto", "carne" => "con carné", _ => Etapa
+            });
+        if (Evaluador is not null)
+            partes.Add(Evaluador == 0 ? "pendientes sin evaluador" : $"asignadas a {Datos.Evaluador(Evaluador)?.Nombre}");
+        return string.Join(" · ", partes);
+    }
+
+    private void Filtrar(string? conv = null, string? estado = null)
+    {
+        var parametros = new Dictionary<string, object?>
+        {
+            ["conv"] = conv is null ? convId : int.Parse(conv),
+            ["estado"] = estado is null ? Estado : estado == "" ? null : estado,
+            ["evaluador"] = conv is null ? Evaluador : null,
+            ["etapa"] = conv is null ? Etapa : null
+        };
+        Navegacion.NavigateTo(Navegacion.GetUriWithQueryParameters(parametros));
+    }
+}

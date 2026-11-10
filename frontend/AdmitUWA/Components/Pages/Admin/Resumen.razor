@@ -1,0 +1,245 @@
+@page "/admin"
+@inject DatosSesion Datos
+
+<PageTitle>Resumen · AdmitU</PageTitle>
+
+<PageHeader Titulo="Resumen del proceso" Subtitulo="Lo que requiere atención y cómo avanza la convocatoria seleccionada." />
+
+<div class="context-bar">
+    <label class="sr-only" for="conv">Convocatoria</label>
+    <select id="conv" class="select" @bind="convId" @bind:after="Calcular">
+        @foreach (var c in Datos.Convocatorias.OrderByDescending(c => c.Inicio))
+        {
+            <option value="@c.Id">@c.Nombre · @c.Estado.Etiqueta()</option>
+        }
+    </select>
+    @if (conv is not null)
+    {
+        <span class="context-meta">@EtapaTexto()</span>
+    }
+</div>
+
+@if (conv is null)
+{
+    <section class="card"><EmptyState Icono="calendar" Titulo="No hay convocatorias registradas" Mensaje="Crea una convocatoria para empezar a recibir postulaciones." /></section>
+}
+else
+{
+    <section class="kpis" aria-label="Indicadores de la convocatoria">
+        <StatCard Etiqueta="Postulaciones enviadas" Valor="@enviadas.ToString()" Detalle="@($"de {registradas} registradas")" Icono="file-text" Href="@($"/admin/postulaciones?conv={convId}")" />
+        <StatCard Etiqueta="Expedientes aptos" Valor="@aptas.ToString()" Detalle="@($"{Formato.Porcentaje(aptas, enviadas)} de las enviadas")" Icono="check-circle" Tono="success" Href="@($"/admin/postulaciones?conv={convId}&etapa=aptas")" />
+        <StatCard Etiqueta="Recaudado" Valor="@Formato.Soles(recaudado)" Detalle="@($"de {Formato.Soles(esperado)} esperados")" Icono="wallet" Tono="accent" Href="/admin/reportes/ingresos" />
+        <StatCard Etiqueta="Carnés emitidos" Valor="@carnes.ToString()" Detalle="@($"para {aptas} expedientes aptos")" Icono="id-card" Tono="violet" Href="/admin/carnes" />
+    </section>
+
+    <div class="grid-2" style="margin-top:0">
+        <section class="card card-pad attention" aria-labelledby="atencion">
+            <div class="card-head"><div><h2 id="atencion">Requiere atención</h2><p>Pendientes de esta convocatoria, de lo más urgente a lo menos urgente.</p></div></div>
+            <ul class="attention-list">
+                @foreach (var a in alertas)
+                {
+                    <li>
+                        <span class="att-num @(a.Valor == 0 ? "is-ok" : "")">@a.Valor</span>
+                        <div class="att-text"><strong>@a.Titulo</strong><small>@(a.Valor == 0 ? "Al día" : a.Detalle)</small></div>
+                        @if (a.Valor > 0) { <a class="btn btn-ghost btn-sm" href="@a.Href">@a.Accion</a> }
+                    </li>
+                }
+            </ul>
+        </section>
+
+        <section class="card card-pad">
+            <div class="card-head"><h2>Fechas del proceso</h2><a class="link-more" href="/admin/convocatorias">Convocatorias<Icon Name="arrow-up-right" Size="14" /></a></div>
+            <div class="dates">
+                @foreach (var h in Datos.HitosDe(conv))
+                {
+                    <div class="date-row @(h.Fecha < Datos.Hoy ? "is-past" : "")">
+                        <div class="date-chip">@h.Fecha.Day<small>@Formato.Mes(h.Fecha)</small></div>
+                        <div><strong>@h.Nombre</strong><small>@h.Detalle</small></div>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+
+    <div class="grid-2">
+        <section class="card card-pad">
+            <div class="card-head"><div><h2>Avance de las postulaciones</h2><p>Cuántas pasan de una etapa a la siguiente. Haz clic en una etapa para ver quiénes están ahí.</p></div></div>
+            <Embudo Etapas="embudo" />
+        </section>
+
+        <section class="card card-pad">
+            <div class="card-head"><div><h2>Postulaciones registradas por semana</h2><p>Desde la apertura de la convocatoria.</p></div></div>
+            @if (semanas.Count == 0)
+            {
+                <EmptyState Icono="bar-chart" Titulo="Aún sin registros" Mensaje="Las postulaciones aparecerán aquí cuando se abran las inscripciones." />
+            }
+            else
+            {
+                <ColumnChart Valores="@semanas.Select(s => s.Valor).ToList()" Etiquetas="@semanas.Select(s => s.Etiqueta).ToList()" Titulo="Postulaciones registradas por semana" />
+            }
+        </section>
+    </div>
+
+    <div class="grid-eq">
+        <section class="card card-pad">
+            <div class="card-head"><div><h2>Demanda frente a oferta</h2><p>Postulaciones enviadas por cada vacante ofrecida.</p></div><a class="link-more" href="/admin/reportes/vacantes">Reporte<Icon Name="arrow-up-right" Size="14" /></a></div>
+            @if (demanda.Count == 0)
+            {
+                <EmptyState Icono="layers" Titulo="Sin oferta registrada" Mensaje="Configura las vacantes de cada carrera desde Convocatorias." />
+            }
+            else
+            {
+                <div class="table-scroll">
+                    <table class="table">
+                        <thead><tr><th>Carrera</th><th class="num">Vacantes</th><th class="num">Postul.</th><th>Por vacante</th></tr></thead>
+                        <tbody>
+                            @foreach (var f in demanda)
+                            {
+                                <tr>
+                                    <td>@f.Carrera</td>
+                                    <td class="num">@f.Vacantes</td>
+                                    <td class="num">@f.Postulaciones</td>
+                                    <td><span class="mini-bar"><i style="width:@Ancho(f.Ratio)%"></i></span><span class="num">@f.Ratio.ToString("0.00")</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        <section class="card card-pad">
+            <div class="card-head"><div><h2>Carga de evaluadores</h2><p>Expedientes asignados en esta convocatoria.</p></div><a class="link-more" href="/admin/evaluadores">Evaluadores<Icon Name="arrow-up-right" Size="14" /></a></div>
+            <div class="table-scroll">
+                <table class="table">
+                    <thead><tr><th>Evaluador</th><th class="num">Asig.</th><th class="num">Resueltos</th><th class="num">Pend.</th><th class="num" title="Pendientes con más de 48 horas">+48 h</th></tr></thead>
+                    <tbody>
+                        @foreach (var c in carga)
+                        {
+                            <tr class="@(c.Atrasados > 0 ? "is-highlight" : "")">
+                                <td><a href="/admin/postulaciones?conv=@convId&evaluador=@c.Id">@c.Nombre</a></td>
+                                <td class="num">@c.Asignados</td>
+                                <td class="num">@c.Resueltos</td>
+                                <td class="num">@c.Pendientes</td>
+                                <td class="num">@(c.Atrasados == 0 ? "—" : c.Atrasados)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <section class="card card-pad" style="margin-top:18px">
+        <div class="card-head"><div><h2>Actividad reciente</h2><p>Lo último que ocurrió en el proceso.</p></div><a class="link-more" href="/admin/notificaciones">Ver todo<Icon Name="arrow-up-right" Size="14" /></a></div>
+        <FeedNotificaciones Items="@Datos.NotificacionesDe(RolUsuario.Administrador)" Maximo="4" />
+    </section>
+}
+
+@code {
+    private sealed record Alerta(string Titulo, string Detalle, int Valor, string Href, string Accion);
+    private sealed record Demanda(string Carrera, int Vacantes, int Postulaciones, double Ratio);
+    private sealed record Carga(int Id, string Nombre, int Asignados, int Resueltos, int Pendientes, int Atrasados);
+
+    private int convId;
+    private Convocatoria? conv;
+    private int registradas, enviadas, aptas, carnes;
+    private decimal recaudado, esperado;
+    private List<Alerta> alertas = [];
+    private List<Embudo.Etapa> embudo = [];
+    private List<(string Etiqueta, int Valor)> semanas = [];
+    private List<Demanda> demanda = [];
+    private List<Carga> carga = [];
+
+    protected override void OnInitialized()
+    {
+        convId = Datos.ConvocatoriaPorDefecto;
+        Calcular();
+    }
+
+    private void Calcular()
+    {
+        conv = Datos.Convocatoria(convId);
+        if (conv is null) return;
+
+        var todas = Datos.PostulacionesDeConvocatoria(convId).ToList();
+        var envio = todas.Where(p => p.Estado != EstadoPostulacion.Borrador).ToList();
+        registradas = todas.Count;
+        enviadas = envio.Count;
+        aptas = envio.Count(EsApta);
+        carnes = envio.Count(p => Datos.CarneVigenteDe(p.Id) is not null);
+        recaudado = envio.Select(p => Datos.PagoDe(p.Id)).Where(x => x?.Estado == EstadoPago.Aprobado).Sum(x => x!.Monto);
+        esperado = envio.Select(p => Datos.PagoDe(p.Id)).Where(x => x is not null).Sum(x => x!.Monto);
+
+        var ids = envio.Select(p => p.Id).ToHashSet();
+        int docsAtrasados = Datos.Documentos.Count(d => ids.Contains(d.PostulacionId) && d.Estado == EstadoDocumento.Pendiente && d.FechaCarga <= Datos.Hoy.AddDays(-2));
+        int vouchers = Datos.Vouchers.Count(v => ids.Contains(v.PostulacionId) && v.Estado == EstadoVoucher.Pendiente);
+        int observadas = envio.Count(p => p.Estado == EstadoPostulacion.Observada);
+        int sinCarne = envio.Count(Datos.AptaSinCarne);
+        int sinEvaluador = envio.Count(p => p.Estado.EsPendiente() && p.EvaluadorId is null);
+        alertas =
+        [
+            new("Aptos sin carné", "La emisión automática no se completó: revisa y emite manualmente.", sinCarne, "/admin/carnes?vista=aptos", "Revisar"),
+            new("Documentos por revisar hace más de 48 h", "Expedientes esperando al evaluador.", docsAtrasados, $"/admin/documentos?conv={convId}&vista=pendientes", "Ver documentos"),
+            new("Vouchers por validar", "Pagos registrados por los postulantes que aún no se validan.", vouchers, "/admin/pagos?estado=Pendiente", "Ver pagos"),
+            new("Expedientes observados sin subsanar", "El postulante debe cargar una nueva versión.", observadas, $"/admin/postulaciones?conv={convId}&estado=Observada", "Ver postulaciones"),
+            new("Postulaciones sin evaluador", "Asigna un evaluador para iniciar la revisión.", sinEvaluador, $"/admin/postulaciones?conv={convId}&evaluador=0", "Asignar")
+        ];
+        alertas = alertas.OrderByDescending(a => a.Valor > 0).ToList();
+
+        embudo =
+        [
+            new("Registradas", registradas, $"/admin/postulaciones?conv={convId}"),
+            new("Enviadas", enviadas, $"/admin/postulaciones?conv={convId}&etapa=enviadas"),
+            new("Pago validado", envio.Count(p => Datos.PagoAprobado(p.Id)), $"/admin/postulaciones?conv={convId}&etapa=pago"),
+            new("Documentos completos", envio.Count(p => Datos.DocumentosCompletos(p.Id)), $"/admin/postulaciones?conv={convId}&etapa=documentos"),
+            new("Expediente apto", aptas, $"/admin/postulaciones?conv={convId}&etapa=aptas"),
+            new("Con carné", carnes, $"/admin/postulaciones?conv={convId}&etapa=carne")
+        ];
+
+        semanas = [];
+        var fin = conv.Fin < Datos.Hoy ? conv.Fin : Datos.Hoy;
+        for (var inicio = conv.Inicio; inicio <= fin; inicio = inicio.AddDays(7))
+        {
+            var corte = inicio.AddDays(7);
+            semanas.Add((Formato.FechaCorta(inicio), todas.Count(p => p.FechaRegistro >= inicio && p.FechaRegistro < corte)));
+        }
+        semanas = semanas.TakeLast(10).ToList();
+        if (semanas.All(s => s.Valor == 0)) semanas = [];
+
+        demanda = Datos.Ofertas.Where(o => o.ConvocatoriaId == convId)
+            .Select(o =>
+            {
+                int n = envio.Count(p => p.CarreraId == o.CarreraId);
+                return new Demanda(Datos.Carrera(o.CarreraId)?.Nombre ?? "—", o.Vacantes, n, o.Vacantes == 0 ? 0 : n / (double)o.Vacantes);
+            })
+            .OrderByDescending(x => x.Ratio).ToList();
+        maxRatio = demanda.Count == 0 ? 0 : demanda.Max(x => x.Ratio);
+
+        carga = Datos.Evaluadores.Where(e => e.Activo)
+            .Select(e =>
+            {
+                var mias = envio.Where(p => p.EvaluadorId == e.Id).ToList();
+                return new Carga(e.Id, e.Nombre, mias.Count, mias.Count(p => p.Estado.EsResuelta()), mias.Count(p => p.Estado.EsPendiente()),
+                    mias.Count(p => p.Estado.EsPendiente() && p.FechaEnvio <= Datos.Hoy.AddDays(-2)));
+            })
+            .OrderByDescending(c => c.Atrasados).ThenByDescending(c => c.Pendientes).ToList();
+    }
+
+    private double maxRatio;
+    private string Ancho(double ratio) => (maxRatio == 0 ? 0 : ratio * 100 / maxRatio).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static bool EsApta(Postulacion p) => p.Estado is EstadoPostulacion.Apta or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
+
+    private string EtapaTexto()
+    {
+        var c = conv!;
+        if (c.Estado == EstadoConvocatoria.Borrador) return $"En preparación · abre el {Formato.Fecha(c.Inicio)}";
+        if (c.Estado == EstadoConvocatoria.Cerrada) return $"Cerrada el {Formato.Fecha(c.Fin)}";
+        int total = c.Fin.DayNumber - c.Inicio.DayNumber;
+        int dia = Math.Clamp(Datos.Hoy.DayNumber - c.Inicio.DayNumber + 1, 1, Math.Max(1, total));
+        var cierre = c.CierreInscripciones ?? c.Fin;
+        string etapa = Datos.Hoy <= cierre ? "Inscripciones" : Datos.Hoy <= (c.LimiteEvaluacion ?? c.Fin) ? "Evaluación de expedientes" : "Publicación de resultados";
+        return $"Día {dia} de {total} · Etapa: {etapa}";
+    }
+}

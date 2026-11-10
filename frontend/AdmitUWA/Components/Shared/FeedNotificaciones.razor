@@ -1,0 +1,47 @@
+@if (lista.Count == 0)
+{
+    <EmptyState Icono="bell" Titulo="Todo al día" Mensaje="No hay notificaciones para mostrar." />
+}
+else
+{
+    <ul class="feed">
+        @foreach (var n in lista)
+        {
+            <li class="@(n.Leida ? "" : "is-unread")">
+                <span class="feed-icon t-@n.Tipo.ToLowerInvariant()"><Icon Name="@IconoDe(n.Tipo)" Size="18" /></span>
+                <div class="feed-text">
+                    <strong>@n.Titulo</strong>
+                    <p>@n.Detalle</p>
+                    @if (MostrarMedio)
+                    {
+                        <div class="feed-tags"><StatusBadge Texto="@n.Tipo" Tono="brand" Punto="false" /><StatusBadge Texto="@n.Medio" Tono="neutral" Punto="false" /></div>
+                    }
+                </div>
+                <time title="@Formato.FechaHora(n.Fecha)">@Formato.Relativo(n.Fecha)</time>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter, EditorRequired] public IEnumerable<Notificacion> Items { get; set; } = [];
+    [Parameter] public int? Maximo { get; set; }
+    [Parameter] public bool MostrarMedio { get; set; }
+
+    private List<Notificacion> lista = [];
+
+    protected override void OnParametersSet()
+    {
+        var ordenadas = Items.OrderByDescending(n => n.Fecha);
+        lista = (Maximo is { } m ? ordenadas.Take(m) : ordenadas).ToList();
+    }
+
+    public static string IconoDe(string tipo) => tipo switch
+    {
+        "Pago" => "credit-card",
+        "Documento" => "paperclip",
+        "Convocatoria" => "calendar",
+        "Postulante" => "users",
+        _ => "file-text"
+    };
+}

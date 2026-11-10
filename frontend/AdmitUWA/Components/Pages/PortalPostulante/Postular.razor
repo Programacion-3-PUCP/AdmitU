@@ -1,0 +1,195 @@
+@page "/postulante/postular"
+@page "/postulante/postular/{ConvocatoriaId:int}"
+@inject DatosSesion Datos
+@inject NavigationManager Navegacion
+@inject ToastService Avisos
+
+<PageTitle>Nueva postulación · AdmitU</PageTitle>
+
+<PageHeader Titulo="Nueva postulación" Subtitulo="@(conv is null ? "" : $"{conv.Nombre} · completa los cuatro pasos; puedes volver atrás para corregir.")" Migas="@(["Mi postulación", "Nueva"])" Enlaces="@(["/postulante/mi-postulacion"])" />
+
+@if (conv is null || conv.Estado != EstadoConvocatoria.Publicada)
+{
+    <section class="card"><EmptyState Icono="calendar" Titulo="Inscripciones cerradas" Mensaje="Esta convocatoria no está recibiendo postulaciones.">
+        <a class="btn btn-primary empty-cta" href="/postulante/convocatorias">Ver convocatorias</a>
+    </EmptyState></section>
+}
+else
+{
+    <ol class="wizard" aria-label="Pasos de la postulación">
+        @for (int i = 0; i < titulos.Length; i++)
+        {
+            int n = i;
+            <li class="@(n < paso ? "is-done" : n == paso ? "is-now" : "")" aria-current="@(n == paso ? "step" : null)">
+                <span class="wizard-dot">@if (n < paso) { <Icon Name="check" Size="16" /> } else { @(n + 1) }</span>
+                <span>@titulos[n]</span>
+            </li>
+        }
+    </ol>
+
+    <section class="card card-pad">
+        @if (paso == 0)
+        {
+            <div class="form-section-head"><div><h2>¿A qué quieres postular?</h2><p class="page-sub">Solo se muestran las carreras con vacantes en esta convocatoria.</p></div></div>
+            <div class="form-grid">
+                <div class="field full">
+                    <label for="carrera">Carrera <span class="req">*</span></label>
+                    <select id="carrera" @bind="carreraId">
+                        <option value="0">Selecciona una carrera</option>
+                        @foreach (var g in ofertas.GroupBy(o => Datos.Carrera(o.CarreraId)?.FacultadId ?? 0))
+                        {
+                            <optgroup label="@Datos.Facultad(g.Key)?.Nombre">
+                                @foreach (var o in g) { <option value="@o.CarreraId">@Datos.Carrera(o.CarreraId)?.Nombre · @o.Vacantes vacantes</option> }
+                            </optgroup>
+                        }
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="modalidad">Modalidad de ingreso <span class="req">*</span></label>
+                    <select id="modalidad" @bind="modalidadId" @bind:after="LimpiarArchivos">
+                        @foreach (var m in Datos.Modalidades.Where(m => m.Activo)) { <option value="@m.Id">@m.Nombre</option> }
+                    </select>
+                    <span class="hint">@Datos.Modalidad(modalidadId)?.Descripcion</span>
+                </div>
+                <div class="field">
+                    <label for="sede">Sede de evaluación <span class="req">*</span></label>
+                    <select id="sede" @bind="sedeId">
+                        @foreach (var s in Datos.Sedes.Where(s => s.Activo)) { <option value="@s.Id">@s.Nombre · @s.Ciudad</option> }
+                    </select>
+                </div>
+            </div>
+        }
+        else if (paso == 1)
+        {
+            <div class="form-section-head"><div><h2>Revisa tus datos</h2><p class="page-sub">Se usarán los datos de tu perfil. Si algo no es correcto, podrás actualizarlo en Mi perfil sin perder esta postulación.</p></div></div>
+            <dl class="dl">
+                <div><dt>Nombre completo</dt><dd>@yo.NombreCompleto</dd></div>
+                <div><dt>Documento</dt><dd>@yo.TipoDocumento @yo.NumeroDocumento</dd></div>
+                <div><dt>Correo electrónico</dt><dd>@yo.Correo <StatusBadge Texto="@(yo.CorreoValidado ? "Validado" : "Sin validar")" Tono="@(yo.CorreoValidado ? "success" : "warning")" /></dd></div>
+                <div><dt>Teléfono</dt><dd>@(yo.Telefono ?? "No registrado")</dd></div>
+                <div><dt>Fecha de nacimiento</dt><dd>@Formato.Fecha(yo.FechaNacimiento)</dd></div>
+            </dl>
+        }
+        else if (paso == 2)
+        {
+            <div class="form-section-head"><div><h2>Sube tus documentos</h2><p class="page-sub">Requisitos de @Datos.Modalidad(modalidadId)?.Nombre en esta convocatoria. Un evaluador los revisará.</p></div></div>
+            <div class="stack">
+                @foreach (var r in requisitos)
+                {
+                    var requisito = r;
+                    <div class="field">
+                        <span class="label">@requisito.Nombre @if (requisito.Obligatorio) { <span class="req">*</span> }</span>
+                        <ZonaCarga Etiqueta="@($"Subir {requisito.Nombre.ToLowerInvariant()}")" Formato="requisito.Formato" Valor="@(archivos.GetValueOrDefault(requisito.Id))" OnArchivo="nombre => Cargado(requisito, nombre)" />
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            var modalidad = Datos.Modalidad(modalidadId);
+            <div class="form-section-head"><div><h2>Confirma y envía</h2><p class="page-sub">El pago se realiza por transferencia; después adjuntarás el voucher en Mis vouchers.</p></div></div>
+            <div class="grid-eq" style="margin-top:0">
+                <div class="summary-rows">
+                    <div><span>Carrera</span><strong>@Datos.Carrera(carreraId)?.Nombre</strong></div>
+                    <div><span>Modalidad</span><strong>@modalidad?.Nombre</strong></div>
+                    <div><span>Sede</span><strong>@Datos.Sede(sedeId)?.Nombre</strong></div>
+                    <div><span>Documentos</span><strong>@archivos.Count de @requisitos.Count</strong></div>
+                </div>
+                <div class="pay-total"><span>Derecho de inscripción<br /><small>Pago por transferencia</small></span><strong>@Formato.Soles(modalidad?.DerechoInscripcion ?? 0)</strong></div>
+            </div>
+            <label class="switch" style="margin-top:20px">
+                <input type="checkbox" @bind="acepta" />
+                <span><strong>Declaro que la información es verdadera</strong><small>Acepto las bases y condiciones del proceso de admisión.</small></span>
+            </label>
+        }
+
+        @if (error is not null)
+        {
+            <p class="validation-message" role="alert" style="margin-top:16px">@error</p>
+        }
+
+        <div class="form-footer">
+            @if (paso > 0)
+            {
+                <button type="button" class="btn btn-ghost" @onclick="Atras"><Icon Name="arrow-left" Size="16" />Atrás</button>
+            }
+            else
+            {
+                <a class="btn btn-ghost" href="/postulante">Cancelar</a>
+            }
+            @if (paso < titulos.Length - 1)
+            {
+                <button type="button" class="btn btn-primary" @onclick="Siguiente">Continuar<Icon Name="arrow-right" Size="16" /></button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-primary" @onclick="Enviar"><Icon Name="send" Size="16" />Enviar postulación</button>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public int? ConvocatoriaId { get; set; }
+
+    private static readonly string[] titulos = ["Carrera", "Mis datos", "Documentos", "Confirmar"];
+
+    private Convocatoria? conv;
+    private Postulante yo = default!;
+    private List<OfertaCarrera> ofertas = [];
+    private List<RequisitoAplicable> requisitos = [];
+    private int paso, carreraId, modalidadId, sedeId;
+    private bool acepta;
+    private string? error;
+    private readonly Dictionary<int, string> archivos = [];
+
+    protected override void OnParametersSet()
+    {
+        yo = Datos.PostulanteActual;
+        conv = ConvocatoriaId is { } id ? Datos.Convocatoria(id) : Datos.ConvocatoriaVigente;
+        if (conv is null) return;
+        ofertas = Datos.Ofertas.Where(o => o.ConvocatoriaId == conv.Id && o.Vacantes > 0 && Datos.Carrera(o.CarreraId)?.Activo == true)
+            .OrderBy(o => Datos.Carrera(o.CarreraId)?.FacultadId).ThenBy(o => Datos.Carrera(o.CarreraId)?.Nombre).ToList();
+        modalidadId = Datos.Modalidades.FirstOrDefault(m => m.Activo)?.Id ?? 0;
+        sedeId = Datos.Sedes.FirstOrDefault(s => s.Activo)?.Id ?? 0;
+    }
+
+    private void LimpiarArchivos() => archivos.Clear();
+
+    private void Cargado(RequisitoAplicable r, string? nombre)
+    {
+        if (nombre is null) archivos.Remove(r.Id); else archivos[r.Id] = nombre;
+        error = null;
+    }
+
+    private void Atras() { error = null; paso--; }
+
+    private void Siguiente()
+    {
+        error = null;
+        if (paso == 0)
+        {
+            if (carreraId == 0) { error = "Selecciona la carrera a la que deseas postular."; return; }
+            if (Datos.Postulaciones.Any(p => p.PostulanteId == yo.Id && p.ConvocatoriaId == conv!.Id && p.CarreraId == carreraId))
+            {
+                error = "Ya tienes una postulación a esta carrera en la convocatoria.";
+                return;
+            }
+            requisitos = Datos.RequisitosPara(conv!.Id, modalidadId);
+        }
+        if (paso == 2 && requisitos.Where(r => r.Obligatorio).Any(r => !archivos.ContainsKey(r.Id)))
+        {
+            error = "Sube todos los documentos obligatorios para continuar.";
+            return;
+        }
+        paso++;
+    }
+
+    private void Enviar()
+    {
+        if (!acepta) { error = "Debes aceptar la declaración para enviar tu postulación."; return; }
+        var p = Datos.EnviarNuevaPostulacion(conv!, carreraId, modalidadId, sedeId, archivos);
+        Avisos.Exito($"Postulación {p.Codigo} enviada. Ahora adjunta el voucher de pago.");
+        Navegacion.NavigateTo("/postulante/vouchers");
+    }
+}

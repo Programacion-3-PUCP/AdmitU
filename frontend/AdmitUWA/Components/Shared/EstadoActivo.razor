@@ -1,0 +1,6 @@
+<StatusBadge Texto="@(Activo ? Femenino ? "Activa" : "Activo" : Femenino ? "Inactiva" : "Inactivo")" Tono="@(Activo ? "success" : "neutral")" />
+
+@code {
+    [Parameter] public bool Activo { get; set; }
+    [Parameter] public bool Femenino { get; set; } = true;
+}

@@ -1,0 +1,117 @@
+@page "/admin/evaluadores"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Evaluadores · AdmitU</PageTitle>
+
+<PageHeader Titulo="Evaluadores" Subtitulo="Docentes que revisan los expedientes y su carga en la convocatoria vigente." Migas="@(["Evaluadores"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nuevo"><Icon Name="plus" Size="16" />Nuevo evaluador</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="Evaluador" Items="Datos.Evaluadores" TextoBusqueda="@(e => $"{e.Nombre} {e.Correo} {e.Especialidad}")" Marcador="Buscar por nombre, correo o especialidad">
+    <Encabezado><th>Evaluador</th><th>Especialidad</th><th class="num">Asignados</th><th class="num">Pendientes</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="e">
+        @{
+            var mias = Datos.PostulacionesDeConvocatoria(convId).Where(p => p.EvaluadorId == e.Id).ToList();
+            var pendientes = mias.Count(p => p.Estado.EsPendiente());
+        }
+        <tr>
+            <td><div class="cell-person"><Avatar Nombre="@e.Nombre" Tamano="sm" /><span><strong>@e.Nombre</strong><small>@e.Correo</small></span></div></td>
+            <td>@e.Especialidad</td>
+            <td class="num">@mias.Count</td>
+            <td class="num">@pendientes</td>
+            <td><EstadoActivo Activo="e.Activo" Femenino="false" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <BotonAccion Tipo="BotonAccion.Accion.Ver" Texto="Ver sus postulaciones" Sobre="@e.Nombre" Href="@($"/admin/postulaciones?conv={convId}&evaluador={e.Id}")" />
+                    <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@e.Nombre" OnClick="() => Editar(e)" />
+                    @if (e.Activo)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Desactivar" Sobre="@e.Nombre" Deshabilitado="@(pendientes > 0)" MotivoDeshabilitado="Reasigna sus expedientes pendientes antes de desactivarlo" OnClick="() => pendiente = e" />
+                    }
+                    else
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Reactivar" Sobre="@e.Nombre" OnClick="() => Reactivar(e)" />
+                    }
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nuevo evaluador" : "Editar evaluador")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field"><label for="e-nombre">Nombre completo <span class="req">*</span></label><InputText id="e-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Dra. Carmen Villanueva" /><ValidationMessage For="() => modelo.Nombre" /></div>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="e-tipo">Tipo doc. @if (modelo.Id != 0) { <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span> }</label>
+                    <InputSelect id="e-tipo" @bind-Value="modelo.TipoDocumento" disabled="@(modelo.Id != 0)">
+                        <option value="DNI">DNI</option>
+                        <option value="CE">CE</option>
+                        <option value="PAS">PAS</option>
+                    </InputSelect>
+                </div>
+                <div class="field">
+                    <label for="e-doc">N.° documento <span class="req">*</span> @if (modelo.Id != 0) { <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span> }</label>
+                    <InputText id="e-doc" @bind-Value="modelo.NumeroDocumento" placeholder="Ej. 30004455" disabled="@(modelo.Id != 0)" />
+                </div>
+            </div>
+            <div class="field">
+                <label for="e-correo">Correo institucional <span class="req">*</span> @if (modelo.Id != 0) { <span class="field-lock"><Icon Name="info" Size="12" />es su usuario; no se modifica</span> }</label>
+                <InputText id="e-correo" @bind-Value="modelo.Correo" placeholder="nombre@admitu.edu.pe" disabled="@(modelo.Id != 0)" />
+                <ValidationMessage For="() => modelo.Correo" />
+                @if (errorCorreo is not null) { <p class="validation-message">@errorCorreo</p> }
+            </div>
+            <div class="field"><label for="e-tel">Teléfono</label><InputText id="e-tel" @bind-Value="modelo.Telefono" placeholder="Ej. 955 112 233" /></div>
+            <div class="field"><label for="e-esp">Especialidad / Cargo <span class="req">*</span></label><InputText id="e-esp" @bind-Value="modelo.Especialidad" placeholder="Ej. Evaluador de Expedientes" /><ValidationMessage For="() => modelo.Especialidad" /></div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Desactivar evaluador" Mensaje="@($"{pendiente?.Nombre} dejará de recibir postulaciones. Podrás reactivarlo.")" TextoConfirmar="Desactivar"
+               OnCancelar="() => pendiente = null" OnConfirmar="Desactivar" />
+
+@code {
+    private int convId;
+    private bool abierto;
+    private Evaluador modelo = new();
+    private Evaluador? pendiente;
+    private string? errorCorreo;
+
+    protected override void OnInitialized() => convId = Datos.ConvocatoriaPorDefecto;
+
+    private void Nuevo() { modelo = new() { TipoDocumento = "DNI", NumeroDocumento = $"{30000000 + Random.Shared.Next(1000, 9999)}" }; errorCorreo = null; abierto = true; }
+    private void Editar(Evaluador e) { modelo = new() { Id = e.Id, Nombre = e.Nombre, Correo = e.Correo, TipoDocumento = e.TipoDocumento, NumeroDocumento = e.NumeroDocumento, Telefono = e.Telefono, Especialidad = e.Especialidad, Activo = e.Activo }; errorCorreo = null; abierto = true; }
+    private void Cerrar() => abierto = false;
+
+    private void Guardar()
+    {
+        if (modelo.Id == 0 && Datos.Evaluadores.Any(x => x.Correo.Equals(modelo.Correo.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            errorCorreo = "Ya existe un evaluador con ese correo.";
+            return;
+        }
+        Datos.GuardarEvaluador(modelo);
+        abierto = false;
+        Avisos.Exito("Evaluador guardado");
+    }
+
+    private void Desactivar()
+    {
+        if (pendiente is not null) Datos.CambiarEstadoEvaluador(pendiente, false);
+        Avisos.Exito($"{pendiente?.Nombre} desactivado");
+        pendiente = null;
+    }
+
+    private void Reactivar(Evaluador e)
+    {
+        Datos.CambiarEstadoEvaluador(e, true);
+        Avisos.Exito($"{e.Nombre} reactivado");
+    }
+}

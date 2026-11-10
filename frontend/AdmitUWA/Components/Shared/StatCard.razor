@@ -1,0 +1,29 @@
+@* Indicador compacto. Si tiene enlace, lleva al listado que explica la cifra. *@
+@if (Href is not null)
+{
+    <a class="stat stat-link tone-@Tono" href="@Href">@Contenido</a>
+}
+else
+{
+    <article class="stat tone-@Tono">@Contenido</article>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Etiqueta { get; set; } = "";
+    [Parameter, EditorRequired] public string Valor { get; set; } = "";
+    [Parameter] public string Icono { get; set; } = "info";
+    [Parameter] public string Tono { get; set; } = "brand";
+    /// <summary>Contexto de la cifra (por ejemplo, "de 14 enviadas").</summary>
+    [Parameter] public string? Detalle { get; set; }
+    [Parameter] public string? Href { get; set; }
+
+    private RenderFragment Contenido => __builder =>
+    {
+        <span class="stat-icon"><Icon Name="@Icono" Size="18" /></span>
+        <span class="stat-body">
+            <span class="stat-value">@Valor</span>
+            <span class="stat-label">@Etiqueta</span>
+            @if (Detalle is not null) { <span class="stat-detail">@Detalle</span> }
+        </span>
+    };
+}

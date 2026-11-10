@@ -1,0 +1,55 @@
+@page "/admin/postulantes"
+@inject DatosSesion Datos
+
+<PageTitle>Postulantes · AdmitU</PageTitle>
+
+<PageHeader Titulo="Postulantes" Subtitulo="Personas registradas en AdmitU, con su documento, contacto y la postulación más reciente." Migas="@(["Postulantes"])" />
+
+<DataTable TItem="Postulante" Items="Filtrados" TextoInicial="@Q" TextoBusqueda="@(p => $"{p.NombreCompleto} {p.Correo} {p.NumeroDocumento}")" Marcador="Buscar por nombre, correo o documento">
+    <Filtros>
+        <select class="select" aria-label="Filtrar por tipo de documento" @bind="tipo">
+            <option value="">Todos los documentos</option>
+            <option value="DNI">DNI</option>
+            <option value="CE">Carné de extranjería</option>
+            <option value="PAS">Pasaporte</option>
+        </select>
+        <select class="select" aria-label="Filtrar por correo" @bind="validacion">
+            <option value="">Cualquier correo</option>
+            <option value="si">Correo validado</option>
+            <option value="no">Correo sin validar</option>
+        </select>
+    </Filtros>
+    <Encabezado>
+        <th>Postulante</th><th>Documento</th><th>Teléfono</th><th>Última postulación</th><th>Correo</th><th class="th-actions">Acciones</th>
+    </Encabezado>
+    <Fila Context="p">
+        @{ var ultima = Datos.Postulaciones.Where(x => x.PostulanteId == p.Id).OrderByDescending(x => x.FechaRegistro).FirstOrDefault(); }
+        <tr>
+            <td>
+                <a class="cell-person" href="/admin/postulantes/@p.Id">
+                    <Avatar Nombre="@p.NombreCompleto" Tamano="sm" />
+                    <span><strong>@p.NombreCompleto</strong><small>@p.Correo</small></span>
+                </a>
+            </td>
+            <td><span class="mono">@p.TipoDocumento @p.NumeroDocumento</span></td>
+            <td>@(p.Telefono ?? "—")</td>
+            <td>
+                @if (ultima is null) { <span class="muted">Sin postulación</span> }
+                else { <StatusBadge Texto="@ultima.Estado.Etiqueta()" Tono="@ultima.Estado.Tono()" /><span class="cell-sub">@Datos.Convocatoria(ultima.ConvocatoriaId)?.Nombre</span> }
+            </td>
+            <td><StatusBadge Texto="@(p.CorreoValidado ? "Validado" : "Sin validar")" Tono="@(p.CorreoValidado ? "success" : "warning")" /></td>
+            <td class="td-actions"><span class="row-actions"><BotonAccion Tipo="BotonAccion.Accion.Ver" Sobre="@p.NombreCompleto" Href="@($"/admin/postulantes/{p.Id}")" /></span></td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    [SupplyParameterFromQuery(Name = "q")] public string? Q { get; set; }
+
+    private string tipo = "";
+    private string validacion = "";
+
+    private IEnumerable<Postulante> Filtrados => Datos.Postulantes
+        .Where(p => tipo == "" || p.TipoDocumento == tipo)
+        .Where(p => validacion == "" || (validacion == "si") == p.CorreoValidado);
+}

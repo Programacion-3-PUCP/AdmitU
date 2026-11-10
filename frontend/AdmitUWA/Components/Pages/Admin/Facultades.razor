@@ -1,0 +1,92 @@
+@page "/admin/facultades"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Facultades · AdmitU</PageTitle>
+
+<PageHeader Titulo="Facultades" Subtitulo="Unidades académicas que agrupan las carreras ofrecidas en la admisión." Migas="@(["Facultades"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva facultad</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="Facultad" Items="Datos.Facultades" TextoBusqueda="@(f => $"{f.Codigo} {f.Nombre}")" Marcador="Buscar por código o nombre">
+    <Encabezado><th>Código</th><th>Facultad</th><th class="num">Carreras activas</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="f">
+        <tr>
+            <td><span class="mono">@f.Codigo</span></td>
+            <td><span class="cell-title">@f.Nombre</span></td>
+            <td class="num">@Datos.Carreras.Count(c => c.FacultadId == f.Id && c.Activo)</td>
+            <td><EstadoActivo Activo="f.Activo" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@f.Nombre" OnClick="() => Editar(f)" />
+                    @if (f.Activo)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Desactivar" Sobre="@f.Nombre" OnClick="() => pendiente = f" />
+                    }
+                    else
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Reactivar" Sobre="@f.Nombre" OnClick="() => Reactivar(f)" />
+                    }
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nueva facultad" : "Editar facultad")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field">
+                <label for="f-codigo">Código <span class="req">*</span> @if (modelo.Id != 0) { <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span> }</label>
+                <InputText id="f-codigo" @bind-Value="modelo.Codigo" placeholder="Ej. FCI" disabled="@(modelo.Id != 0)" />
+                <ValidationMessage For="() => modelo.Codigo" />
+                @if (errorCodigo is not null) { <p class="validation-message">@errorCodigo</p> }
+            </div>
+            <div class="field"><label for="f-nombre">Nombre <span class="req">*</span></label><InputText id="f-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Facultad de Ciencias" /><ValidationMessage For="() => modelo.Nombre" /></div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Desactivar facultad" Mensaje="@($"{pendiente?.Nombre} dejará de mostrarse al crear carreras. Su historial se conserva y podrás reactivarla.")" TextoConfirmar="Desactivar"
+               OnCancelar="() => pendiente = null" OnConfirmar="Desactivar" />
+
+@code {
+    private bool abierto;
+    private Facultad modelo = new();
+    private Facultad? pendiente;
+    private string? errorCodigo;
+
+    private void Nueva() { modelo = new(); errorCodigo = null; abierto = true; }
+    private void Editar(Facultad f) { modelo = new() { Id = f.Id, Codigo = f.Codigo, Nombre = f.Nombre, Activo = f.Activo }; errorCodigo = null; abierto = true; }
+    private void Cerrar() => abierto = false;
+
+    private void Guardar()
+    {
+        if (modelo.Id == 0 && Datos.Facultades.Any(x => x.Codigo.Equals(modelo.Codigo.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            errorCodigo = "Ya existe una facultad con ese código.";
+            return;
+        }
+        Datos.GuardarFacultad(modelo);
+        abierto = false;
+        Avisos.Exito("Facultad guardada");
+    }
+
+    private void Desactivar()
+    {
+        if (pendiente is not null) Datos.CambiarEstadoFacultad(pendiente, false);
+        Avisos.Exito($"{pendiente?.Nombre} desactivada");
+        pendiente = null;
+    }
+
+    private void Reactivar(Facultad f)
+    {
+        Datos.CambiarEstadoFacultad(f, true);
+        Avisos.Exito($"{f.Nombre} reactivada");
+    }
+}

@@ -1,0 +1,95 @@
+@page "/admin/sedes"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Sedes · AdmitU</PageTitle>
+
+<PageHeader Titulo="Sedes" Subtitulo="Locales habilitados para la evaluación de admisión." Migas="@(["Sedes"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva sede</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="Sede" Items="Datos.Sedes" TextoBusqueda="@(s => $"{s.Codigo} {s.Nombre} {s.Ciudad} {s.Direccion}")" Marcador="Buscar por código, sede, ciudad o dirección">
+    <Encabezado><th>Código</th><th>Sede</th><th>Ciudad</th><th>Dirección</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="s">
+        <tr>
+            <td><span class="mono">@s.Codigo</span></td>
+            <td><span class="cell-title">@s.Nombre</span></td>
+            <td>@s.Ciudad</td>
+            <td>@s.Direccion</td>
+            <td><EstadoActivo Activo="s.Activo" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@s.Nombre" OnClick="() => Editar(s)" />
+                    @if (s.Activo)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Desactivar" Sobre="@s.Nombre" OnClick="() => pendiente = s" />
+                    }
+                    else
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Reactivar" Sobre="@s.Nombre" OnClick="() => Reactivar(s)" />
+                    }
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nueva sede" : "Editar sede")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field">
+                <label for="s-codigo">Código <span class="req">*</span> @if (modelo.Id != 0) { <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span> }</label>
+                <InputText id="s-codigo" @bind-Value="modelo.Codigo" placeholder="Ej. SEDE03" disabled="@(modelo.Id != 0)" />
+                <ValidationMessage For="() => modelo.Codigo" />
+                @if (errorCodigo is not null) { <p class="validation-message">@errorCodigo</p> }
+            </div>
+            <div class="field"><label for="s-nombre">Nombre <span class="req">*</span></label><InputText id="s-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Campus Principal" /><ValidationMessage For="() => modelo.Nombre" /></div>
+            <div class="field"><label for="s-ciudad">Ciudad <span class="req">*</span></label><InputText id="s-ciudad" @bind-Value="modelo.Ciudad" placeholder="Ej. Lima" /><ValidationMessage For="() => modelo.Ciudad" /></div>
+            <div class="field"><label for="s-dir">Dirección <span class="req">*</span></label><InputText id="s-dir" @bind-Value="modelo.Direccion" placeholder="Calle y número" /><ValidationMessage For="() => modelo.Direccion" /></div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Desactivar sede" Mensaje="@($"{pendiente?.Nombre} dejará de estar disponible para nuevas postulaciones. Podrás reactivarla.")" TextoConfirmar="Desactivar"
+               OnCancelar="() => pendiente = null" OnConfirmar="Desactivar" />
+
+@code {
+    private bool abierto;
+    private Sede modelo = new();
+    private Sede? pendiente;
+    private string? errorCodigo;
+
+    private void Nueva() { modelo = new() { Codigo = $"SEDE{DatosSesion.SiguienteId(Datos.Sedes, x => x.Id):00}", Ciudad = "Lima" }; errorCodigo = null; abierto = true; }
+    private void Editar(Sede s) { modelo = new() { Id = s.Id, Codigo = s.Codigo, Nombre = s.Nombre, Ciudad = s.Ciudad, Direccion = s.Direccion, Activo = s.Activo }; errorCodigo = null; abierto = true; }
+    private void Cerrar() => abierto = false;
+
+    private void Guardar()
+    {
+        if (modelo.Id == 0 && Datos.Sedes.Any(x => x.Codigo.Equals(modelo.Codigo.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            errorCodigo = "Ya existe una sede con ese código.";
+            return;
+        }
+        Datos.GuardarSede(modelo);
+        abierto = false;
+        Avisos.Exito("Sede guardada");
+    }
+
+    private void Desactivar()
+    {
+        if (pendiente is not null) Datos.CambiarEstadoSede(pendiente, false);
+        Avisos.Exito($"{pendiente?.Nombre} desactivada");
+        pendiente = null;
+    }
+
+    private void Reactivar(Sede s)
+    {
+        Datos.CambiarEstadoSede(s, true);
+        Avisos.Exito($"{s.Nombre} reactivada");
+    }
+}

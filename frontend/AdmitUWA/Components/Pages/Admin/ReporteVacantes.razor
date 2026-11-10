@@ -1,0 +1,73 @@
+@page "/admin/reportes/vacantes"
+@inject DatosSesion Datos
+
+<PageTitle>Vacantes y postulaciones · AdmitU</PageTitle>
+
+<PageHeader Titulo="Vacantes y postulaciones" Subtitulo="Oferta de cada convocatoria frente a las postulaciones enviadas y los expedientes aptos." Migas="@(["Reportes", "Vacantes"])" />
+
+<ReporteParametros ConFechas="false" OnAplicar="Generar" />
+
+<section class="card card-pad" style="margin-top:18px">
+    <div class="card-head"><div><h2>Reporte de vacantes</h2><p>Emitido el @Formato.FechaHora(DateTime.Now)</p></div></div>
+    @if (grupos.Count == 0)
+    {
+        <EmptyState Icono="layers" Titulo="Sin oferta registrada" Mensaje="La convocatoria elegida no tiene vacantes configuradas." />
+    }
+    else
+    {
+        <div class="table-scroll">
+            <table class="table report-table">
+                <thead><tr><th>Convocatoria / carrera</th><th class="num">Vacantes</th><th class="num">Postulaciones enviadas</th><th class="num">Aptas</th><th class="num">Postulantes por vacante</th></tr></thead>
+                <tbody>
+                    @foreach (var g in grupos)
+                    {
+                        <tr class="report-group"><td colspan="5">@g.Convocatoria</td></tr>
+                        @foreach (var f in g.Filas)
+                        {
+                            <tr>
+                                <td class="report-indent">@f.Carrera <span class="cell-sub">@f.Facultad</span></td>
+                                <td class="num">@f.Vacantes</td>
+                                <td class="num">@f.Enviadas</td>
+                                <td class="num">@f.Aptas</td>
+                                <td class="num">@(f.Vacantes == 0 ? "—" : (f.Enviadas / (double)f.Vacantes).ToString("0.00"))</td>
+                            </tr>
+                        }
+                        <tr class="report-subtotal">
+                            <td>Subtotal @g.Convocatoria</td>
+                            <td class="num">@g.Filas.Sum(f => f.Vacantes)</td>
+                            <td class="num">@g.Filas.Sum(f => f.Enviadas)</td>
+                            <td class="num">@g.Filas.Sum(f => f.Aptas)</td>
+                            <td class="num">@Ratio(g.Filas.Sum(f => f.Enviadas), g.Filas.Sum(f => f.Vacantes))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@code {
+    private sealed record Fila(string Carrera, string Facultad, int Vacantes, int Enviadas, int Aptas);
+    private sealed record Grupo(string Convocatoria, List<Fila> Filas);
+
+    private List<Grupo> grupos = [];
+
+    private void Generar(ReporteParametros.Filtro f)
+    {
+        grupos = Datos.Ofertas
+            .Where(o => f.ConvocatoriaId == 0 || o.ConvocatoriaId == f.ConvocatoriaId)
+            .GroupBy(o => o.ConvocatoriaId)
+            .OrderByDescending(g => Datos.Convocatoria(g.Key)?.Inicio)
+            .Select(g => new Grupo(Datos.Convocatoria(g.Key)?.Nombre ?? "—", g.Select(o =>
+            {
+                var postulaciones = Datos.Postulaciones.Where(p => p.ConvocatoriaId == g.Key && p.CarreraId == o.CarreraId && p.Estado != EstadoPostulacion.Borrador
+                    && (f.ModalidadId == 0 || p.ModalidadId == f.ModalidadId)).ToList();
+                var carrera = Datos.Carrera(o.CarreraId);
+                return new Fila(carrera?.Nombre ?? "—", Datos.Facultad(carrera?.FacultadId ?? 0)?.Codigo ?? "", o.Vacantes, postulaciones.Count,
+                    postulaciones.Count(p => p.Estado is EstadoPostulacion.Apta or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida));
+            }).OrderByDescending(x => x.Vacantes == 0 ? 0 : x.Enviadas / (double)x.Vacantes).ToList()))
+            .ToList();
+    }
+
+    private static string Ratio(int enviadas, int vacantes) => vacantes == 0 ? "—" : (enviadas / (double)vacantes).ToString("0.00");
+}

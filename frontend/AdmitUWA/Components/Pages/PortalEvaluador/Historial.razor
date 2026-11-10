@@ -1,0 +1,33 @@
+@page "/evaluador/historial"
+@inject DatosSesion Datos
+
+<PageTitle>Historial · AdmitU</PageTitle>
+
+<PageHeader Titulo="Mis decisiones" Subtitulo="Expedientes que declaraste aptos, no aptos u observados, con el comentario que registraste." Migas="@(["Historial"])" />
+
+<DataTable TItem="MovimientoEstado" Items="decisiones" TextoBusqueda="@(m => $"{Datos.Postulacion(m.PostulacionId)?.Codigo} {Datos.PersonaDePostulacion(m.PostulacionId)?.NombreCompleto} {m.Motivo}")" Marcador="Buscar por código, postulante o comentario"
+           TituloVacio="Aún no registras decisiones" MensajeVacio="Tus decisiones sobre los expedientes aparecerán aquí.">
+    <Encabezado><th>Fecha</th><th>Postulación</th><th>Postulante</th><th>Decisión</th><th>Comentario</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="m">
+        <tr>
+            <td>@Formato.FechaHora(m.Fecha)</td>
+            <td><span class="mono">@Datos.Postulacion(m.PostulacionId)?.Codigo</span></td>
+            <td>@Datos.PersonaDePostulacion(m.PostulacionId)?.NombreCompleto</td>
+            <td><StatusBadge Texto="@m.Nuevo.Etiqueta()" Tono="@m.Nuevo.Tono()" /></td>
+            <td class="wrap">@m.Motivo</td>
+            <td class="td-actions"><span class="row-actions"><BotonAccion Tipo="BotonAccion.Accion.Ver" Sobre="@Datos.Postulacion(m.PostulacionId)?.Codigo" Href="@($"/evaluador/postulaciones/{m.PostulacionId}")" /></span></td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    private List<MovimientoEstado> decisiones = [];
+
+    protected override void OnInitialized()
+    {
+        var yo = Datos.EvaluadorActual;
+        decisiones = Datos.Historial
+            .Where(m => m.Responsable == yo.Nombre && m.Nuevo is EstadoPostulacion.Apta or EstadoPostulacion.NoApta or EstadoPostulacion.Observada)
+            .OrderByDescending(m => m.Fecha).ToList();
+    }
+}

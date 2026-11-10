@@ -1,0 +1,95 @@
+@page "/admin/modalidades"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Modalidades · AdmitU</PageTitle>
+
+<PageHeader Titulo="Modalidades" Subtitulo="Vías de ingreso y su derecho de inscripción." Migas="@(["Modalidades"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva modalidad</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="Modalidad" Items="Datos.Modalidades" TextoBusqueda="@(m => $"{m.Codigo} {m.Nombre} {m.Descripcion}")" Marcador="Buscar por código o nombre">
+    <Encabezado><th>Código</th><th>Modalidad</th><th>Descripción</th><th class="num">Derecho de inscripción</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="m">
+        <tr>
+            <td><span class="mono">@m.Codigo</span></td>
+            <td><span class="cell-title">@m.Nombre</span></td>
+            <td class="wrap">@m.Descripcion</td>
+            <td class="num">@Formato.Soles(m.DerechoInscripcion)</td>
+            <td><EstadoActivo Activo="m.Activo" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@m.Nombre" OnClick="() => Editar(m)" />
+                    @if (m.Activo)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Desactivar" Sobre="@m.Nombre" OnClick="() => pendiente = m" />
+                    }
+                    else
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Reactivar" Sobre="@m.Nombre" OnClick="() => Reactivar(m)" />
+                    }
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nueva modalidad" : "Editar modalidad")" OnCerrar="Cerrar">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field">
+                <label for="m-codigo">Código <span class="req">*</span> @if (modelo.Id != 0) { <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span> }</label>
+                <InputText id="m-codigo" @bind-Value="modelo.Codigo" placeholder="Ej. ORD" disabled="@(modelo.Id != 0)" />
+                <ValidationMessage For="() => modelo.Codigo" />
+                @if (errorCodigo is not null) { <p class="validation-message">@errorCodigo</p> }
+            </div>
+            <div class="field"><label for="m-nombre">Nombre <span class="req">*</span></label><InputText id="m-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Evaluación ordinaria" /><ValidationMessage For="() => modelo.Nombre" /></div>
+            <div class="field"><label for="m-desc">Descripción</label><InputTextArea id="m-desc" @bind-Value="modelo.Descripcion" placeholder="Quiénes pueden postular por esta vía" /><ValidationMessage For="() => modelo.Descripcion" /></div>
+            <div class="field"><label for="m-monto">Derecho de inscripción (S/) <span class="req">*</span></label><InputNumber id="m-monto" @bind-Value="modelo.DerechoInscripcion" step="0.01" /><ValidationMessage For="() => modelo.DerechoInscripcion" /></div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Desactivar modalidad" Mensaje="@($"{pendiente?.Nombre} dejará de ofrecerse en nuevas convocatorias. Podrás reactivarla.")" TextoConfirmar="Desactivar"
+               OnCancelar="() => pendiente = null" OnConfirmar="Desactivar" />
+
+@code {
+    private bool abierto;
+    private Modalidad modelo = new();
+    private Modalidad? pendiente;
+    private string? errorCodigo;
+
+    private void Nueva() { modelo = new(); errorCodigo = null; abierto = true; }
+    private void Editar(Modalidad m) { modelo = new() { Id = m.Id, Codigo = m.Codigo, Nombre = m.Nombre, Descripcion = m.Descripcion, DerechoInscripcion = m.DerechoInscripcion, Activo = m.Activo }; errorCodigo = null; abierto = true; }
+    private void Cerrar() => abierto = false;
+
+    private void Guardar()
+    {
+        if (modelo.Id == 0 && Datos.Modalidades.Any(x => x.Codigo.Equals(modelo.Codigo.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            errorCodigo = "Ya existe una modalidad con ese código.";
+            return;
+        }
+        Datos.GuardarModalidad(modelo);
+        abierto = false;
+        Avisos.Exito("Modalidad guardada");
+    }
+
+    private void Desactivar()
+    {
+        if (pendiente is not null) Datos.CambiarEstadoModalidad(pendiente, false);
+        Avisos.Exito($"{pendiente?.Nombre} desactivada");
+        pendiente = null;
+    }
+
+    private void Reactivar(Modalidad m)
+    {
+        Datos.CambiarEstadoModalidad(m, true);
+        Avisos.Exito($"{m.Nombre} reactivada");
+    }
+}

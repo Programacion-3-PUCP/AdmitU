@@ -1,0 +1,72 @@
+@page "/postulante/documentos-personales"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Documentos personales · AdmitU</PageTitle>
+
+<PageHeader Titulo="Documentos personales" Subtitulo="Tu documento de identidad y tu fotografía. Se usan en todas tus postulaciones y en tu carné." Migas="@(["Documentos personales"])" />
+
+<div class="grid-eq" style="margin-top:0">
+    @foreach (var (tipo, formato, ayuda) in tipos)
+    {
+        var actual = Datos.DocumentosPersonales.FirstOrDefault(d => d.PostulanteId == Datos.PostulanteActualId && d.Tipo == tipo);
+        var t = tipo;
+        <section class="card card-pad">
+            <div class="card-head">
+                <div><h2>@(tipo == "DNI" ? "Documento de identidad" : "Fotografía")</h2><p>@ayuda</p></div>
+                <StatusBadge Texto="@(actual is null ? "Pendiente" : "Cargado")" Tono="@(actual is null ? "warning" : "success")" />
+            </div>
+            @if (actual is not null)
+            {
+                <ul class="list-rows" style="margin-bottom:14px">
+                    <li>
+                        <span class="file-icon">@Path.GetExtension(actual.Archivo).TrimStart('.').ToUpperInvariant()</span>
+                        <div class="file-meta"><strong>@actual.Archivo</strong><small>Cargado el @Formato.Fecha(actual.Fecha)</small></div>
+                        <span class="row-actions"><BotonAccion Tipo="BotonAccion.Accion.Eliminar" Sobre="@actual.Archivo" OnClick="() => porEliminar = actual" /></span>
+                    </li>
+                </ul>
+            }
+            <ZonaCarga Etiqueta="@(actual is null ? "Subir archivo" : "Reemplazar archivo")" Formato="formato" Valor="@(seleccion.GetValueOrDefault(t))" OnArchivo="n => seleccion[t] = n" />
+            <div class="form-footer" style="margin-top:14px;padding-top:14px">
+                <button type="button" class="btn btn-primary" disabled="@(seleccion.GetValueOrDefault(t) is null)" @onclick="() => Guardar(t)"><Icon Name="check" Size="16" />Guardar</button>
+            </div>
+        </section>
+    }
+</div>
+
+<ConfirmDialog Abierto="porEliminar is not null" Titulo="Eliminar archivo" Mensaje="@($"Se eliminará {porEliminar?.Archivo}. Deberás subir otro antes de enviar una postulación.")" TextoConfirmar="Eliminar"
+               OnCancelar="() => porEliminar = null" OnConfirmar="Eliminar" />
+
+@code {
+    private static readonly (string Tipo, FormatoArchivo Formato, string Ayuda)[] tipos =
+    [
+        ("DNI", FormatoArchivo.Cualquiera, "Ambas caras, legibles, en PDF o imagen."),
+        ("Fotografía", FormatoArchivo.Imagen, "Tamaño carné, fondo blanco, en JPG o PNG.")
+    ];
+
+    private readonly Dictionary<string, string?> seleccion = [];
+    private DocumentoPersonal? porEliminar;
+
+    private void Guardar(string tipo)
+    {
+        if (seleccion.GetValueOrDefault(tipo) is not { } archivo) return;
+        var actual = Datos.DocumentosPersonales.FirstOrDefault(d => d.PostulanteId == Datos.PostulanteActualId && d.Tipo == tipo);
+        if (actual is null)
+            Datos.DocumentosPersonales.Add(new DocumentoPersonal { Id = DatosSesion.SiguienteId(Datos.DocumentosPersonales, x => x.Id), PostulanteId = Datos.PostulanteActualId, Tipo = tipo, Archivo = archivo, Fecha = Datos.Hoy });
+        else
+        {
+            actual.Archivo = archivo;
+            actual.Fecha = Datos.Hoy;
+        }
+        seleccion[tipo] = null;
+        Avisos.Exito("Archivo guardado");
+    }
+
+    private void Eliminar()
+    {
+        if (porEliminar is null) return;
+        Datos.DocumentosPersonales.Remove(porEliminar);
+        Avisos.Exito("Archivo eliminado");
+        porEliminar = null;
+    }
+}

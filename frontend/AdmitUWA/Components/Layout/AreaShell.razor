@@ -1,0 +1,77 @@
+@implements IDisposable
+@inject NavigationManager Navegacion
+@inject DatosSesion Datos
+
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<CascadingValue Value="area">
+    <div class="shell @(menuAbierto ? "menu-open" : "")" data-area="@area.Clave">
+        <Sidebar Area="area" />
+        <button type="button" class="scrim" aria-label="Cerrar menú" tabindex="-1" @onclick="CerrarMenu"></button>
+
+        <div class="main">
+            <Topbar Area="area" OnMenu="AlternarMenu" />
+            <main id="contenido" class="content">
+                <ErrorBoundary @ref="limite">
+                    <ChildContent>@ChildContent</ChildContent>
+                    <ErrorContent>
+                        <section class="card">
+                            <EmptyState Icono="alert" Titulo="No pudimos mostrar esta pantalla" Mensaje="Ocurrió un error inesperado. Puedes intentarlo de nuevo o volver al inicio.">
+                                <div class="empty-actions">
+                                    <button type="button" class="btn btn-primary" @onclick="Reintentar">Reintentar</button>
+                                    <a class="btn btn-ghost" href="@area.Inicio">Ir al inicio</a>
+                                </div>
+                            </EmptyState>
+                        </section>
+                    </ErrorContent>
+                </ErrorBoundary>
+            </main>
+            <footer class="footer">
+                <span>AdmitU · Sistema de gestión de admisiones</span>
+                <span>Prototipo de interfaz · los datos se reinician al cerrar la sesión</span>
+            </footer>
+        </div>
+    </div>
+</CascadingValue>
+
+<ToastHost />
+
+@code {
+    [Parameter, EditorRequired] public string Clave { get; set; } = "admin";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private AreaInfo area = default!;
+    private ErrorBoundary? limite;
+    private bool menuAbierto;
+
+    protected override void OnInitialized()
+    {
+        Navegacion.LocationChanged += AlCambiarRuta;
+        Datos.Cambio += AlCambiarDatos;
+    }
+
+    protected override void OnParametersSet() => area = Areas.Crear(Clave, Datos);
+
+    private void AlternarMenu() => menuAbierto = !menuAbierto;
+    private void CerrarMenu() => menuAbierto = false;
+    private void Reintentar() => limite?.Recover();
+
+    private void AlCambiarRuta(object? sender, LocationChangedEventArgs e)
+    {
+        menuAbierto = false;
+        limite?.Recover();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void AlCambiarDatos()
+    {
+        area = Areas.Crear(Clave, Datos);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Navegacion.LocationChanged -= AlCambiarRuta;
+        Datos.Cambio -= AlCambiarDatos;
+    }
+}

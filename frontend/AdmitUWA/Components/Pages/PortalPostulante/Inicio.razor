@@ -1,0 +1,129 @@
+@page "/postulante"
+@using System.Globalization
+@inject DatosSesion Datos
+
+<PageTitle>Mi portal · AdmitU</PageTitle>
+
+<section class="hero" aria-labelledby="saludo">
+    <div>
+        <span class="eyebrow"><i class="dot"></i>@(conv?.Nombre ?? "Sin convocatoria abierta")</span>
+        <h1 id="saludo" class="hero-title">Hola, @yo.Nombres</h1>
+        @if (mia is null)
+        {
+            <p>@(conv is null ? "Por ahora no hay inscripciones abiertas. Te avisaremos cuando se publique la próxima convocatoria." : $"Aún no has iniciado tu postulación. Las inscripciones están abiertas por {dias} días más.")</p>
+            @if (conv is not null)
+            {
+                <div class="hero-actions"><a class="btn btn-light" href="/postulante/postular/@conv.Id"><Icon Name="plus" Size="16" />Iniciar mi postulación</a></div>
+            }
+        }
+        else
+        {
+            <p>Tu postulación <strong>@mia.Codigo</strong> a <strong>@Datos.Carrera(mia.CarreraId)?.Nombre</strong> está <strong>@mia.Estado.Etiqueta().ToLowerInvariant()</strong>.</p>
+            <div class="hero-actions">
+                <a class="btn btn-light" href="/postulante/mi-postulacion">Ver mi postulación<Icon Name="arrow-right" Size="16" /></a>
+                @if (siguiente is { Enlace: not null } s && s.Enlace != "/postulante/mi-postulacion")
+                {
+                    <a class="btn btn-outline-light" href="@s.Enlace">@s.Accion</a>
+                }
+            </div>
+        }
+    </div>
+    <div class="hero-side">
+        <div class="progress-meta" style="color:#c9d5e6"><span>Tu avance</span><strong style="color:#fff">@avance%</strong></div>
+        <div class="hero-progress" role="progressbar" aria-label="Tu avance" aria-valuenow="@avance" aria-valuemin="0" aria-valuemax="100"><i style="width:@avance.ToString(CultureInfo.InvariantCulture)%"></i></div>
+        <div class="hero-dates"><span>@pasos.Count(p => p.Hecho) de @pasos.Count pasos</span>@if (conv?.CierreInscripciones is { } c) { <span>Cierre: @Formato.FechaCorta(c)</span> }</div>
+    </div>
+</section>
+
+@if (mia?.Estado == EstadoPostulacion.Observada && !string.IsNullOrWhiteSpace(mia.Observacion))
+{
+    <div class="notice" style="margin-bottom:18px" role="status">
+        <Icon Name="alert" Size="20" />
+        <div style="flex:1"><strong>Tienes documentos por corregir</strong><p>@mia.Observacion</p></div>
+        <a class="btn btn-ghost btn-sm" href="/postulante/mi-postulacion">Corregir ahora</a>
+    </div>
+}
+
+<div class="grid-2" style="margin-top:0">
+    <section class="card card-pad">
+        <div class="card-head"><div><h2>Tus siguientes pasos</h2><p>Completa cada paso para obtener tu carné de postulante.</p></div></div>
+        <ul class="steps">
+            @foreach (var s in pasos)
+            {
+                <li class="@(s.Hecho ? "is-done" : s == siguiente ? "is-now" : "")">
+                    <span class="steps-mark">@if (s.Hecho) { <Icon Name="check" Size="16" /> } else { @s.Numero }</span>
+                    <div><strong>@s.Titulo</strong><small>@s.Detalle</small></div>
+                    @if (!s.Hecho && s.Enlace is not null && s == siguiente) { <a class="btn btn-primary btn-sm" href="@s.Enlace">@s.Accion</a> }
+                </li>
+            }
+        </ul>
+    </section>
+
+    <section class="card card-pad">
+        <div class="card-head"><h2>Fechas importantes</h2></div>
+        @if (conv is null)
+        {
+            <EmptyState Icono="calendar" Titulo="Sin fechas por ahora" Mensaje="Se mostrarán cuando se publique una convocatoria." />
+        }
+        else
+        {
+            <div class="dates">
+                @foreach (var h in Datos.HitosDe(conv))
+                {
+                    <div class="date-row @(h.Fecha < Datos.Hoy ? "is-past" : "")">
+                        <div class="date-chip">@h.Fecha.Day<small>@Formato.Mes(h.Fecha)</small></div>
+                        <div><strong>@h.Nombre</strong><small>@h.Detalle</small></div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+<section class="card card-pad" style="margin-top:18px">
+    <div class="card-head"><div><h2>Novedades</h2><p>Avisos sobre tu proceso.</p></div><a class="link-more" href="/postulante/notificaciones">Ver todo<Icon Name="arrow-up-right" Size="14" /></a></div>
+    <FeedNotificaciones Items="@Datos.NotificacionesDe(RolUsuario.Postulante)" Maximo="3" />
+</section>
+
+@code {
+    private sealed record Paso(int Numero, string Titulo, string Detalle, bool Hecho, string? Enlace, string Accion, bool RequiereAccion = true);
+
+    private Postulante yo = default!;
+    private Convocatoria? conv;
+    private Postulacion? mia;
+    private List<Paso> pasos = [];
+    private Paso? siguiente;
+    private int dias, avance;
+
+    protected override void OnInitialized()
+    {
+        yo = Datos.PostulanteActual;
+        conv = Datos.ConvocatoriaVigente;
+        dias = conv is null ? 0 : Math.Max(0, (conv.CierreInscripciones ?? conv.Fin).DayNumber - Datos.Hoy.DayNumber);
+        mia = Datos.PostulacionActualDelPostulante();
+
+        var docs = mia is null ? [] : Datos.DocumentosDe(mia.Id);
+        var pago = mia is null ? null : Datos.PagoDe(mia.Id);
+        bool enviada = mia is not null && mia.Estado != EstadoPostulacion.Borrador;
+        bool apta = mia?.Estado is EstadoPostulacion.Apta or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
+        var carne = mia is null ? null : Datos.CarneVigenteDe(mia.Id);
+        string pagoDetalle = pago?.Estado switch
+        {
+            EstadoPago.Aprobado => "Pago validado.",
+            EstadoPago.Pendiente => "Tu voucher está en validación.",
+            EstadoPago.Rechazado => "Tu voucher fue rechazado: adjunta uno nuevo.",
+            _ => "Paga por transferencia y adjunta el voucher."
+        };
+
+        pasos =
+        [
+            new(1, "Confirma tu correo", yo.CorreoValidado ? "Correo validado." : "Lo necesitamos para enviarte avisos.", yo.CorreoValidado, "/postulante/perfil", "Ir a mi perfil"),
+            new(2, "Envía tu postulación", "Elige carrera, modalidad y sede, y sube tus documentos.", enviada, conv is null ? null : $"/postulante/postular/{conv.Id}", "Postular"),
+            new(3, "Paga tu derecho de inscripción", pagoDetalle, pago?.Estado == EstadoPago.Aprobado, "/postulante/vouchers", pago?.Estado == EstadoPago.Pendiente ? "Ver mi voucher" : "Adjuntar voucher", pago?.Estado != EstadoPago.Pendiente),
+            new(4, "Revisión de tu expediente", mia?.Estado == EstadoPostulacion.Observada ? "Tienes documentos observados por corregir." : "Un evaluador revisa tus documentos.", apta, "/postulante/mi-postulacion", mia?.Estado == EstadoPostulacion.Observada ? "Corregir documentos" : "Ver documentos", mia?.Estado == EstadoPostulacion.Observada),
+            new(5, "Recibe tu carné de postulante", carne is null ? "Se emite automáticamente cuando tu expediente es apto y tu pago está validado." : $"Carné {carne.Codigo}: preséntalo el día de la evaluación.", carne is not null, "/postulante/mi-postulacion", "Ver mi carné", false)
+        ];
+        siguiente = pasos.FirstOrDefault(p => !p.Hecho && p.RequiereAccion) ?? pasos.FirstOrDefault(p => !p.Hecho);
+        avance = (int)Math.Round(pasos.Count(p => p.Hecho) * 100.0 / pasos.Count);
+    }
+}

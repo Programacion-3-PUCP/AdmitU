@@ -1,0 +1,99 @@
+@page "/admin/reportes/ingresos"
+@inject DatosSesion Datos
+
+<PageTitle>Reporte de ingresos · AdmitU</PageTitle>
+
+<PageHeader Titulo="Ingresos por validación de vouchers" Subtitulo="Montos validados por convocatoria y modalidad. Solo suman los vouchers aprobados; los pendientes se muestran aparte." Migas="@(["Reportes", "Ingresos"])" />
+
+<ReporteParametros EtiquetaDesde="Validados desde" OnAplicar="Generar" />
+
+<section class="card card-pad" style="margin-top:18px">
+    <div class="card-head">
+        <div><h2>Reporte de ingresos</h2><p>Emitido el @Formato.FechaHora(DateTime.Now)@RangoTexto()</p></div>
+        <div class="report-total"><span>Total validado</span><strong>@Formato.Soles(grupos.Sum(g => g.Total))</strong></div>
+    </div>
+
+    @if (grupos.Count == 0)
+    {
+        <EmptyState Icono="wallet" Titulo="Sin ingresos en el periodo" Mensaje="No hay vouchers validados con los parámetros elegidos." />
+    }
+    else
+    {
+        <div class="table-scroll">
+            <table class="table report-table">
+                <thead><tr><th>Convocatoria / modalidad</th><th class="num">Vouchers validados</th><th class="num">Monto validado</th><th class="num">Por validar (no incluido)</th></tr></thead>
+                <tbody>
+                    @foreach (var g in grupos)
+                    {
+                        <tr class="report-group"><td colspan="4">@g.Convocatoria</td></tr>
+                        @foreach (var m in g.Modalidades)
+                        {
+                            <tr>
+                                <td class="report-indent">@m.Modalidad</td>
+                                <td class="num">@m.Cantidad</td>
+                                <td class="num">@Formato.Soles(m.Monto)</td>
+                                <td class="num muted">@(m.PorValidar == 0 ? "—" : Formato.Soles(m.PorValidar))</td>
+                            </tr>
+                        }
+                        <tr class="report-subtotal">
+                            <td>Subtotal @g.Convocatoria</td>
+                            <td class="num">@g.Modalidades.Sum(m => m.Cantidad)</td>
+                            <td class="num">@Formato.Soles(g.Total)</td>
+                            <td class="num">@(g.Modalidades.Sum(m => m.PorValidar) is var pv && pv > 0 ? Formato.Soles(pv) : "—")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="report-total-row">
+                        <td>Total general</td>
+                        <td class="num">@grupos.Sum(g => g.Modalidades.Sum(m => m.Cantidad))</td>
+                        <td class="num">@Formato.Soles(grupos.Sum(g => g.Total))</td>
+                        <td class="num">@Formato.Soles(grupos.Sum(g => g.Modalidades.Sum(m => m.PorValidar)))</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+</section>
+
+@code {
+    private sealed record FilaModalidad(string Modalidad, int Cantidad, decimal Monto, decimal PorValidar);
+    private sealed record Grupo(string Convocatoria, List<FilaModalidad> Modalidades, decimal Total);
+
+    private ReporteParametros.Filtro? filtro;
+    private List<Grupo> grupos = [];
+
+    private void Generar(ReporteParametros.Filtro f)
+    {
+        filtro = f;
+        var postulaciones = Datos.Postulaciones
+            .Where(p => (f.ConvocatoriaId == 0 || p.ConvocatoriaId == f.ConvocatoriaId) && (f.ModalidadId == 0 || p.ModalidadId == f.ModalidadId))
+            .ToDictionary(p => p.Id);
+        var vouchers = Datos.Vouchers.Where(v => postulaciones.ContainsKey(v.PostulacionId)).ToList();
+
+        grupos = vouchers
+            .GroupBy(v => postulaciones[v.PostulacionId].ConvocatoriaId)
+            .OrderByDescending(g => Datos.Convocatoria(g.Key)?.Inicio)
+            .Select(g =>
+            {
+                var filas = g.GroupBy(v => postulaciones[v.PostulacionId].ModalidadId)
+                    .Select(m =>
+                    {
+                        var aprobados = m.Where(v => v.Estado == EstadoVoucher.Aprobado && (f.Desde is null && f.Hasta is null || f.EnRango(v.FechaRevision))).ToList();
+                        return new FilaModalidad(Datos.Modalidad(m.Key)?.Nombre ?? "—", aprobados.Count, aprobados.Sum(v => v.Monto),
+                            m.Where(v => v.Estado == EstadoVoucher.Pendiente).Sum(v => v.Monto));
+                    })
+                    .Where(x => x.Cantidad > 0 || x.PorValidar > 0)
+                    .OrderBy(x => x.Modalidad).ToList();
+                return new Grupo(Datos.Convocatoria(g.Key)?.Nombre ?? "—", filas, filas.Sum(x => x.Monto));
+            })
+            .Where(g => g.Modalidades.Count > 0)
+            .ToList();
+    }
+
+    private string RangoTexto()
+    {
+        if (filtro is null || (filtro.Desde is null && filtro.Hasta is null)) return "";
+        return $" · validados {(filtro.Desde is { } d ? $"desde el {Formato.Fecha(d)}" : "")} {(filtro.Hasta is { } h ? $"hasta el {Formato.Fecha(h)}" : "")}".TrimEnd();
+    }
+}

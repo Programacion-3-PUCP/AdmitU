@@ -1,0 +1,203 @@
+@page "/admin/convocatorias"
+@using System.Globalization
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Convocatorias · AdmitU</PageTitle>
+
+<PageHeader Titulo="Convocatorias" Subtitulo="Procesos de admisión por periodo: fechas, oferta de vacantes y estado." Migas="@(["Convocatorias"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva convocatoria</button></Acciones>
+</PageHeader>
+
+<div class="conv-grid">
+    @foreach (var c in Datos.Convocatorias.OrderBy(c => c.Estado == EstadoConvocatoria.Cerrada).ThenByDescending(c => c.Inicio))
+    {
+        var avance = Avance(c);
+        var vacantes = Datos.Ofertas.Where(o => o.ConvocatoriaId == c.Id).Sum(o => o.Vacantes);
+        var postulaciones = Datos.Postulaciones.Count(p => p.ConvocatoriaId == c.Id && p.Estado != EstadoPostulacion.Borrador);
+        <article class="card conv">
+            <div class="conv-top">
+                <div><span class="code">@c.Codigo</span><h2 class="conv-title">@c.Nombre</h2></div>
+                <StatusBadge Texto="@c.Estado.Etiqueta()" Tono="@c.Estado.Tono()" />
+            </div>
+            <p>@c.Descripcion</p>
+            <div class="summary-rows">
+                <div><span>Inscripciones</span><strong>@Formato.Fecha(c.Inicio) – @Formato.Fecha(c.CierreInscripciones)</strong></div>
+                <div><span>Resultados</span><strong>@Formato.Fecha(c.Fin)</strong></div>
+                <div><span>Oferta</span><strong>@(vacantes == 0 ? "Sin vacantes configuradas" : $"{vacantes} vacantes")</strong></div>
+            </div>
+            <div>
+                <div class="progress-meta"><span>Tiempo transcurrido</span><strong>@avance%</strong></div>
+                <div class="conv-bar" role="progressbar" aria-label="Tiempo transcurrido" aria-valuenow="@avance" aria-valuemin="0" aria-valuemax="100"><i style="width:@avance.ToString(CultureInfo.InvariantCulture)%"></i></div>
+            </div>
+            <div class="conv-foot">
+                <a href="/admin/postulaciones?conv=@c.Id">@postulaciones postulaciones enviadas</a>
+                <span class="row-actions">
+                    <BotonAccion Tipo="BotonAccion.Accion.Configurar" Sobre="@c.Nombre" Deshabilitado="@(c.Estado == EstadoConvocatoria.Cerrada)" MotivoDeshabilitado="La convocatoria está cerrada" OnClick="() => AbrirOferta(c)" />
+                    <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@c.Nombre" Deshabilitado="@(c.Estado == EstadoConvocatoria.Cerrada)" MotivoDeshabilitado="La convocatoria está cerrada" OnClick="() => Editar(c)" />
+                    @if (c.Estado == EstadoConvocatoria.Borrador)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Publicar" Sobre="@c.Nombre" OnClick="() => accion = (c, EstadoConvocatoria.Publicada)" />
+                    }
+                    else if (c.Estado == EstadoConvocatoria.Publicada)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Cerrar" Sobre="@c.Nombre" OnClick="() => accion = (c, EstadoConvocatoria.Cerrada)" />
+                    }
+                </span>
+            </div>
+        </article>
+    }
+</div>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nueva convocatoria" : "Editar convocatoria")" Descripcion="El estado cambia con las acciones Publicar y Cerrar." OnCerrar="() => abierto = false">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field">
+                <label for="v-codigo">Código <span class="req">*</span> @if (modelo.Id != 0) { <span class="field-lock"><Icon Name="info" Size="12" />no se modifica</span> }</label>
+                <InputText id="v-codigo" @bind-Value="modelo.Codigo" placeholder="Ej. ADM-2027-1" disabled="@(modelo.Id != 0)" />
+                <ValidationMessage For="() => modelo.Codigo" />
+                @if (errorCodigo is not null) { <p class="validation-message">@errorCodigo</p> }
+            </div>
+            <div class="field"><label for="v-nombre">Nombre <span class="req">*</span></label><InputText id="v-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Admisión 2027-I" /><ValidationMessage For="() => modelo.Nombre" /></div>
+            <div class="field"><label for="v-periodo">Periodo <span class="req">*</span></label><InputText id="v-periodo" @bind-Value="modelo.Periodo" placeholder="Ej. 2027-I" /><ValidationMessage For="() => modelo.Periodo" /></div>
+            <div class="form-grid">
+                <div class="field"><label for="v-ini">Apertura de inscripciones</label><InputDate id="v-ini" @bind-Value="modelo.Inicio" /></div>
+                <div class="field"><label for="v-cierre">Cierre de inscripciones</label><InputDate id="v-cierre" @bind-Value="modelo.CierreInscripciones" /><ValidationMessage For="() => modelo.CierreInscripciones" /></div>
+                <div class="field"><label for="v-lim">Fin de evaluación</label><InputDate id="v-lim" @bind-Value="modelo.LimiteEvaluacion" /><ValidationMessage For="() => modelo.LimiteEvaluacion" /></div>
+                <div class="field"><label for="v-fin">Publicación de resultados</label><InputDate id="v-fin" @bind-Value="modelo.Fin" /><ValidationMessage For="() => modelo.Fin" /></div>
+            </div>
+            <div class="field"><label for="v-desc">Descripción</label><InputTextArea id="v-desc" @bind-Value="modelo.Descripcion" /><ValidationMessage For="() => modelo.Descripcion" /></div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="() => abierto = false">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<Drawer Abierto="ofertaDe is not null" Titulo="@($"Oferta de vacantes · {ofertaDe?.Nombre}")" Descripcion="Vacantes por carrera para esta convocatoria. Deja 0 para no ofrecer la carrera." OnCerrar="() => ofertaDe = null">
+    <form class="drawer-form" @onsubmit="GuardarOferta" @onsubmit:preventDefault>
+        <div class="drawer-body">
+            @foreach (var fila in oferta)
+            {
+                var f = fila;
+                <div class="field">
+                    <label for="of-@f.CarreraId">@f.Carrera <span class="cell-sub">@f.Facultad</span></label>
+                    <input id="of-@f.CarreraId" type="number" min="0" max="1000" @bind="f.Vacantes" />
+                </div>
+            }
+            @if (errorOferta is not null) { <p class="validation-message" role="alert">@errorOferta</p> }
+            <div class="summary-rows"><div><span>Total de vacantes</span><strong>@oferta.Sum(o => o.Vacantes)</strong></div></div>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="() => ofertaDe = null">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar oferta</button>
+        </div>
+    </form>
+</Drawer>
+
+<ConfirmDialog Abierto="@(accion is not null)"
+               Titulo="@(accion?.Nuevo == EstadoConvocatoria.Publicada ? "Publicar convocatoria" : "Cerrar convocatoria")"
+               Mensaje="@MensajeAccion()"
+               TextoConfirmar="@(accion?.Nuevo == EstadoConvocatoria.Publicada ? "Publicar" : "Cerrar convocatoria")"
+               Tono="@(accion?.Nuevo == EstadoConvocatoria.Publicada ? "success" : "danger")"
+               Error="@errorAccion"
+               OnCancelar="() => { accion = null; errorAccion = null; }" OnConfirmar="ConfirmarAccion" />
+
+@code {
+    private sealed class FilaOferta
+    {
+        public int CarreraId { get; init; }
+        public string Carrera { get; init; } = "";
+        public string Facultad { get; init; } = "";
+        public int Vacantes { get; set; }
+    }
+
+    private bool abierto;
+    private Convocatoria modelo = new();
+    private string? errorCodigo;
+    private Convocatoria? ofertaDe;
+    private List<FilaOferta> oferta = [];
+    private string? errorOferta;
+    private (Convocatoria Conv, EstadoConvocatoria Nuevo)? accion;
+    private string? errorAccion;
+
+    private int Avance(Convocatoria c)
+    {
+        if (Datos.Hoy >= c.Fin) return 100;
+        if (Datos.Hoy <= c.Inicio) return 0;
+        return (int)Math.Round((Datos.Hoy.DayNumber - c.Inicio.DayNumber) * 100.0 / (c.Fin.DayNumber - c.Inicio.DayNumber));
+    }
+
+    private void Nueva()
+    {
+        modelo = new() { CierreInscripciones = Datos.Hoy.AddMonths(1), LimiteEvaluacion = Datos.Hoy.AddMonths(1).AddDays(5) };
+        errorCodigo = null;
+        abierto = true;
+    }
+
+    private void Editar(Convocatoria c)
+    {
+        modelo = new()
+        {
+            Id = c.Id, Codigo = c.Codigo, Nombre = c.Nombre, Periodo = c.Periodo, Inicio = c.Inicio, Fin = c.Fin,
+            CierreInscripciones = c.CierreInscripciones, LimiteEvaluacion = c.LimiteEvaluacion, Estado = c.Estado, Descripcion = c.Descripcion
+        };
+        errorCodigo = null;
+        abierto = true;
+    }
+
+    private void Guardar()
+    {
+        if (modelo.Id == 0 && Datos.Convocatorias.Any(x => x.Codigo.Equals(modelo.Codigo.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            errorCodigo = "Ya existe una convocatoria con ese código.";
+            return;
+        }
+        Datos.GuardarConvocatoria(modelo);
+        abierto = false;
+        Avisos.Exito("Convocatoria guardada");
+    }
+
+    private void AbrirOferta(Convocatoria c)
+    {
+        oferta = Datos.Carreras.Where(x => x.Activo || Datos.VacantesDe(c.Id, x.Id) > 0)
+            .OrderBy(x => x.FacultadId).ThenBy(x => x.Nombre)
+            .Select(x => new FilaOferta { CarreraId = x.Id, Carrera = x.Nombre, Facultad = Datos.Facultad(x.FacultadId)?.Codigo ?? "", Vacantes = Datos.VacantesDe(c.Id, x.Id) })
+            .ToList();
+        errorOferta = null;
+        ofertaDe = c;
+    }
+
+    private void GuardarOferta()
+    {
+        if (ofertaDe is null) return;
+        if (oferta.Any(o => o.Vacantes < 0 || o.Vacantes > 1000)) { errorOferta = "Las vacantes deben estar entre 0 y 1000."; return; }
+        Datos.GuardarOfertaVacantes(ofertaDe.Id, oferta.Select(o => (o.CarreraId, o.Vacantes)));
+        Avisos.Exito($"Oferta de {ofertaDe.Nombre} guardada: {oferta.Sum(o => o.Vacantes)} vacantes");
+        ofertaDe = null;
+    }
+
+    private string MensajeAccion()
+    {
+        if (accion is not { } a) return "";
+        return a.Nuevo == EstadoConvocatoria.Publicada
+            ? $"{a.Conv.Nombre} quedará visible para los postulantes y se abrirán las inscripciones."
+            : $"{a.Conv.Nombre} dejará de recibir postulaciones. Esta acción no se puede deshacer.";
+    }
+
+    private void ConfirmarAccion()
+    {
+        if (accion is not { } a) return;
+        if (a.Nuevo == EstadoConvocatoria.Publicada)
+        {
+            if (!Datos.Ofertas.Any(o => o.ConvocatoriaId == a.Conv.Id)) { errorAccion = "Configura la oferta de vacantes antes de publicar."; return; }
+            if (Datos.ConvocatoriaVigente is { } vigente && vigente.Id != a.Conv.Id) { errorAccion = $"Ya hay una convocatoria en curso ({vigente.Nombre}). Ciérrala primero."; return; }
+        }
+        Datos.CambiarEstadoConvocatoria(a.Conv, a.Nuevo);
+        Avisos.Exito(a.Nuevo == EstadoConvocatoria.Publicada ? $"{a.Conv.Nombre} publicada" : $"{a.Conv.Nombre} cerrada");
+        accion = null;
+        errorAccion = null;
+    }
+}

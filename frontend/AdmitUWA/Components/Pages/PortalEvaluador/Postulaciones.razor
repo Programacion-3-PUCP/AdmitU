@@ -1,0 +1,65 @@
+@page "/evaluador/postulaciones"
+@inject DatosSesion Datos
+
+<PageTitle>Mi bandeja · AdmitU</PageTitle>
+
+<PageHeader Titulo="Mi bandeja" Subtitulo="Postulaciones asignadas a ti, empezando por las que esperan hace más tiempo." Migas="@(["Mi bandeja"])" />
+
+<div class="chips" role="group" aria-label="Filtrar por estado">
+    @foreach (var (clave, etiqueta) in grupos)
+    {
+        var actual = clave;
+        <button type="button" class="chip @(filtro == actual ? "is-active" : "")" @onclick="() => filtro = actual">@etiqueta<em>@mias.Count(p => Cumple(p, actual))</em></button>
+    }
+</div>
+
+<DataTable TItem="Postulacion" Items="@mias.Where(p => Cumple(p, filtro))" TextoInicial="@Q" TextoBusqueda="@(p => $"{p.Codigo} {Datos.PersonaDe(p)?.NombreCompleto} {Datos.Carrera(p.CarreraId)?.Nombre}")" Marcador="Buscar por código, postulante o carrera"
+           TituloVacio="Nada pendiente en esta vista" MensajeVacio="Cuando te asignen postulaciones aparecerán aquí.">
+    <Encabezado><th>Código</th><th>Postulante</th><th>Carrera · modalidad</th><th>Documentos</th><th>Esperando</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="p">
+        @{ var docs = Datos.DocumentosDe(p.Id); var dias = Datos.Hoy.DayNumber - (p.FechaEnvio ?? p.FechaRegistro).DayNumber; }
+        <tr class="@(p.Estado.EsPendiente() && dias > 2 ? "is-highlight" : "")">
+            <td><a class="mono" href="/evaluador/postulaciones/@p.Id">@p.Codigo</a></td>
+            <td><div class="cell-person"><Avatar Nombre="@(Datos.PersonaDe(p)?.NombreCompleto ?? "?")" Tamano="sm" /><span><strong>@Datos.PersonaDe(p)?.NombreCompleto</strong></span></div></td>
+            <td><span class="cell-title">@Datos.Carrera(p.CarreraId)?.Nombre</span><span class="cell-sub">@Datos.Modalidad(p.ModalidadId)?.Nombre</span></td>
+            <td><span class="doc-dots" aria-hidden="true">@foreach (var d in docs) { <i class="t-@d.Estado.Tono()" title="@d.Requisito: @d.Estado.Etiqueta()"></i> }</span><span class="num">@docs.Count(d => d.Estado == EstadoDocumento.Aprobado)/@docs.Count</span></td>
+            <td>@(p.Estado.EsPendiente() ? Formato.Antiguedad(p.FechaEnvio ?? p.FechaRegistro, Datos.Hoy) : "—")</td>
+            <td><StatusBadge Texto="@p.Estado.Etiqueta()" Tono="@p.Estado.Tono()" /></td>
+            <td class="td-actions">
+                @if (p.Estado.EsPendiente())
+                {
+                    <a class="btn btn-primary btn-sm" href="/evaluador/postulaciones/@p.Id">Revisar</a>
+                }
+                else
+                {
+                    <span class="row-actions"><BotonAccion Tipo="BotonAccion.Accion.Ver" Sobre="@p.Codigo" Href="@($"/evaluador/postulaciones/{p.Id}")" /></span>
+                }
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+@code {
+    [SupplyParameterFromQuery(Name = "q")] public string? Q { get; set; }
+
+    private static readonly (string Clave, string Etiqueta)[] grupos =
+        [("pendientes", "Por evaluar"), ("observadas", "Esperando subsanación"), ("resueltas", "Resueltas"), ("todas", "Todas")];
+
+    private string filtro = "pendientes";
+    private List<Postulacion> mias = [];
+
+    protected override void OnParametersSet()
+    {
+        mias = Datos.Postulaciones.Where(p => p.EvaluadorId == Datos.EvaluadorActualId && p.Estado != EstadoPostulacion.Borrador)
+            .OrderBy(p => p.FechaEnvio ?? p.FechaRegistro).ToList();
+        if (!string.IsNullOrWhiteSpace(Q)) filtro = "todas";
+    }
+
+    private static bool Cumple(Postulacion p, string filtro) => filtro switch
+    {
+        "pendientes" => p.Estado.EsPendiente(),
+        "observadas" => p.Estado == EstadoPostulacion.Observada,
+        "resueltas" => p.Estado.EsResuelta(),
+        _ => true
+    };
+}

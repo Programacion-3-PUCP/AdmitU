@@ -1,0 +1,66 @@
+@inject DatosSesion Datos
+@inject IJSRuntime Js
+
+<section class="card card-pad no-print" aria-label="Parámetros del reporte">
+    <div class="form-grid report-params">
+        <div class="field">
+            <label for="rp-conv">Convocatoria</label>
+            <select id="rp-conv" @bind="convId">
+                <option value="0">Todas</option>
+                @foreach (var c in Datos.Convocatorias.OrderByDescending(c => c.Inicio)) { <option value="@c.Id">@c.Nombre</option> }
+            </select>
+        </div>
+        <div class="field">
+            <label for="rp-mod">Modalidad</label>
+            <select id="rp-mod" @bind="modalidadId">
+                <option value="0">Todas</option>
+                @foreach (var m in Datos.Modalidades) { <option value="@m.Id">@m.Nombre</option> }
+            </select>
+        </div>
+        @if (ConFechas)
+        {
+            <div class="field"><label for="rp-desde">@EtiquetaDesde</label><input id="rp-desde" type="date" @bind="desde" /></div>
+            <div class="field"><label for="rp-hasta">Hasta</label><input id="rp-hasta" type="date" @bind="hasta" /></div>
+        }
+    </div>
+    @if (error is not null) { <p class="validation-message" role="alert" style="margin-top:12px">@error</p> }
+    <div class="form-footer">
+        <button type="button" class="btn btn-ghost" @onclick="Imprimir"><Icon Name="printer" Size="16" />Imprimir</button>
+        <button type="button" class="btn btn-primary" @onclick="Aplicar"><Icon Name="filter" Size="16" />Generar reporte</button>
+    </div>
+</section>
+
+@code {
+    public sealed record Filtro(int ConvocatoriaId, int ModalidadId, DateOnly? Desde, DateOnly? Hasta)
+    {
+        public bool EnRango(DateOnly? fecha) => fecha is { } f && (Desde is null || f >= Desde) && (Hasta is null || f <= Hasta);
+    }
+
+    [Parameter] public bool ConFechas { get; set; } = true;
+    [Parameter] public string EtiquetaDesde { get; set; } = "Desde";
+    [Parameter] public EventCallback<Filtro> OnAplicar { get; set; }
+
+    private int convId;
+    private int modalidadId;
+    private DateOnly? desde, hasta;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        convId = Datos.ConvocatoriaPorDefecto;
+        await OnAplicar.InvokeAsync(new Filtro(convId, 0, null, null));
+    }
+
+    private async Task Aplicar()
+    {
+        if (desde is not null && hasta is not null && desde > hasta)
+        {
+            error = "La fecha inicial no puede ser posterior a la final.";
+            return;
+        }
+        error = null;
+        await OnAplicar.InvokeAsync(new Filtro(convId, modalidadId, desde, hasta));
+    }
+
+    private async Task Imprimir() => await Js.InvokeVoidAsync("print");
+}

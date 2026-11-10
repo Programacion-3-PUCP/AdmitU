@@ -1,0 +1,88 @@
+@page "/registro"
+@layout AdmitUWA.Components.Layout.AccesoLayout
+@inject DatosSesion Datos
+
+<PageTitle>Crear cuenta · AdmitU</PageTitle>
+
+<div class="registro">
+    <div class="registro-top">
+        <a class="brand" href="/"><Logo /><span class="brand-text"><strong>Admit<em>U</em></strong><small>Admisión universitaria</small></span></a>
+        <a class="btn btn-ghost" href="/"><Icon Name="arrow-left" Size="16" />Volver a ingresar</a>
+    </div>
+
+    @if (creado is not null)
+    {
+        <section class="card">
+            <EmptyState Icono="check-circle" Titulo="@($"¡Listo, {creado.Nombres}! Tu cuenta fue creada")" Mensaje="@($"Te enviaremos un correo a {creado.Correo} para validarlo. Ya puedes ingresar e iniciar tu postulación.")">
+                <a class="btn btn-primary empty-cta" href="/">Ir a ingresar</a>
+            </EmptyState>
+        </section>
+    }
+    else
+    {
+        <h1>Crea tu cuenta de postulante</h1>
+        <p class="page-sub" style="margin-bottom:22px">Usa tus datos tal como figuran en tu documento de identidad: no podrás cambiarlos después.</p>
+
+        <EditForm Model="modelo" OnValidSubmit="Registrar" class="card card-pad">
+            <DataAnnotationsValidator />
+            <div class="form-grid">
+                <div class="field"><label for="r-nombres">Nombres <span class="req">*</span></label><InputText id="r-nombres" @bind-Value="modelo.Nombres" autocomplete="given-name" /><ValidationMessage For="() => modelo.Nombres" /></div>
+                <div class="field"><label for="r-pat">Apellido paterno <span class="req">*</span></label><InputText id="r-pat" @bind-Value="modelo.ApellidoPaterno" /><ValidationMessage For="() => modelo.ApellidoPaterno" /></div>
+                <div class="field"><label for="r-mat">Apellido materno <span class="req">*</span></label><InputText id="r-mat" @bind-Value="modelo.ApellidoMaterno" /><ValidationMessage For="() => modelo.ApellidoMaterno" /></div>
+                <div class="field"><label for="r-nac">Fecha de nacimiento <span class="req">*</span></label><InputDate id="r-nac" @bind-Value="modelo.FechaNacimiento" /><ValidationMessage For="() => modelo.FechaNacimiento" /></div>
+                <div class="field">
+                    <label for="r-tipo">Tipo de documento <span class="req">*</span></label>
+                    <InputSelect id="r-tipo" @bind-Value="modelo.TipoDocumento">
+                        @foreach (var (valor, texto) in DatosPersonales.TiposDocumento) { <option value="@valor">@texto</option> }
+                    </InputSelect>
+                </div>
+                <div class="field"><label for="r-num">Número de documento <span class="req">*</span></label><InputText id="r-num" @bind-Value="modelo.NumeroDocumento" /><ValidationMessage For="() => modelo.NumeroDocumento" /></div>
+                <div class="field"><label for="r-correo">Correo electrónico <span class="req">*</span></label><InputText id="r-correo" type="email" @bind-Value="modelo.Correo" autocomplete="email" /><ValidationMessage For="() => modelo.Correo" /></div>
+                <div class="field"><label for="r-tel">Teléfono</label><InputText id="r-tel" type="tel" @bind-Value="modelo.Telefono" placeholder="987 654 321" /><ValidationMessage For="() => modelo.Telefono" /></div>
+                <label class="switch full">
+                    <InputCheckbox @bind-Value="modelo.TieneDiscapacidad" />
+                    <span><strong>Registro una discapacidad</strong><small>Nos permite ofrecerte ajustes razonables durante la evaluación.</small></span>
+                </label>
+                @if (modelo.TieneDiscapacidad)
+                {
+                    <div class="field full"><label for="r-conadis">Número de carné CONADIS <span class="req">*</span></label><InputText id="r-conadis" @bind-Value="modelo.CarnetConadis" placeholder="CON-00000" /><ValidationMessage For="() => modelo.CarnetConadis" /></div>
+                }
+            </div>
+            @if (error is not null) { <p class="validation-message" role="alert" style="margin-top:14px">@error</p> }
+            <div class="form-footer">
+                <a class="btn btn-ghost" href="/">Cancelar</a>
+                <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Crear cuenta</button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private DatosPersonales modelo = new() { FechaNacimiento = new DateOnly(2008, 1, 1) };
+    private Postulante? creado;
+    private string? error;
+
+    private void Registrar()
+    {
+        var numero = modelo.NumeroDocumento.Trim().ToUpperInvariant();
+        var correo = modelo.Correo.Trim();
+        if (Datos.Postulantes.Any(p => p.TipoDocumento == modelo.TipoDocumento && p.NumeroDocumento == numero))
+        {
+            error = "Ya existe una cuenta con ese documento. Ingresa con tu correo o contacta a la oficina de admisión.";
+            return;
+        }
+        if (Datos.Postulantes.Any(p => p.Correo.Equals(correo, StringComparison.OrdinalIgnoreCase)))
+        {
+            error = "Ese correo ya está registrado.";
+            return;
+        }
+        creado = Datos.RegistrarNuevoPostulante(new Postulante
+        {
+            Nombres = modelo.Nombres.Trim(), ApellidoPaterno = modelo.ApellidoPaterno.Trim(), ApellidoMaterno = modelo.ApellidoMaterno.Trim(),
+            TipoDocumento = modelo.TipoDocumento, NumeroDocumento = numero, Correo = correo,
+            Telefono = string.IsNullOrWhiteSpace(modelo.Telefono) ? null : modelo.Telefono.Trim(), FechaNacimiento = modelo.FechaNacimiento,
+            TieneDiscapacidad = modelo.TieneDiscapacidad, CarnetConadis = modelo.TieneDiscapacidad ? modelo.CarnetConadis?.Trim() : null
+        });
+        error = null;
+    }
+}

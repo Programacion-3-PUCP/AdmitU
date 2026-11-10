@@ -1,0 +1,138 @@
+@page "/admin/requisitos"
+@inject DatosSesion Datos
+@inject ToastService Avisos
+
+<PageTitle>Requisitos documentales · AdmitU</PageTitle>
+
+<PageHeader Titulo="Requisitos documentales" Subtitulo="Documentos que se piden al postular, según la convocatoria y la modalidad." Migas="@(["Requisitos documentales"])">
+    <Acciones><button type="button" class="btn btn-primary" @onclick="Nuevo"><Icon Name="plus" Size="16" />Nuevo requisito</button></Acciones>
+</PageHeader>
+
+<DataTable TItem="RequisitoAplicable" Items="Filtrados" TextoBusqueda="@(r => $"{r.Nombre} {Datos.Modalidad(r.ModalidadId)?.Nombre}")" Marcador="Buscar por requisito o modalidad">
+    <Filtros>
+        <select class="select" aria-label="Convocatoria" @bind="convId">
+            @foreach (var c in Datos.Convocatorias.OrderByDescending(c => c.Inicio)) { <option value="@c.Id">@c.Nombre</option> }
+        </select>
+        <select class="select" aria-label="Modalidad" @bind="modalidadId">
+            <option value="0">Todas las modalidades</option>
+            @foreach (var m in Datos.Modalidades) { <option value="@m.Id">@m.Nombre</option> }
+        </select>
+    </Filtros>
+    <Encabezado><th>Requisito</th><th>Modalidad</th><th>Formato</th><th>Condición</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+    <Fila Context="r">
+        <tr>
+            <td><span class="cell-title">@r.Nombre</span></td>
+            <td>@Datos.Modalidad(r.ModalidadId)?.Nombre</td>
+            <td>@r.Formato.Etiqueta()</td>
+            <td>@(r.Obligatorio ? "Obligatorio" : "Opcional")</td>
+            <td><EstadoActivo Activo="r.Activo" Femenino="false" /></td>
+            <td class="td-actions">
+                <span class="row-actions">
+                    <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@r.Nombre" OnClick="() => Editar(r)" />
+                    @if (r.Activo)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Desactivar" Sobre="@r.Nombre" OnClick="() => pendiente = r" />
+                    }
+                    else
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Reactivar" Sobre="@r.Nombre" OnClick="() => Reactivar(r)" />
+                    }
+                </span>
+            </td>
+        </tr>
+    </Fila>
+</DataTable>
+
+<Drawer Abierto="abierto" Titulo="@(modelo.Id == 0 ? "Nuevo requisito" : "Editar requisito")" OnCerrar="() => abierto = false">
+    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
+        <DataAnnotationsValidator />
+        <div class="drawer-body">
+            <div class="field">
+                <label for="r-conv">Convocatoria <span class="req">*</span></label>
+                <InputSelect id="r-conv" @bind-Value="modelo.ConvocatoriaId" disabled="@(modelo.Id != 0)">
+                    <option value="0">Selecciona una convocatoria</option>
+                    @foreach (var c in Datos.Convocatorias.Where(c => c.Estado != EstadoConvocatoria.Cerrada || c.Id == modelo.ConvocatoriaId)) { <option value="@c.Id">@c.Nombre</option> }
+                </InputSelect>
+                <ValidationMessage For="() => modelo.ConvocatoriaId" />
+            </div>
+            <div class="field">
+                <label for="r-mod">Modalidad <span class="req">*</span></label>
+                <InputSelect id="r-mod" @bind-Value="modelo.ModalidadId" disabled="@(modelo.Id != 0)">
+                    <option value="0">Selecciona una modalidad</option>
+                    @foreach (var m in Datos.Modalidades.Where(m => m.Activo || m.Id == modelo.ModalidadId)) { <option value="@m.Id">@m.Nombre</option> }
+                </InputSelect>
+                <ValidationMessage For="() => modelo.ModalidadId" />
+            </div>
+            <div class="field">
+                <label for="r-nombre">Requisito <span class="req">*</span></label>
+                <InputText id="r-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Certificado de estudios" />
+                <ValidationMessage For="() => modelo.Nombre" />
+                @if (error is not null) { <p class="validation-message">@error</p> }
+            </div>
+            <div class="field">
+                <label for="r-formato">Formato aceptado</label>
+                <InputSelect id="r-formato" @bind-Value="modelo.Formato">
+                    @foreach (var f in Enum.GetValues<FormatoArchivo>()) { <option value="@f">@f.Etiqueta()</option> }
+                </InputSelect>
+            </div>
+            <label class="switch"><InputCheckbox @bind-Value="modelo.Obligatorio" /><span><strong>Obligatorio</strong><small>Sin este documento no se puede enviar la postulación.</small></span></label>
+        </div>
+        <div class="drawer-foot">
+            <button type="button" class="btn btn-ghost" @onclick="() => abierto = false">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Guardar</button>
+        </div>
+    </EditForm>
+</Drawer>
+
+<ConfirmDialog Abierto="@(pendiente is not null)" Titulo="Desactivar requisito" Mensaje="@($"«{pendiente?.Nombre}» dejará de pedirse en las nuevas postulaciones. Podrás reactivarlo.")" TextoConfirmar="Desactivar"
+               OnCancelar="() => pendiente = null" OnConfirmar="Desactivar" />
+
+@code {
+    private int convId;
+    private int modalidadId;
+    private bool abierto;
+    private RequisitoAplicable modelo = new();
+    private RequisitoAplicable? pendiente;
+    private string? error;
+
+    protected override void OnInitialized() => convId = Datos.ConvocatoriaPorDefecto;
+
+    private IEnumerable<RequisitoAplicable> Filtrados => Datos.Requisitos
+        .Where(r => r.ConvocatoriaId == convId && (modalidadId == 0 || r.ModalidadId == modalidadId))
+        .OrderBy(r => r.ModalidadId).ThenBy(r => r.Id);
+
+    private void Nuevo() { modelo = new() { ConvocatoriaId = convId, ModalidadId = modalidadId }; error = null; abierto = true; }
+
+    private void Editar(RequisitoAplicable r)
+    {
+        modelo = new() { Id = r.Id, Nombre = r.Nombre, ConvocatoriaId = r.ConvocatoriaId, ModalidadId = r.ModalidadId, Formato = r.Formato, Obligatorio = r.Obligatorio, Activo = r.Activo };
+        error = null;
+        abierto = true;
+    }
+
+    private void Guardar()
+    {
+        var nombre = modelo.Nombre.Trim();
+        if (Datos.Requisitos.Any(r => r.Id != modelo.Id && r.ConvocatoriaId == modelo.ConvocatoriaId && r.ModalidadId == modelo.ModalidadId && r.Nombre.Equals(nombre, StringComparison.OrdinalIgnoreCase)))
+        {
+            error = "Ese requisito ya existe para la convocatoria y modalidad elegidas.";
+            return;
+        }
+        Datos.GuardarRequisito(modelo);
+        abierto = false;
+        Avisos.Exito("Requisito guardado");
+    }
+
+    private void Desactivar()
+    {
+        if (pendiente is not null) Datos.CambiarEstadoRequisito(pendiente, false);
+        Avisos.Exito("Requisito desactivado");
+        pendiente = null;
+    }
+
+    private void Reactivar(RequisitoAplicable r)
+    {
+        Datos.CambiarEstadoRequisito(r, true);
+        Avisos.Exito("Requisito reactivado");
+    }
+}
