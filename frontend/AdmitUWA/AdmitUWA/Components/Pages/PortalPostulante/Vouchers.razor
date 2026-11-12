@@ -1,229 +1,36 @@
 @page "/postulante/vouchers"
+@using AdmitUWA.Services.REST
+@inject AdmitURestClient Api
 @inject DatosSesion Datos
 @inject ToastService Avisos
-
 <PageTitle>Mis vouchers · AdmitU</PageTitle>
-
-<PageHeader Titulo="Mis vouchers" Subtitulo="El pago se hace por transferencia bancaria. Aquí registras, consultas, modificas o retiras tu voucher mientras está en validación." Migas="@(["Mis vouchers"])" />
-
-@if (pagos.Count == 0)
-{
-    <section class="card"><EmptyState Icono="credit-card" Titulo="Aún no tienes pagos" Mensaje="El derecho de inscripción se genera al enviar tu postulación." /></section>
+<PageHeader Titulo="Mis vouchers" Subtitulo="Adjunta la transferencia al pago existente. Los comprobantes aprobados quedan bloqueados." Migas="@(["Mis vouchers"])" />
+@if(error is not null){<p class="validation-message" role="alert">@error</p>}
+@if(pagos.Count==0){<section class="card card-pad"><p>El pago se genera una sola vez al enviar la postulación.</p></section>}
+@foreach(var p in pagos){
+ var pago=p;var archivo=archivos.FirstOrDefault(x=>x.Tipo=="VOUCHER"&&x.ReferenciaId==p.Id);
+ <section class="card card-pad"><h2>@p.CodigoPago</h2><p>Importe: <strong>@Formato.Soles((decimal)p.Monto)</strong> · Estado: @p.EstadoPago</p>
+ @if(archivo is not null){<p>@archivo.Nombre · Operación @p.ReferenciaPasarela</p><ArchivoVista ArchivoId="archivo.Id" Mime="@archivo.Mime" Nombre="@archivo.Nombre" />}
+ @if(p.EstadoPago=="APROBADO"){<p class="inline-note is-success">Aprobado el @Formato.Fecha(p.FechaPago). El voucher está bloqueado contra modificaciones.</p>}
+ else if(p.EstadoPago is "GENERADO" or "PENDIENTE" or "RECHAZADO"){
+  <button class="btn btn-primary" disabled="@ocupado" @onclick="()=>Abrir(pago)">@(archivo is null?"Registrar voucher":"Modificar voucher")</button>
+  @if(archivo is not null){<button class="btn btn-ghost" disabled="@ocupado" @onclick="()=>porEliminar=archivo">Retirar voucher</button>}
+ }
+ </section>
 }
-
-@foreach (var pago in pagos)
-{
-    var p = Datos.Postulacion(pago.PostulacionId)!;
-    var vouchers = Datos.VouchersDe(p.Id);
-    var pendiente = vouchers.FirstOrDefault(v => v.Estado == EstadoVoucher.Pendiente);
-    var rechazado = vouchers.FirstOrDefault(v => v.Estado == EstadoVoucher.Rechazado);
-    <section class="card card-pad" style="margin-bottom:18px">
-        <div class="card-head">
-            <div><h2>@p.Codigo · @Datos.Carrera(p.CarreraId)?.Nombre</h2><p>Derecho de inscripción: <strong>@Formato.Soles(pago.Monto)</strong> · código de pago <span class="mono">@pago.Codigo</span></p></div>
-            <StatusBadge Texto="@pago.Estado.Etiqueta()" Tono="@pago.Estado.Tono()" />
-        </div>
-
-        @if (pago.Estado == EstadoPago.Aprobado)
-        {
-            <p class="inline-note is-success"><Icon Name="check-circle" Size="16" /><span>Pago validado el @Formato.Fecha(pago.FechaAprobacion). Una vez aprobado, el voucher queda bloqueado y no puede modificarse ni retirarse.</span></p>
-        }
-        else if (pendiente is not null)
-        {
-            <p class="inline-note"><Icon Name="clock" Size="16" /><span>Tu voucher @pendiente.CodigoOperacion está en validación. Mientras esté pendiente puedes visualizarlo, editarlo o retirarlo.</span></p>
-        }
-        else
-        {
-            @if (rechazado is not null && pago.Estado == EstadoPago.Rechazado)
-            {
-                <p class="inline-note is-warning" style="margin-bottom:12px"><Icon Name="alert" Size="16" /><span>Tu voucher @rechazado.CodigoOperacion fue rechazado: @rechazado.MotivoRechazo</span></p>
-            }
-            <button type="button" class="btn btn-primary" @onclick="() => AbrirRegistro(p, pago)"><Icon Name="upload" Size="16" />Registrar voucher</button>
-        }
-
-        @if (vouchers.Count > 0)
-        {
-            <div class="table-scroll" style="margin-top:16px">
-                <table class="table">
-                    <thead><tr><th>N.° de operación</th><th class="num">Importe</th><th>Comprobante</th><th>Registrado</th><th>Estado</th><th class="th-actions">Acciones</th></tr></thead>
-                    <tbody>
-                        @foreach (var v in vouchers)
-                        {
-                            bool editable = v.Estado == EstadoVoucher.Pendiente && pago.Estado != EstadoPago.Aprobado;
-                            <tr>
-                                <td><span class="mono">@v.CodigoOperacion</span></td>
-                                <td class="num">@Formato.Soles(v.Monto)</td>
-                                <td>@v.Archivo</td>
-                                <td>@Formato.Fecha(v.FechaRegistro)</td>
-                                <td><StatusBadge Texto="@v.Estado.Etiqueta()" Tono="@v.Estado.Tono()" /></td>
-                                <td class="td-actions">
-                                    <span class="row-actions">
-                                        <BotonAccion Tipo="BotonAccion.Accion.Ver" Texto="Ver voucher" Sobre="@v.CodigoOperacion" OnClick="() => viendo = v" />
-                                        <BotonAccion Tipo="BotonAccion.Accion.Editar" Texto="Editar voucher" Sobre="@v.CodigoOperacion" Deshabilitado="@(!editable)"
-                                                     MotivoDeshabilitado="No se puede modificar un voucher ya aprobado o rechazado" OnClick="() => AbrirEdicion(p, v)" />
-                                        <BotonAccion Tipo="BotonAccion.Accion.Eliminar" Texto="Retirar voucher" Sobre="@v.CodigoOperacion" Deshabilitado="@(!editable)"
-                                                     MotivoDeshabilitado="Solo se puede retirar mientras está pendiente de validación" OnClick="() => porRetirar = v" />
-                                    </span>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-    </section>
+@if(seleccionado is not null){
+ <section class="card card-pad"><h2>Voucher de @seleccionado.CodigoPago</h2>
+ <div class="field"><label for="voucher-operacion">Número de operación</label><input id="voucher-operacion" @bind="operacion" maxlength="30" disabled="@ocupado" /></div>
+ <div class="field"><label for="voucher-monto">Importe fijado por modalidad</label><input id="voucher-monto" value="@seleccionado.Monto" readonly /></div>
+ <ZonaCarga Etiqueta="Adjuntar voucher PDF, JPG o PNG" Formato="FormatoArchivo.Cualquiera" Deshabilitado="@ocupado" OnContenido="a=>seleccion=a" />
+ <button class="btn btn-primary" disabled="@(ocupado||seleccion is null)" @onclick="Guardar">Enviar voucher</button><button class="btn btn-ghost" disabled="@ocupado" @onclick="()=>seleccionado=null">Cancelar</button></section>
 }
-
-<Drawer Abierto="viendo is not null" Titulo="Detalle del voucher" Descripcion="@($"Operación {viendo?.CodigoOperacion}")" OnCerrar="() => viendo = null">
-    @if (viendo is not null)
-    {
-        var post = Datos.Postulacion(viendo.PostulacionId);
-        var pago = Datos.PagoDe(viendo.PostulacionId);
-        <div class="drawer-body">
-            <div class="summary-rows">
-                <div><span>Postulación</span><strong class="mono">@post?.Codigo</strong></div>
-                <div><span>Carrera</span><strong>@Datos.Carrera(post?.CarreraId ?? 0)?.Nombre</strong></div>
-                <div><span>Código de pago</span><strong class="mono">@pago?.Codigo</strong></div>
-                <div><span>N.° de operación</span><strong class="mono">@viendo.CodigoOperacion</strong></div>
-                <div><span>Importe transferido</span><strong>@Formato.Soles(viendo.Monto)</strong></div>
-                <div><span>Archivo comprobante</span><strong>@viendo.Archivo</strong></div>
-                <div><span>Fecha de registro</span><strong>@Formato.Fecha(viendo.FechaRegistro)</strong></div>
-                <div><span>Estado de validación</span><StatusBadge Texto="@viendo.Estado.Etiqueta()" Tono="@viendo.Estado.Tono()" /></div>
-                @if (viendo.FechaRevision is not null)
-                {
-                    <div><span>Fecha de revisión</span><strong>@Formato.Fecha(viendo.FechaRevision)</strong></div>
-                }
-                @if (!string.IsNullOrWhiteSpace(viendo.MotivoRechazo))
-                {
-                    <div><span>Observación / Motivo</span><strong>@viendo.MotivoRechazo</strong></div>
-                }
-            </div>
-            @if (viendo.Estado == EstadoVoucher.Aprobado)
-            {
-                <p class="inline-note is-success" style="margin-top:16px"><Icon Name="check-circle" Size="16" /><span>Comprobante aprobado y bloqueado contra modificaciones.</span></p>
-            }
-        </div>
-        <div class="drawer-foot">
-            <button type="button" class="btn btn-ghost" @onclick="() => viendo = null">Cerrar</button>
-            @if (viendo.Estado == EstadoVoucher.Pendiente && post is not null)
-            {
-                <button type="button" class="btn btn-primary" @onclick="() => { var v = viendo; viendo = null; AbrirEdicion(post, v); }"><Icon Name="edit" Size="16" />Editar voucher</button>
-            }
-        </div>
-    }
-</Drawer>
-
-<Drawer Abierto="registrando is not null" Titulo="@(editando is null ? "Registrar voucher" : "Modificar voucher")" Descripcion="@($"Postulación {registrando?.Codigo}")" OnCerrar="CerrarFormulario">
-    <EditForm Model="modelo" OnValidSubmit="Guardar" class="drawer-form">
-        <DataAnnotationsValidator />
-        <div class="drawer-body">
-            <div class="field">
-                <label for="v-op">Número de operación <span class="req">*</span></label>
-                <InputText id="v-op" @bind-Value="modelo.CodigoOperacion" placeholder="Figura en tu voucher (ej. TRF-BANCO-9950)" />
-                <ValidationMessage For="() => modelo.CodigoOperacion" />
-            </div>
-            <div class="field">
-                <label for="v-monto">Importe transferido (S/) <span class="req">*</span> @if (editando is not null) { <span class="field-lock"><Icon Name="info" Size="12" />fijado por modalidad</span> }</label>
-                <InputNumber id="v-monto" @bind-Value="modelo.Monto" step="0.01" disabled="@(editando is not null)" />
-                <ValidationMessage For="() => modelo.Monto" />
-            </div>
-            <div class="field">
-                <span class="label">Voucher <span class="req">*</span></span>
-                <ZonaCarga Etiqueta="@(editando is null ? "Subir voucher" : "Reemplazar archivo del voucher")" Formato="FormatoArchivo.Cualquiera"
-                           Valor="@(string.IsNullOrWhiteSpace(modelo.Archivo) ? null : modelo.Archivo)" OnArchivo="n => modelo.Archivo = n ?? string.Empty" />
-                <ValidationMessage For="() => modelo.Archivo" />
-            </div>
-        </div>
-        <div class="drawer-foot">
-            <button type="button" class="btn btn-ghost" @onclick="CerrarFormulario">Cancelar</button>
-            <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />@(editando is null ? "Registrar" : "Guardar cambios")</button>
-        </div>
-    </EditForm>
-</Drawer>
-
-<ConfirmDialog Abierto="porRetirar is not null" Titulo="Retirar voucher" Mensaje="@($"Se retirará el voucher {porRetirar?.CodigoOperacion}. Podrás registrar otro.")" TextoConfirmar="Retirar"
-               OnCancelar="() => porRetirar = null" OnConfirmar="Retirar" />
-
+<ConfirmDialog Abierto="@(porEliminar is not null)" Titulo="Retirar voucher" Mensaje="Se retirará el archivo y el pago volverá a generado. Un aprobado no puede retirarse." TextoConfirmar="Retirar" OnCancelar="()=>porEliminar=null" OnConfirmar="Eliminar" />
 @code {
-    private sealed class FormularioVoucher
-    {
-        [Required(ErrorMessage = "Ingresa el número de operación.")]
-        [RegularExpression("^[A-Za-z0-9-]{4,30}$", ErrorMessage = "Usa solo letras, números o guiones (de 4 a 30 caracteres).")]
-        public string CodigoOperacion { get; set; } = "";
-        [Range(typeof(decimal), "0.01", "10000", ErrorMessage = "Ingresa el importe transferido.")]
-        public decimal Monto { get; set; }
-        [Required(ErrorMessage = "Adjunta el voucher en PDF o imagen.")]
-        public string Archivo { get; set; } = "";
-    }
-
-    private List<Pago> pagos = [];
-    private Postulacion? registrando;
-    private Voucher? editando;
-    private Voucher? viendo;
-    private FormularioVoucher modelo = new();
-    private Voucher? porRetirar;
-
-    protected override void OnInitialized() => Cargar();
-
-    private void Cargar()
-    {
-        var mias = Datos.Postulaciones.Where(p => p.PostulanteId == Datos.PostulanteActualId).Select(p => p.Id).ToHashSet();
-        pagos = Datos.Pagos.Where(x => mias.Contains(x.PostulacionId)).OrderByDescending(x => x.FechaGeneracion).ToList();
-    }
-
-    private void AbrirRegistro(Postulacion p, Pago pago)
-    {
-        editando = null;
-        modelo = new() { Monto = pago.Monto };
-        registrando = p;
-    }
-
-    private void AbrirEdicion(Postulacion p, Voucher v)
-    {
-        if (v.Estado != EstadoVoucher.Pendiente)
-        {
-            Avisos.Error("No se puede modificar un voucher que ya fue aprobado o rechazado.");
-            return;
-        }
-        editando = v;
-        modelo = new()
-        {
-            CodigoOperacion = v.CodigoOperacion,
-            Monto = v.Monto,
-            Archivo = v.Archivo
-        };
-        registrando = p;
-    }
-
-    private void CerrarFormulario()
-    {
-        registrando = null;
-        editando = null;
-    }
-
-    private void Guardar()
-    {
-        if (registrando is null) return;
-        if (editando is null)
-        {
-            Datos.RegistrarVoucher(registrando, modelo.CodigoOperacion, modelo.Monto, modelo.Archivo);
-            Avisos.Exito("Voucher registrado; te avisaremos cuando sea validado");
-        }
-        else
-        {
-            Datos.ModificarVoucher(editando, modelo.CodigoOperacion, modelo.Archivo);
-            Avisos.Exito("Voucher actualizado correctamente");
-        }
-        registrando = null;
-        editando = null;
-        Cargar();
-    }
-
-    private void Retirar()
-    {
-        if (porRetirar is null) return;
-        Datos.RetirarVoucher(porRetirar);
-        Avisos.Exito("Voucher retirado");
-        porRetirar = null;
-        Cargar();
-    }
+ private List<PagoDto> pagos=[];private List<ArchivoDigitalDto> archivos=[];private PagoDto? seleccionado;private ArchivoSeleccionado? seleccion;private ArchivoDigitalDto? porEliminar;private string operacion="";private bool ocupado;private string? error;
+ protected override async Task OnInitializedAsync()=>await Cargar();
+ private async Task Cargar(){try{pagos=Api.ListarTodos<PagoDto>("PagoRS");archivos=await Api.ListarArchivosAsync(Datos.PostulanteActualId);}catch(Exception){error="No se pudieron cargar tus pagos y comprobantes.";}}
+ private void Abrir(PagoDto p){seleccionado=p;operacion=p.ReferenciaPasarela??"";seleccion=null;}
+ private async Task Guardar(){if(ocupado||seleccion is null||seleccionado is null)return;ocupado=true;error=null;try{var f=seleccion;await Api.GuardarArchivoAsync(new(){Tipo="VOUCHER",PostulanteId=Datos.PostulanteActualId,ReferenciaId=seleccionado.Id,Nombre=f.Nombre,Mime=f.Mime,ContenidoBase64=f.ContenidoBase64,CodigoOperacion=operacion,Monto=(decimal)seleccionado.Monto,FechaRegistro=Datos.Hoy},"guardarVoucher");Datos.CargarDesdeBackend();await Cargar();seleccionado=null;Avisos.Exito("Voucher guardado; pendiente de validación");}catch(Exception ex){error=ex.Message;}finally{ocupado=false;}}
+ private async Task Eliminar(){if(porEliminar is null||ocupado)return;ocupado=true;try{await Api.EliminarArchivoAsync(porEliminar.Id);Datos.CargarDesdeBackend();await Cargar();porEliminar=null;}catch(Exception ex){error=ex.Message;}finally{ocupado=false;}}
 }

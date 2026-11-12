@@ -1,4 +1,6 @@
 @page "/postulante/mi-postulacion"
+@using AdmitUWA.Services.REST
+@inject AdmitURestClient Api
 @inject DatosSesion Datos
 @inject ToastService Avisos
 @inject IJSRuntime Js
@@ -61,7 +63,7 @@ else
                             {
                                 <div class="doc-fix">
                                     @if (!string.IsNullOrWhiteSpace(doc.Comentario)) { <p class="inline-note is-warning"><Icon Name="flag" Size="16" /><span>@doc.Comentario</span></p> }
-                                    <ZonaCarga Etiqueta="Subir nueva versión" Formato="@(requisito?.Formato ?? FormatoArchivo.Cualquiera)" OnArchivo="nombre => nuevos[doc.Id] = nombre" />
+                                    <ZonaCarga Etiqueta="Subir nueva versión" Formato="@(requisito?.Formato ?? FormatoArchivo.Cualquiera)" OnContenido="archivo => nuevos[doc.Id] = archivo" />
                                     <div><button type="button" class="btn btn-primary btn-sm" disabled="@(!nuevos.TryGetValue(doc.Id, out var n) || n is null)" @onclick="() => Reemplazar(doc)"><Icon Name="upload" Size="14" />Enviar nueva versión</button></div>
                                 </div>
                             }
@@ -128,7 +130,8 @@ else
     private List<Postulacion> mias = [];
     private Postulacion? p;
     private List<Documento> documentos = [];
-    private readonly Dictionary<int, string?> nuevos = [];
+    private readonly Dictionary<int, ArchivoSeleccionado?> nuevos = [];
+    private bool subiendo;
 
     protected override void OnInitialized()
     {
@@ -143,12 +146,15 @@ else
         nuevos.Clear();
     }
 
-    private void Reemplazar(Documento doc)
+    private async Task Reemplazar(Documento doc)
     {
-        if (!nuevos.TryGetValue(doc.Id, out var archivo) || archivo is null) return;
-        Datos.SubirNuevaVersion(doc, archivo);
-        nuevos.Remove(doc.Id);
-        Avisos.Exito($"{doc.Requisito}: nueva versión enviada a revisión");
+        if(subiendo||!nuevos.TryGetValue(doc.Id,out var archivo)||archivo is null)return;
+        subiendo=true;
+        try {
+            await Api.GuardarArchivoAsync(new(){Tipo="DOCUMENTO",PostulanteId=Datos.PostulanteActualId,ReferenciaId=doc.Id,Nombre=archivo.Nombre,Mime=archivo.Mime,ContenidoBase64=archivo.ContenidoBase64,FechaRegistro=Datos.Hoy});
+            Datos.CargarDesdeBackend();documentos=p is null?[]:Datos.DocumentosDe(p.Id);nuevos.Remove(doc.Id);
+            Avisos.Exito("Nueva versión enviada para reevaluación");
+        }catch(Exception ex){Avisos.Error(ex.Message);}finally{subiendo=false;}
     }
 
     private async Task Imprimir() => await Js.InvokeVoidAsync("print");

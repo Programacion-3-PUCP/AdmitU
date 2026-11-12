@@ -27,49 +27,26 @@
     [Parameter] public FormatoArchivo Formato { get; set; } = FormatoArchivo.Cualquiera;
     [Parameter] public int MaximoMb { get; set; } = 5;
     [Parameter] public bool Deshabilitado { get; set; }
-    /// <summary>Nombre del archivo ya cargado, si existe.</summary>
     [Parameter] public string? Valor { get; set; }
     [Parameter] public EventCallback<string?> OnArchivo { get; set; }
-
-    private string? archivo;
-    private string? error;
-    private string? ultimoValor;
-
-    protected override void OnParametersSet()
-    {
-        if (Valor != ultimoValor)
-        {
-            ultimoValor = Valor;
-            archivo = Valor;
-            error = null;
-        }
-    }
-
+    [Parameter] public EventCallback<ArchivoSeleccionado?> OnContenido { get; set; }
+    private string? archivo,error,ultimoValor;
+    protected override void OnParametersSet(){if(Valor!=ultimoValor){ultimoValor=Valor;archivo=Valor;error=null;}}
     private async Task Elegido(InputFileChangeEventArgs e)
     {
-        var f = e.File;
-        var extension = Path.GetExtension(f.Name).ToLowerInvariant();
-        var permitidas = Formato.Extensiones().Split(',');
-        if (!permitidas.Contains(extension))
-        {
-            Rechazar($"El archivo debe ser {Formato.Etiqueta()}.");
-        }
-        else if (f.Size > MaximoMb * 1024L * 1024L)
-        {
-            Rechazar($"El archivo supera los {MaximoMb} MB permitidos.");
-        }
+        var f=e.File;var extension=Path.GetExtension(f.Name).ToLowerInvariant();
+        ArchivoSeleccionado? contenido=null;
+        if(!Formato.Extensiones().Split(',').Contains(extension)){archivo=null;error=$"El archivo debe ser {Formato.Etiqueta()}.";}
+        else if(f.Size<=0||f.Size>MaximoMb*1024L*1024L){archivo=null;error=$"El archivo debe medir entre 1 byte y {MaximoMb} MB.";}
         else
         {
-            archivo = f.Name;
-            error = null;
+            try {
+                await using var stream=f.OpenReadStream(MaximoMb*1024L*1024L);
+                using var memory=new MemoryStream();await stream.CopyToAsync(memory);
+                var mime=extension switch {".png"=>"image/png",".jpg" or ".jpeg"=>"image/jpeg",".pdf"=>"application/pdf",_=>f.ContentType};
+                contenido=new ArchivoSeleccionado {Nombre=f.Name,Mime=mime,Bytes=memory.ToArray()};archivo=f.Name;error=null;
+            }catch(Exception){archivo=null;error="No se pudo leer el archivo o supera el tamaño permitido.";}
         }
-        ultimoValor = archivo;
-        await OnArchivo.InvokeAsync(archivo);
-    }
-
-    private void Rechazar(string mensaje)
-    {
-        archivo = null;
-        error = mensaje;
+        ultimoValor=archivo;await OnArchivo.InvokeAsync(archivo);await OnContenido.InvokeAsync(contenido);
     }
 }
