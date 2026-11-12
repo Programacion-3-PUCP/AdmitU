@@ -24,6 +24,9 @@ public class PostulanteBOImpl implements IPostulanteBO {
         Validaciones.persona(p.getNombres(), p.getApellidoPaterno(), p.getApellidoMaterno(),
                 p.getCorreo(), p.getTipoDocumento(), p.getNumeroDocumento(), p.getTelefono());
         Validaciones.noFutura(p.getFechaNacimiento(), "La fecha de nacimiento");
+        if (p.isTieneDiscapacidad() && (p.getNumeroCarnetConadis() == null || p.getNumeroCarnetConadis().isBlank() || p.getNumeroCarnetConadis().length() > 30))
+            throw new IllegalArgumentException("Indica un carné CONADIS válido (máximo 30 caracteres)");
+        if (!p.isTieneDiscapacidad()) p.setNumeroCarnetConadis(null);
     }
 
     @Override
@@ -45,7 +48,14 @@ public class PostulanteBOImpl implements IPostulanteBO {
     public int modificar(Postulante p) {
         validar(p);
         if (p.getId() <= 0) throw new RuntimeException("Id de postulante no valido");
-        return daoPostulante.modificar(p);
+        try {
+            int result = daoPostulante.modificar(p);
+            TransactionContext.commit();
+            return result;
+        } catch (Exception ex) {
+            TransactionContext.rollback();
+            throw new IllegalStateException("No se pudo actualizar el perfil", ex);
+        } finally { TransactionContext.close(); }
     }
 
     @Override

@@ -14,7 +14,7 @@ public class PostulanteImpl implements PostulanteDAO {
 
     @Override
     public int insertar(Postulante post) {
-        String sql = "{call INSERTAR_POSTULANTE(?, ?, ?, ?, ?, ?, ?, ?, ?)}";
+        String sql = "{call INSERTAR_POSTULANTE_PERFIL(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
         try {
             Connection con = TransactionContext.getConnection();
             try (CallableStatement cs = con.prepareCall(sql)) {
@@ -27,6 +27,8 @@ public class PostulanteImpl implements PostulanteDAO {
                 cs.setString("_num_doc", post.getNumeroDocumento());
                 cs.setString("_telefono", post.getTelefono());
                 cs.setDate("_fecha_nac", post.getFechaNacimiento() != null ? Date.valueOf(post.getFechaNacimiento()) : null);
+                cs.setBoolean("_discapacidad", post.isTieneDiscapacidad());
+                cs.setString("_conadis", post.getNumeroCarnetConadis());
                 cs.executeUpdate();
                 post.setId(cs.getInt("_id"));
                 return post.getId();
@@ -39,9 +41,10 @@ public class PostulanteImpl implements PostulanteDAO {
 
     @Override
     public int modificar(Postulante post) {
-        String sql = "{call MODIFICAR_POSTULANTE(?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        String sql = "{call MODIFICAR_POSTULANTE_PERFIL(?, ?, ?, ?, ?, ?, ?, ?, ?)}";
+        try {
+            Connection con = TransactionContext.getConnection();
+            try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", post.getId());
             cs.setString("_nombres", post.getNombres());
             cs.setString("_ape_paterno", post.getApellidoPaterno());
@@ -49,7 +52,10 @@ public class PostulanteImpl implements PostulanteDAO {
             cs.setString("_correo", post.getCorreo());
             cs.setString("_telefono", post.getTelefono());
             cs.setDate("_fecha_nac", post.getFechaNacimiento() != null ? Date.valueOf(post.getFechaNacimiento()) : null);
+            cs.setBoolean("_discapacidad", post.isTieneDiscapacidad());
+            cs.setString("_conadis", post.getNumeroCarnetConadis());
             return cs.executeUpdate();
+            }
         } catch (Exception ex) {
             System.out.println("ERROR AL MODIFICAR POSTULANTE: " + ex.getMessage());
             throw new RuntimeException(ex);
@@ -85,7 +91,8 @@ public class PostulanteImpl implements PostulanteDAO {
                         rs.getString("numero_documento"), rs.getString("telefono"),
                         null,
                         rs.getDate("fecha_nacimiento") != null ? rs.getDate("fecha_nacimiento").toLocalDate() : null,
-                        false, null, false, null, null, null);
+                        rs.getBoolean("tiene_discapacidad"), rs.getString("numero_carnet_conadis"), rs.getBoolean("correo_validado"),
+                        rs.getDate("fecha_validacion_correo") == null ? null : rs.getDate("fecha_validacion_correo").toLocalDate(), null, null);
                     post.setId(rs.getInt("id"));
                 }
             }
@@ -111,7 +118,8 @@ public class PostulanteImpl implements PostulanteDAO {
                     rs.getString("numero_documento"), rs.getString("telefono"),
                     null,
                     rs.getDate("fecha_nacimiento") != null ? rs.getDate("fecha_nacimiento").toLocalDate() : null,
-                    false, null, false, null, null, null);
+                    rs.getBoolean("tiene_discapacidad"), rs.getString("numero_carnet_conadis"), rs.getBoolean("correo_validado"),
+                        rs.getDate("fecha_validacion_correo") == null ? null : rs.getDate("fecha_validacion_correo").toLocalDate(), null, null);
                 post.setId(rs.getInt("id"));
                 lista.add(post);
             }
