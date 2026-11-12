@@ -61,7 +61,7 @@ BEGIN
  IF _anterior<>_estado_id THEN
   IF NOT((_anterior=1 AND _estado_id IN(2,8)) OR (_anterior=2 AND _estado_id IN(3,7,8)) OR (_anterior=3 AND _estado_id IN(4,5,7,8)) OR (_anterior=4 AND _estado_id IN(3,5,7,8)) OR (_anterior=5 AND _estado_id IN(6,7,8))) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Transición de estado no permitida';END IF;
   IF _estado_id IN(3,5,6) AND NOT EXISTS(SELECT 1 FROM pago WHERE postulacion_id=_id AND estado_pago='APROBADO') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El pago debe estar aprobado';END IF;
-  IF _estado_id IN(5,6) AND EXISTS(SELECT 1 FROM requisito_convocatoria_modalidad rm JOIN postulacion p ON p.modalidad_elegida_id=rm.convocatoria_modalidad_id WHERE p.id=_id AND rm.obligatorio=1 AND NOT EXISTS(SELECT 1 FROM documento_postulacion d WHERE d.postulacion_id=_id AND d.requisito_aplicable_id=rm.id AND d.estado_documento='APROBADO')) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Faltan documentos obligatorios aprobados';END IF;
+  IF _estado_id IN(5,6) AND EXISTS(SELECT 1 FROM requisito_convocatoria_modalidad rm JOIN postulacion p ON p.modalidad_elegida_id=rm.convocatoria_modalidad_id WHERE p.id=_id AND rm.obligatorio=1 AND NOT EXISTS(SELECT 1 FROM documento_postulacion d JOIN archivo_digital a ON a.tipo='DOCUMENTO' AND a.referencia_id=d.id AND a.activo=1 AND OCTET_LENGTH(a.contenido)>0 WHERE d.postulacion_id=_id AND d.requisito_aplicable_id=rm.id AND d.estado_documento='APROBADO')) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Faltan documentos obligatorios aprobados';END IF;
   IF _estado_id=6 AND NOT EXISTS(SELECT 1 FROM carne_postulante WHERE postulacion_id=_id) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Primero genera el carné';END IF;
   INSERT INTO postulacion_historial(postulacion_id,estado_anterior_id,estado_actual_id,fecha_cambio,responsable_cambio,motivo_cambio) VALUES(_id,_anterior,_estado_id,CURDATE(),'SERVICIO',COALESCE(_observacion,'Cambio de estado'));
  END IF;
@@ -110,5 +110,58 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM sede WHERE id=_sede_id AND activo=1) OR _fecha_inicio_vigencia>_fecha_fin_vigencia THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Sede o vigencia inválida';END IF;
  INSERT INTO carne_postulante(postulacion_id,sede_id,codigo_carne,fecha_generacion,fecha_inicio_vigencia,fecha_fin_vigencia,aula_examen) VALUES(_postulacion_id,_sede_id,_codigo_carne,COALESCE(_fecha_generacion,CURDATE()),_fecha_inicio_vigencia,_fecha_fin_vigencia,_aula_examen);SET _id=LAST_INSERT_ID();
  CALL MODIFICAR_POSTULACION(_postulacion_id,6,'Carné emitido');
+END$$
+DROP PROCEDURE IF EXISTS MODIFICAR_CARNE_POSTULANTE$$
+CREATE PROCEDURE MODIFICAR_CARNE_POSTULANTE(
+    IN _id INT,
+    IN _postulacion_id INT,
+    IN _sede_id INT,
+    IN _codigo_carne VARCHAR(30),
+    IN _fecha_generacion DATE,
+    IN _fecha_inicio_vigencia DATE,
+    IN _fecha_fin_vigencia DATE,
+    IN _aula_examen VARCHAR(30)
+)
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM carne_postulante WHERE id=_id AND postulacion_id=_postulacion_id) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El carné no existe o se intenta trasladar a otra postulación';END IF;
+ IF _aula_examen<>'ANULADO' AND (NOT EXISTS(SELECT 1 FROM postulacion WHERE id=_postulacion_id AND estado_actual_id IN(5,6)) OR NOT EXISTS(SELECT 1 FROM pago WHERE postulacion_id=_postulacion_id AND estado_pago='APROBADO')) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El expediente no es apto o el pago no está aprobado';END IF;
+ IF NOT EXISTS(SELECT 1 FROM sede WHERE id=_sede_id AND activo=1) OR _fecha_inicio_vigencia>_fecha_fin_vigencia THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Sede o vigencia no válida';END IF;
+ UPDATE carne_postulante SET sede_id=_sede_id,codigo_carne=_codigo_carne,fecha_generacion=_fecha_generacion,fecha_inicio_vigencia=_fecha_inicio_vigencia,fecha_fin_vigencia=_fecha_fin_vigencia,aula_examen=_aula_examen WHERE id=_id;
+END$$
+DROP PROCEDURE IF EXISTS ELIMINAR_CARNE_POSTULANTE$$
+CREATE PROCEDURE ELIMINAR_CARNE_POSTULANTE(IN _id INT)
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM carne_postulante WHERE id=_id) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Carné inexistente';END IF;
+ -- El marcador existente es interpretado como ANULADO por el cliente Blazor.
+ -- Conserva código, titular, vigencia y la traza de emisión.
+ UPDATE carne_postulante SET aula_examen='ANULADO' WHERE id=_id;
+END$$
+DROP PROCEDURE IF EXISTS MODIFICAR_DOCUMENTO_POSTULACION$$
+CREATE PROCEDURE MODIFICAR_DOCUMENTO_POSTULACION(
+    IN _id INT,
+    IN _postulacion_id INT,
+    IN _requisito_id INT,
+    IN _numero_version INT,
+    IN _nombre_archivo VARCHAR(150),
+    IN _tipo_archivo ENUM('PDF','IMAGEN','CUALQUIERA'),
+    IN _tamanio_archivo BIGINT,
+    IN _ruta_archivo VARCHAR(255),
+    IN _fecha_carga DATE,
+    IN _estado_documento ENUM('PENDIENTE','APROBADO','OBSERVADO','RECHAZADO'),
+    IN _fecha_evaluacion DATE,
+    IN _comentario_evaluacion VARCHAR(255)
+)
+BEGIN
+    DECLARE _post_actual INT DEFAULT NULL;DECLARE _requisito_actual INT;DECLARE _estado_actual VARCHAR(20);
+    SELECT postulacion_id,requisito_aplicable_id,estado_documento INTO _post_actual,_requisito_actual,_estado_actual FROM documento_postulacion WHERE id=_id FOR UPDATE;
+    IF _post_actual IS NULL OR _post_actual<>_postulacion_id OR _requisito_actual<>_requisito_id THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se puede trasladar el documento a otro expediente o requisito';END IF;
+    IF EXISTS(SELECT 1 FROM postulacion WHERE id=_post_actual AND estado_actual_id IN(5,6,7,8)) AND _estado_actual<>_estado_documento THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El expediente ya está resuelto';END IF;
+    IF _estado_documento='APROBADO' AND NOT EXISTS(SELECT 1 FROM archivo_digital WHERE tipo='DOCUMENTO' AND referencia_id=_id AND activo=1 AND OCTET_LENGTH(contenido)>0) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se puede aprobar un documento sin archivo durable activo';END IF;
+    UPDATE documento_postulacion SET postulacion_id = _postulacion_id, requisito_aplicable_id = _requisito_id,
+        numero_version = _numero_version, nombre_archivo = _nombre_archivo, tipo_archivo = _tipo_archivo,
+        tamanio_archivo = _tamanio_archivo, ruta_archivo = _ruta_archivo, fecha_carga = _fecha_carga,
+        estado_documento = _estado_documento, fecha_evaluacion = _fecha_evaluacion,
+        comentario_evaluacion = _comentario_evaluacion
+    WHERE id = _id;
 END$$
 DELIMITER ;

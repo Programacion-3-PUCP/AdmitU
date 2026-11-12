@@ -81,10 +81,33 @@ public final class PruebasReglasLab12 {
             int pago=scalar("SELECT id FROM pago WHERE postulacion_id="+post);var boPago=new PagoBOImpl();Pago pagoActual=boPago.buscarPorId(pago);pagoActual.setEstadoPago(EstadoPago.APROBADO);fallo=false;try{boPago.modificar(pagoActual);}catch(RuntimeException expected){fallo=true;}check(fallo,"pago sin voucher no se aprueba");
             ArchivoDigital voucher=personal("VOUCHER");voucher.setReferenciaId(pago);voucher.setCodigoOperacion("LAB12-"+post);voucher.setMonto(pagoActual.getMonto());archivos.guardarVoucher(voucher);
             check(scalar("SELECT COUNT(*) FROM pago WHERE id="+pago+" AND estado_pago='PENDIENTE'")==1,"voucher real deja pago pendiente");
-            pagoActual=boPago.buscarPorId(pago);pagoActual.setEstadoPago(EstadoPago.APROBADO);boPago.modificar(pagoActual);
+            var gate=new CyclicBarrier(2);ExecutorService revision=Executors.newFixedThreadPool(2);
+            final int voucherId=voucher.getId();
+            var aprobar=revision.submit(()->{gate.await();try{Pago x=new PagoBOImpl().buscarPorId(pago);x.setEstadoPago(EstadoPago.APROBADO);new PagoBOImpl().modificar(x);return true;}catch(RuntimeException expected){return false;}});
+            var retirar=revision.submit(()->{gate.await();try{new ArchivoBOImpl().eliminar(voucherId);return true;}catch(RuntimeException expected){return false;}});
+            boolean aprobo=aprobar.get(30,TimeUnit.SECONDS),retiro=retirar.get(30,TimeUnit.SECONDS);revision.shutdownNow();
+            check(aprobo^retiro,"aprobación y retiro concurrentes tienen un solo efecto válido");
+            check(!aprobo||scalar("SELECT COUNT(*) FROM archivo_digital WHERE id="+voucherId+" AND activo=1")==1,"nunca se aprueba un voucher retirado");
+            if(retiro){voucher.setId(0);archivos.guardarVoucher(voucher);pagoActual=boPago.buscarPorId(pago);pagoActual.setEstadoPago(EstadoPago.APROBADO);boPago.modificar(pagoActual);}
+            pagoActual=boPago.buscarPorId(pago);
             check(scalar("SELECT COUNT(*) FROM pago WHERE id="+pago+" AND estado_pago='APROBADO' AND fecha_pago IS NOT NULL")==1,"aprobación con fecha");
             pagoActual.setEstadoPago(EstadoPago.RECHAZADO);fallo=false;try{boPago.modificar(pagoActual);}catch(RuntimeException expected){fallo=true;}check(fallo,"pago aprobado inmutable");
             check(scalar("SELECT estado_actual_id FROM postulacion WHERE id="+post)==3,"pago aprobado avanza expediente en misma transacción");
+            var docsBo=new pe.edu.pucp.admitu.postulacion.bo.DocumentoPostulacionBOImpl();
+            var docs=docsBo.listarTodos().stream().filter(d->d.getPostulacion().getId()==post).toList();
+            var primero=docs.get(0);var docArchivo=archivos.listarPorPostulante(persona).stream().filter(f->f.getTipo().equals("DOCUMENTO")&&f.getReferenciaId()==primero.getId()).findFirst().orElseThrow();
+            var restaurar=archivos.buscarPorId(docArchivo.getId());archivos.eliminar(docArchivo.getId());
+            primero.setEstadoDocumento(pe.edu.pucp.admitu.postulacion.EstadoDocumento.APROBADO);fallo=false;try{docsBo.modificar(primero);}catch(RuntimeException expected){fallo=true;}check(fallo,"documento con archivo retirado no se aprueba");
+            archivos.guardar(restaurar);
+            var carneBo=new pe.edu.pucp.admitu.postulacion.bo.CarnePostulanteBOImpl();var carne=new CarnePostulante();
+            var expediente=new PostulacionBOImpl().buscarPorId(post);carne.setPostulacion(expediente);Sede lugar=new Sede();lugar.setId(sede);carne.setSede(lugar);carne.setCodigoCarne("LAB12-"+post);carne.setFechaGeneracion(LocalDate.now(ZoneId.of("America/Lima")));carne.setFechaInicioVigencia(carne.getFechaGeneracion());carne.setFechaFinVigencia(carne.getFechaGeneracion().plusMonths(1));carne.setAulaExamen("LAB12-AULA");
+            fallo=false;try{carneBo.insertar(carne);}catch(RuntimeException expected){fallo=true;}check(fallo,"carné sin expediente apto rechazado");
+            for(var documento:docsBo.listarTodos().stream().filter(d->d.getPostulacion().getId()==post).toList()){documento.setEstadoDocumento(pe.edu.pucp.admitu.postulacion.EstadoDocumento.APROBADO);documento.setFechaEvaluacion(LocalDate.now(ZoneId.of("America/Lima")));docsBo.modificar(documento);}
+            expediente.getEstadoActual().setId(5);new PostulacionBOImpl().modificar(expediente);int carneId=carneBo.insertar(carne);
+            check(carneId>0&&scalar("SELECT estado_actual_id FROM postulacion WHERE id="+post)==6,"carné apto finaliza expediente de forma atómica");
+            carneBo.eliminar(carneId);
+            check(carneBo.buscarPorId(carneId)!=null&&"ANULADO".equals(carneBo.buscarPorId(carneId).getAulaExamen()),"anular carné conserva fila, código y titular");
+            check(scalar("SELECT COUNT(*) FROM postulacion_historial WHERE postulacion_id="+post)>=4,"la anulación conserva historial del expediente");
             System.out.println("RESULTADO: "+checks+" comprobaciones aprobadas; fixtures se eliminan en finally.");
         }finally{cleanup();}
     }

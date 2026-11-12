@@ -54,6 +54,7 @@
                 <div><span>N.° de operación</span><strong class="mono">@viendo.CodigoOperacion</strong></div>
                 <div><span>Importe transferido</span><strong>@Formato.Soles(viendo.Monto)</strong></div>
                 <div><span>Archivo comprobante</span><strong>@viendo.Archivo</strong></div>
+                <ArchivoAsociadoVista PostulanteId="@(post?.PostulanteId??0)" Tipo="VOUCHER" ReferenciaId="@(pago?.Id??0)" />
                 <div><span>Fecha de registro</span><strong>@Formato.Fecha(viendo.FechaRegistro)</strong></div>
                 <div><span>Estado</span><StatusBadge Texto="@viendo.Estado.Etiqueta()" Tono="@viendo.Estado.Tono()" /></div>
             </div>

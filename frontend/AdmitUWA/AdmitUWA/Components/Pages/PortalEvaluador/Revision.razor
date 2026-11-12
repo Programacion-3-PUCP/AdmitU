@@ -39,7 +39,7 @@ else
                             </div>
                             <StatusBadge Texto="@doc.Estado.Etiqueta()" Tono="@doc.Estado.Tono()" />
                             <span class="row-actions">
-                                <BotonAccion Tipo="BotonAccion.Accion.Descargar" Sobre="@doc.Requisito" OnClick='() => Avisos.Info("Simulación: la descarga del archivo se habilitará con el almacenamiento de documentos.")' />
+                                <ArchivoAsociadoVista PostulanteId="p.PostulanteId" Tipo="DOCUMENTO" ReferenciaId="doc.Id" />
                                 <BotonAccion Tipo="BotonAccion.Accion.Aprobar" Sobre="@doc.Requisito" Deshabilitado="@(!Editable || doc.Estado == EstadoDocumento.Aprobado)" OnClick="() => Aprobar(doc)" />
                                 <BotonAccion Tipo="BotonAccion.Accion.Observar" Sobre="@doc.Requisito" Deshabilitado="@(!Editable)" OnClick="() => AbrirObservacion(doc)" />
                             </span>

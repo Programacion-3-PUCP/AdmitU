@@ -1,0 +1,13 @@
+@using AdmitUWA.Services.REST
+@inject AdmitURestClient Api
+<button type="button" class="btn btn-ghost btn-sm" disabled="@ocupado" @onclick="Mostrar">Ver archivo</button>
+@if(error is not null){<p class="validation-message" role="status">@error</p>}
+<Drawer Abierto="@(uri is not null)" Titulo="Archivo del expediente" OnCerrar="()=>uri=null">
+ @if(uri is not null){<div class="drawer-body"><a class="btn btn-ghost btn-sm" href="@uri" download="@nombre">Descargar @nombre</a><iframe src="@uri" title="Archivo @nombre" style="width:100%;height:600px;border:1px solid #ddd"></iframe></div>}
+</Drawer>
+@code {
+ [Parameter] public int PostulanteId {get;set;}[Parameter] public string Tipo {get;set;}="DOCUMENTO";[Parameter] public int ReferenciaId {get;set;}
+ private bool ocupado;private string? uri,error,nombre;private (int,string,int) anterior;
+ protected override void OnParametersSet(){var actual=(PostulanteId,Tipo,ReferenciaId);if(actual!=anterior){anterior=actual;uri=null;error=null;}}
+ private async Task Mostrar(){if(ocupado)return;ocupado=true;error=null;try{var list=await Api.ListarArchivosAsync(PostulanteId);var a=list.FirstOrDefault(x=>x.Tipo==Tipo&&x.ReferenciaId==ReferenciaId);if(a is null){error="Este registro histórico no contiene un archivo durable asociado.";return;}var bytes=await Api.DescargarArchivoAsync(a.Id);nombre=a.Nombre;uri="data:"+a.Mime+";base64,"+Convert.ToBase64String(bytes);}catch(Exception){error="No se pudo recuperar el archivo. Verifica tu sesión y permisos.";}finally{ocupado=false;}}
+}

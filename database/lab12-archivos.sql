@@ -39,7 +39,9 @@ END$$
 DROP PROCEDURE IF EXISTS GUARDAR_VOUCHER_METADATA$$
 CREATE PROCEDURE GUARDAR_VOUCHER_METADATA(IN _pago INT,IN _postulante INT,IN _operacion VARCHAR(30),IN _monto DECIMAL(10,2))
 BEGIN
- DECLARE _estado VARCHAR(20) DEFAULT NULL;DECLARE _importe DECIMAL(10,2);
+ DECLARE _estado VARCHAR(20) DEFAULT NULL;DECLARE _importe DECIMAL(10,2);DECLARE _persona INT DEFAULT NULL;
+ SELECT persona_id INTO _persona FROM postulante WHERE persona_id=_postulante FOR UPDATE;
+ IF _persona IS NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Postulante inexistente';END IF;
  SELECT p.estado_pago,p.monto INTO _estado,_importe FROM pago p JOIN postulacion x ON x.id=p.postulacion_id WHERE p.id=_pago AND x.postulante_id=_postulante FOR UPDATE;
  IF _estado IS NULL OR _estado NOT IN ('GENERADO','PENDIENTE','RECHAZADO') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El voucher solo se adjunta a un pago no aprobado';END IF;
  IF _monto<>_importe OR _monto<=0 OR _operacion IS NULL OR CHAR_LENGTH(_operacion)<4 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El importe o número de operación no es válido';END IF;
@@ -68,6 +70,7 @@ BEGIN
   UPDATE documento_postulacion SET numero_version=numero_version+IF(_estado IN('OBSERVADO','RECHAZADO'),1,0),nombre_archivo=_nombre,tamanio_archivo=OCTET_LENGTH(_contenido),tipo_archivo=IF(_mime='application/pdf','PDF','IMAGEN'),ruta_archivo=CONCAT('archivo:documento:',id),fecha_carga=_fecha,estado_documento='PENDIENTE',fecha_evaluacion=NULL,comentario_evaluacion=NULL WHERE id=_referencia;
   IF _estado IN('OBSERVADO','RECHAZADO') THEN
    UPDATE documento_observacion SET estado_observacion='SUBSANADA',fecha_subsanacion=_fecha,comentario_subsanacion='Archivo reemplazado; pendiente de reevaluación' WHERE documento_id=_referencia AND estado_observacion='PENDIENTE';
+   IF EXISTS(SELECT 1 FROM postulacion WHERE id=_postulacion AND estado_actual_id=4) AND EXISTS(SELECT 1 FROM pago WHERE postulacion_id=_postulacion AND estado_pago='APROBADO') AND NOT EXISTS(SELECT 1 FROM documento_observacion o JOIN documento_postulacion d ON d.id=o.documento_id WHERE d.postulacion_id=_postulacion AND o.estado_observacion='PENDIENTE') THEN CALL MODIFICAR_POSTULACION(_postulacion,3,'Documentos subsanados; pendiente de reevaluación');END IF;
   END IF;
  ELSE SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Tipo de archivo inválido';
  END IF;
@@ -85,14 +88,21 @@ BEGIN SELECT a.*,OCTET_LENGTH(a.contenido) AS tamanio,i.nombre AS institucion,aa
 DROP PROCEDURE IF EXISTS ELIMINAR_ARCHIVO_DIGITAL$$
 CREATE PROCEDURE ELIMINAR_ARCHIVO_DIGITAL(IN _id INT)
 BEGIN
- DECLARE _tipo VARCHAR(20);DECLARE _referencia INT;
- SELECT tipo,referencia_id INTO _tipo,_referencia FROM archivo_digital WHERE id=_id AND activo=1 FOR UPDATE;
+ DECLARE _tipo VARCHAR(20);DECLARE _referencia INT;DECLARE _postulante INT;DECLARE _persona INT;DECLARE _estado_pago VARCHAR(20);DECLARE _estado_documento VARCHAR(20);
+ -- Orden de locks compartido con carga: postulante -> pago -> archivo.
+ SELECT postulante_id,tipo,referencia_id INTO _postulante,_tipo,_referencia FROM archivo_digital WHERE id=_id AND activo=1;
  IF _tipo IS NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Archivo inexistente';END IF;
+ SELECT persona_id INTO _persona FROM postulante WHERE persona_id=_postulante FOR UPDATE;
  IF _tipo='VOUCHER' THEN
-  IF EXISTS(SELECT 1 FROM pago WHERE id=_referencia AND estado_pago='APROBADO') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se puede eliminar un voucher aprobado';END IF;
+  SELECT estado_pago INTO _estado_pago FROM pago WHERE id=_referencia FOR UPDATE;
+  IF _estado_pago='APROBADO' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se puede eliminar un voucher aprobado';END IF;
   UPDATE pago SET estado_pago='GENERADO',referencia_pasarela=NULL,fecha_pago=NULL,ruta_voucher=NULL WHERE id=_referencia;
  END IF;
- IF _tipo='DOCUMENTO' AND EXISTS(SELECT 1 FROM documento_postulacion WHERE id=_referencia AND estado_documento='APROBADO') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se puede eliminar un documento aprobado';END IF;
+ SELECT tipo,referencia_id INTO _tipo,_referencia FROM archivo_digital WHERE id=_id AND activo=1 FOR UPDATE;
+ IF _tipo='DOCUMENTO' THEN
+  SELECT estado_documento INTO _estado_documento FROM documento_postulacion WHERE id=_referencia FOR UPDATE;
+  IF _estado_documento='APROBADO' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se puede eliminar un documento aprobado';END IF;
+ END IF;
  IF _tipo='CERTIFICADO' THEN UPDATE antecedente_academico SET activo=0 WHERE id=_referencia;END IF;
  UPDATE archivo_digital SET activo=0 WHERE id=_id;
 END$$
