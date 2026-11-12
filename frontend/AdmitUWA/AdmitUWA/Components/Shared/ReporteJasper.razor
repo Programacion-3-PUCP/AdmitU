@@ -1,0 +1,25 @@
+@using AdmitUWA.Services.REST
+@inject AdmitURestClient Api
+<ReporteParametros ConFechas="@ConFechas" EtiquetaDesde="@EtiquetaDesde" OnAplicar="Generar" />
+@if (ocupado){<p role="status">Generando PDF desde MySQL con JasperReports…</p>}
+@if (error is not null){<p role="alert" class="validation-message">@error</p>}
+@if (pdf is not null)
+{
+ <section class="card card-pad" style="margin-top:18px">
+  <a class="btn btn-primary" href="@pdf" download="@($"AdmitU-{Tipo}.pdf")">Descargar PDF</a>
+  <iframe src="@pdf" title="@($"PDF {Tipo}")" style="width:100%;height:720px;border:1px solid #ddd;margin-top:15px"></iframe>
+ </section>
+}
+@code {
+ [Parameter,EditorRequired] public string Tipo {get;set;}="";
+ [Parameter] public bool ConFechas {get;set;}=true;
+ [Parameter] public string EtiquetaDesde {get;set;}="Desde";
+ private bool ocupado;private string? pdf,error;
+ private async Task Generar(ReporteParametros.Filtro f)
+ {
+  if(ocupado)return;ocupado=true;error=null;pdf=null;
+  try{byte[] bytes=await Api.GenerarReporteAsync(Tipo,f.ConvocatoriaId,f.ModalidadId,f.Desde,f.Hasta);pdf="data:application/pdf;base64,"+Convert.ToBase64String(bytes);}
+  catch(Exception){error="No se pudo generar el reporte. Verifica tu sesión y los filtros e inténtalo otra vez.";}
+  finally{ocupado=false;}
+ }
+}
