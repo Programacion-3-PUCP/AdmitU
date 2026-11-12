@@ -8,6 +8,7 @@
  @if(Datos.ConvocatoriaVigente is {} conv){<div class="login-conv"><span class="eyebrow">Convocatoria vigente</span><h3>@conv.Nombre</h3></div>}
  </section>
  <section class="login-panel"><div class="login-card"><h1>Ingresar</h1><p class="page-sub">Usa el correo y contraseña de tu cuenta.</p>
+ @if(Datos.ErrorCarga is not null){<p class="notice" role="alert">@Datos.ErrorCarga</p>}
  @if(Error is not null){<p class="validation-message" role="alert">@(Error=="servicio"?"No fue posible conectar con el servicio. Intenta nuevamente.":"Credenciales incorrectas o cuenta temporalmente bloqueada.")</p>}
  <form method="post" action="/cuenta/ingresar" class="stack" data-enhance="false" style="gap:16px;margin-top:20px">
   <AntiforgeryToken/>

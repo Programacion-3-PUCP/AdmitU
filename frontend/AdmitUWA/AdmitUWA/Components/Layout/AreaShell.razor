@@ -13,7 +13,13 @@
             <Topbar Area="area" OnMenu="AlternarMenu" />
             <main id="contenido" class="content">
                 <ErrorBoundary @ref="limite">
-                    <ChildContent>@ChildContent</ChildContent>
+                    <ChildContent>
+                        @if (Datos.ErrorCarga is not null)
+                        {
+                            <section class="card card-pad" role="alert"><h1>No pudimos cargar los datos</h1><p>@Datos.ErrorCarga</p><a class="btn btn-primary" href="@Navegacion.Uri" data-enhance-nav="false">Recargar</a><a class="btn btn-ghost" href="/">Volver a ingresar</a></section>
+                        }
+                        else { @ChildContent }
+                    </ChildContent>
                     <ErrorContent>
                         <section class="card">
                             <EmptyState Icono="alert" Titulo="No pudimos mostrar esta pantalla" Mensaje="Ocurrió un error inesperado. Puedes intentarlo de nuevo o volver al inicio.">
