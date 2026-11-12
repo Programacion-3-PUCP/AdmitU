@@ -76,7 +76,9 @@ public class PagoBOImpl implements IPagoBO {
         }
         registrarFechaPago(p);
         validar(p);
-        return daoPago.modificar(p);
+        try{int r=daoPago.modificar(p);TransactionContext.commit();return r;}
+        catch(Exception e){TransactionContext.rollback();throw new IllegalStateException("No se pudo validar el pago",e);}
+        finally{TransactionContext.close();}
     }
 
     @Override

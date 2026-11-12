@@ -47,4 +47,16 @@ public class PostulacionRS {
     public int eliminarPostulacion(@PathParam("id") int idPostulacion) {
         return boPostulacion.eliminar(idPostulacion);
     }
+
+    @POST @Path("enviarPostulacion")
+    public int enviar(pe.edu.pucp.admitu.postulacion.EnvioPostulacion envio){
+        if(envio==null||envio.getPostulacion()==null||envio.getPostulacion().getPostulante()==null)throw new BadRequestException("Postulante requerido");
+        pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirPropietario(seguridad,envio.getPostulacion().getPostulante().getId());
+        return boPostulacion.enviar(envio);
+    }
+    @jakarta.ws.rs.core.Context private jakarta.ws.rs.core.SecurityContext seguridad;
+    @PUT @Path("asignarEvaluador/{id}/{evaluadorId}")
+    public int asignar(@PathParam("id")int id,@PathParam("evaluadorId")int evaluador){
+        pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRoles(seguridad,"admin");return boPostulacion.asignarEvaluador(id,evaluador);
+    }
 }

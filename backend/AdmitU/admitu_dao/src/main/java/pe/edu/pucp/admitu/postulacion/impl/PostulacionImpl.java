@@ -44,12 +44,14 @@ public class PostulacionImpl implements PostulacionDAO {
     @Override
     public int modificar(Postulacion post) {
         String sql = "{call MODIFICAR_POSTULACION(?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        try {
+            Connection con=TransactionContext.getConnection();
+            try(CallableStatement cs=con.prepareCall(sql)){
             cs.setInt("_id", post.getId());
             cs.setInt("_estado_id", post.getEstadoActual().getId());
             cs.setString("_observacion", post.getObservacionGeneral());
             return cs.executeUpdate();
+            }
         } catch (Exception ex) {
             System.out.println("ERROR AL MODIFICAR POSTULACION: " + ex.getMessage());
             throw new RuntimeException(ex);
@@ -91,6 +93,10 @@ public class PostulacionImpl implements PostulacionDAO {
         if (rs.getDate("fecha_registro") != null) post.setFechaRegistro(rs.getDate("fecha_registro").toLocalDate());
         post.setCodigoInscripcion(rs.getString("codigo_inscripcion"));
         post.setObservacionGeneral(rs.getString("observacion_general"));
+        post.setSedeId((Integer)rs.getObject("sede_id"));
+        post.setEvaluadorId((Integer)rs.getObject("evaluador_id"));
+        if(rs.getDate("fecha_envio")!=null)post.setFechaEnvio(rs.getDate("fecha_envio").toLocalDate());
+        if(rs.getDate("fecha_finalizacion")!=null)post.setFechaFinalizacion(rs.getDate("fecha_finalizacion").toLocalDate());
         return post;
     }
 
@@ -125,5 +131,14 @@ public class PostulacionImpl implements PostulacionDAO {
             System.out.println("ERROR AL LISTAR POSTULACIONES: " + ex.getMessage());
             throw new RuntimeException(ex);
         }
+    }
+
+    public void validarEnvio(int id,int sedeId){
+        try(CallableStatement cs=TransactionContext.getConnection().prepareCall("{call VALIDAR_ENVIO_POSTULACION(?,?)}")){cs.setInt(1,id);cs.setInt(2,sedeId);cs.execute();}
+        catch(SQLException e){throw new IllegalStateException("No se pudo validar el envío",e);}
+    }
+    public int asignarEvaluador(int id,int evaluadorId){
+        try(CallableStatement cs=TransactionContext.getConnection().prepareCall("{call ASIGNAR_EVALUADOR_POSTULACION(?,?)}")){cs.setInt(1,id);cs.setInt(2,evaluadorId);cs.execute();return 1;}
+        catch(SQLException e){throw new IllegalStateException("No se pudo asignar evaluador",e);}
     }
 }
