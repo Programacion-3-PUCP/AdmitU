@@ -29,3 +29,5 @@ La tabla oferta_carrera define un cupo por convocatoria/carrera, compartido por 
 Estos valores son de las fixtures de LAB11 en el entorno local al ejecutar la prueba; pueden cambiar con nuevas pruebas. No constituyen evidencia de navegación Blazor ni de despliegue AWS. La evidencia del runner se guarda en `work/evidencias/`, ignorado por Git, para evitar publicar documentos con datos personales.
 
 Reproducción: compilar el WAR, configurar `ADMITU_DB_PROPERTIES` con un archivo privado y ejecutar `scripts/pruebas/reportes.sh`. El script solo lee datos y escribe PDFs locales; nunca imprime configuraciones ni credenciales.
+
+También se probaron las nueve combinaciones HTTP de rol/reporte: anónimo401 en los tres; administrador200/PDF en los tres; evaluador200 en Observados y403 en Ingresos/Vacantes. Los resultados están en `work/evidencias/reportes-roles.json`. Las descripciones del JRXML permiten crecer en altura para conservar el texto completo; la prueba sintética de una observación extensa verifica su marcador final tras extraer el PDF.

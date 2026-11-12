@@ -16,6 +16,17 @@ public class PruebaReportes {
    if(pdf.length<1000||!new String(pdf,0,5,java.nio.charset.StandardCharsets.US_ASCII).equals("%PDF-"))throw new AssertionError("PDF inválido "+tipo);
    Files.write(out.resolve(tipo.name()+".pdf"),pdf);System.out.println("PASS PDF "+tipo+" bytes="+pdf.length);
   }
+  // Una observación de longitud válida debe conservar su final en el PDF.
+  java.util.Map<String,Object> larga=new java.util.HashMap<>();
+  larga.put("convocatoria_id",1L);larga.put("convocatoria","Convocatoria de prueba");
+  larga.put("modalidad","Modalidad prueba");larga.put("expediente","EXTENSO");larga.put("postulante","Postulante de prueba");
+  larga.put("tipo","OTRO");larga.put("fecha","2026-11-12");larga.put("descripcion","Texto extenso ".repeat(14)+"FIN_OBSERVACION_EXTENSA");
+  try(var fuente=ReporteBOImpl.class.getResourceAsStream("/reportes/ReporteObservados.jrxml")){
+   var plantilla=net.sf.jasperreports.engine.JasperCompileManager.compileReport(fuente);
+   var datos=new net.sf.jasperreports.engine.data.JRMapCollectionDataSource(java.util.List.<java.util.Map<String,?>>of(larga));
+   var print=net.sf.jasperreports.engine.JasperFillManager.fillReport(plantilla,new java.util.HashMap<String,Object>(java.util.Map.of("FILTROS","Prueba de descripción extensa")),datos);
+   Files.write(out.resolve("OBSERVACION-EXTENSA.pdf"),net.sf.jasperreports.engine.JasperExportManager.exportReportToPdf(print));
+  }
   f.setConvocatoriaId(1);f.setModalidadId(1);Files.write(out.resolve("INGRESOS-FILTRO.pdf"),bo.generar(TipoReporte.INGRESOS,f));
   f.setConvocatoriaId(999999);Files.write(out.resolve("INGRESOS-VACIO.pdf"),bo.generar(TipoReporte.INGRESOS,f));
   f.setDesde(LocalDate.of(2026,12,1));f.setHasta(LocalDate.of(2026,1,1));
