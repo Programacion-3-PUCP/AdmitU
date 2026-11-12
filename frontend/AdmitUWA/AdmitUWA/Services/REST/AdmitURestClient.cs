@@ -162,6 +162,8 @@ public class EstadoPostulacionDto
 
 public class PostulacionDto
 {
+    public int? SedeId { get; set; }
+    public int? EvaluadorId { get; set; }
     public int Id { get; set; }
     public PostulanteDto? Postulante { get; set; }
     public ConvocatoriaDto? Convocatoria { get; set; }
@@ -241,7 +243,7 @@ public class PagoDto
     public string? RutaVoucher { get; set; }
 }
 
-public class AdmitURestClient
+public partial class AdmitURestClient
 {
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
@@ -277,9 +279,10 @@ public class AdmitURestClient
     private static string ObtenerRutaListar(string recurso) =>
         RutasListar.TryGetValue(recurso, out var ruta) ? ruta : $"listarTodos{ObtenerNombreEntidad(recurso)}s";
 
-    public AdmitURestClient(HttpClient httpClient)
+    public AdmitURestClient(HttpClient httpClient, IHttpContextAccessor contexto)
     {
         _httpClient = httpClient;
+        ActualizarSesion(contexto.HttpContext?.User);
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -290,6 +293,8 @@ public class AdmitURestClient
 
     public List<T> ListarTodos<T>(string recurso)
     {
+        if (!Autenticado && !RecursosPublicos.Contains(recurso)) return [];
+        if (Rol == "postulante" && recurso == "EvaluadorRS") return [];
         var url = $"{recurso}/{ObtenerRutaListar(recurso)}";
         var response = _httpClient.GetAsync(url).GetAwaiter().GetResult();
         response.EnsureSuccessStatusCode();

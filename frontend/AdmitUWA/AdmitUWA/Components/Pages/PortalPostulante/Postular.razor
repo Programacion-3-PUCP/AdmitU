@@ -47,7 +47,7 @@ else
                 <div class="field">
                     <label for="modalidad">Modalidad de ingreso <span class="req">*</span></label>
                     <select id="modalidad" @bind="modalidadId" @bind:after="LimpiarArchivos">
-                        @foreach (var m in Datos.Modalidades.Where(m => m.Activo)) { <option value="@m.Id">@m.Nombre</option> }
+                        @foreach (var m in Datos.ModalidadesParaConvocatoria(conv.Id)) { <option value="@m.Id">@m.Nombre</option> }
                     </select>
                     <span class="hint">@Datos.Modalidad(modalidadId)?.Descripcion</span>
                 </div>
@@ -79,7 +79,7 @@ else
                     var requisito = r;
                     <div class="field">
                         <span class="label">@requisito.Nombre @if (requisito.Obligatorio) { <span class="req">*</span> }</span>
-                        <ZonaCarga Etiqueta="@($"Subir {requisito.Nombre.ToLowerInvariant()}")" Formato="requisito.Formato" Valor="@(archivos.GetValueOrDefault(requisito.Id))" OnArchivo="nombre => Cargado(requisito, nombre)" />
+                        <ZonaCarga Etiqueta="@($"Subir {requisito.Nombre.ToLowerInvariant()}")" Formato="requisito.Formato" Valor="@(archivos.GetValueOrDefault(requisito.Id)?.Nombre)" OnContenido="archivo => Cargado(requisito, archivo)" />
                     </div>
                 }
             </div>
@@ -123,7 +123,7 @@ else
             }
             else
             {
-                <button type="button" class="btn btn-primary" @onclick="Enviar"><Icon Name="send" Size="16" />Enviar postulación</button>
+                <button type="button" class="btn btn-primary" disabled="@enviando" @onclick="Enviar"><Icon Name="send" Size="16" />@(enviando ? "Enviando…" : "Enviar postulación")</button>
             }
         </div>
     </section>
@@ -139,9 +139,9 @@ else
     private List<OfertaCarrera> ofertas = [];
     private List<RequisitoAplicable> requisitos = [];
     private int paso, carreraId, modalidadId, sedeId;
-    private bool acepta;
+    private bool acepta, enviando;
     private string? error;
-    private readonly Dictionary<int, string> archivos = [];
+    private readonly Dictionary<int, ArchivoSeleccionado> archivos = [];
 
     protected override void OnParametersSet()
     {
@@ -150,15 +150,15 @@ else
         if (conv is null) return;
         ofertas = Datos.Ofertas.Where(o => o.ConvocatoriaId == conv.Id && o.Vacantes > 0 && Datos.Carrera(o.CarreraId)?.Activo == true)
             .OrderBy(o => Datos.Carrera(o.CarreraId)?.FacultadId).ThenBy(o => Datos.Carrera(o.CarreraId)?.Nombre).ToList();
-        modalidadId = Datos.Modalidades.FirstOrDefault(m => m.Activo)?.Id ?? 0;
+        modalidadId = Datos.ModalidadesParaConvocatoria(conv.Id).FirstOrDefault()?.Id ?? 0;
         sedeId = Datos.Sedes.FirstOrDefault(s => s.Activo)?.Id ?? 0;
     }
 
     private void LimpiarArchivos() => archivos.Clear();
 
-    private void Cargado(RequisitoAplicable r, string? nombre)
+    private void Cargado(RequisitoAplicable r, ArchivoSeleccionado? archivo)
     {
-        if (nombre is null) archivos.Remove(r.Id); else archivos[r.Id] = nombre;
+        if (archivo is null) archivos.Remove(r.Id); else archivos[r.Id] = archivo;
         error = null;
     }
 
@@ -170,9 +170,9 @@ else
         if (paso == 0)
         {
             if (carreraId == 0) { error = "Selecciona la carrera a la que deseas postular."; return; }
-            if (Datos.Postulaciones.Any(p => p.PostulanteId == yo.Id && p.ConvocatoriaId == conv!.Id && p.CarreraId == carreraId))
+            if (Datos.Postulaciones.Any(p => p.PostulanteId == yo.Id && p.ConvocatoriaId == conv!.Id))
             {
-                error = "Ya tienes una postulación a esta carrera en la convocatoria.";
+                error = "Ya tienes una postulación en esta convocatoria, independientemente de la carrera.";
                 return;
             }
             requisitos = Datos.RequisitosPara(conv!.Id, modalidadId);
@@ -185,11 +185,16 @@ else
         paso++;
     }
 
-    private void Enviar()
+    private async Task Enviar()
     {
         if (!acepta) { error = "Debes aceptar la declaración para enviar tu postulación."; return; }
-        var p = Datos.EnviarNuevaPostulacion(conv!, carreraId, modalidadId, sedeId, archivos);
+        if (enviando) return;
+        enviando = true;
+        try {
+        var p = await Datos.EnviarNuevaPostulacionAsync(conv!, carreraId, modalidadId, sedeId, archivos);
         Avisos.Exito($"Postulación {p.Codigo} enviada. Ahora adjunta el voucher de pago.");
         Navegacion.NavigateTo("/postulante/vouchers");
+        } catch { error = "No se pudo enviar. Verifica los documentos y que no exista una postulación previa; vuelve a intentar."; }
+        finally { enviando = false; }
     }
 }

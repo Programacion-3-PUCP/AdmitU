@@ -6,10 +6,16 @@
 else
 {
     <button type="button" class="icon-btn @definicion.Clase" title="@(MotivoDeshabilitado is not null && Deshabilitado ? MotivoDeshabilitado : definicion.Texto)"
-            aria-label="@Etiqueta" disabled="@Deshabilitado" @onclick="OnClick"><Icon Name="@definicion.Icono" Size="17" /></button>
+            aria-label="@Etiqueta" disabled="@Deshabilitado" @onclick="Ejecutar"><Icon Name="@definicion.Icono" Size="17" /></button>
 }
 
+<ConfirmDialog Abierto="confirmando" Titulo="Reactivar registro" Mensaje="@($"¿Deseas reactivar {Sobre ?? "este registro"}?")" TextoConfirmar="Reactivar" Tono="success" OnCancelar="() => confirmando = false" OnConfirmar="ConfirmarReactivacion" />
+
 @code {
+    private bool confirmando;
+    private async Task Ejecutar() { if (Tipo == Accion.Reactivar) confirmando = true; else await OnClick.InvokeAsync(); }
+    private async Task ConfirmarReactivacion() { await OnClick.InvokeAsync(); confirmando = false; }
+
     public enum Accion { Ver, Editar, Desactivar, Reactivar, Eliminar, Aprobar, Rechazar, Observar, Descargar, Anular, Reemitir, Emitir, Asignar, Configurar, Cerrar, Publicar }
 
     private sealed record Definicion(string Icono, string Texto, string Clase);

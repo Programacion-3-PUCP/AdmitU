@@ -86,7 +86,7 @@
 .inline-note.is-warning { background: var(--warning-soft); color: var(--warning); }
 
 /* Campos de solo lectura (identificadores que no se modifican al editar) */
-.field input:disabled, .field select:disabled, .field input[readonly] { background: var(--surface-2); color: var(--text-2); cursor: not-allowed; }
+.field input:disabled, .field select:disabled, .field textarea:disabled, .field input[readonly], .field textarea[readonly] { background: var(--surface-2); color: var(--text-2); cursor: not-allowed; }
 .field-lock { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); font-weight: 500; }
 
 /* Pantalla de acceso */

@@ -23,9 +23,9 @@
            TextoBusqueda="@(o => $"{Postulacion(o)?.Codigo} {Datos.PersonaDe(Postulacion(o))?.NombreCompleto} {Datos.Documento(o.DocumentoId)?.Requisito} {o.Descripcion} {o.ComentarioSubsanacion}")"
            Marcador="Buscar por postulación, postulante, documento o descripción" TituloVacio="Sin observaciones" MensajeVacio="No hay observaciones con estos filtros.">
     <Filtros>
-        <select class="select" aria-label="Alcance" @bind="soloMias">
+        <label class="filter-label" for="alcance-observaciones">Mostrar</label><select id="alcance-observaciones" class="select" aria-label="Alcance" @bind="soloMias">
             <option value="true">Mis expedientes</option>
-            <option value="false">Todos los evaluadores</option>
+            <option value="false">Todos los expedientes</option>
         </select>
         <select class="select" aria-label="Tipo de observación" @bind="tipo">
             <option value="">Cualquier tipo</option>

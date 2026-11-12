@@ -37,6 +37,7 @@
                     <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@c.Nombre" Deshabilitado="@(c.Estado == EstadoConvocatoria.Cerrada)" MotivoDeshabilitado="La convocatoria está cerrada" OnClick="() => Editar(c)" />
                     @if (c.Estado == EstadoConvocatoria.Borrador)
                     {
+                        <BotonAccion Tipo="BotonAccion.Accion.Eliminar" Sobre="@c.Nombre" OnClick="() => porEliminar = c" />
                         <BotonAccion Tipo="BotonAccion.Accion.Publicar" Sobre="@c.Nombre" OnClick="() => accion = (c, EstadoConvocatoria.Publicada)" />
                     }
                     else if (c.Estado == EstadoConvocatoria.Publicada)
@@ -105,7 +106,12 @@
                Error="@errorAccion"
                OnCancelar="() => { accion = null; errorAccion = null; }" OnConfirmar="ConfirmarAccion" />
 
+<ConfirmDialog Abierto="porEliminar is not null" Titulo="Eliminar borrador" Mensaje="@($"Se dará de baja el borrador {porEliminar?.Nombre}.")" TextoConfirmar="Eliminar" OnCancelar="() => porEliminar = null" OnConfirmar="EliminarBorrador" />
+
 @code {
+    private Convocatoria? porEliminar;
+    private void EliminarBorrador() { if (porEliminar is null) return; Datos.EliminarBorradorConvocatoria(porEliminar); porEliminar = null; Avisos.Exito("Borrador dado de baja"); }
+
     private sealed class FilaOferta
     {
         public int CarreraId { get; init; }
