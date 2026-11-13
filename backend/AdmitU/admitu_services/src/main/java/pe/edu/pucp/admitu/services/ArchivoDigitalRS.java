@@ -9,7 +9,25 @@ import pe.edu.pucp.admitu.services.seguridad.Seguridad;
 @Path("ArchivoDigitalRS") @Consumes(MediaType.APPLICATION_JSON) @Produces(MediaType.APPLICATION_JSON)
 public class ArchivoDigitalRS {
  private final IArchivoBO bo=new ArchivoBOImpl();@Context private SecurityContext seguridad;
- private void escritura(ArchivoDigital a){Seguridad.exigirRoles(seguridad,"admin","postulante");if(a==null)throw new BadRequestException("Adjunta un archivo");Seguridad.exigirPropietario(seguridad,a.getPostulanteId());}
+ private void escritura(ArchivoDigital a){Seguridad.exigirRoles(seguridad,"admin","postulante");if(a==null)throw new BadRequestException("Adjunta un archivo");Seguridad.exigirPropietario(seguridad,a.getPostulanteId());
+  if(a.getReferenciaId()>0&&"DOCUMENTO".equals(a.getTipo())){
+   var d=new pe.edu.pucp.admitu.postulacion.bo.DocumentoPostulacionBOImpl().buscarPorId(a.getReferenciaId());
+   if(d==null)throw new NotFoundException("Documento no encontrado");
+   var p=new pe.edu.pucp.admitu.postulacion.bo.PostulacionBOImpl().buscarPorId(d.getPostulacion().getId());
+   if(p.getPostulante().getId()!=a.getPostulanteId())throw new ForbiddenException("El documento pertenece a otro postulante");
+  }
+  if(a.getReferenciaId()>0&&"VOUCHER".equals(a.getTipo())){
+   var pago=new pe.edu.pucp.admitu.pago.bo.PagoBOImpl().buscarPorId(a.getReferenciaId());
+   if(pago==null)throw new NotFoundException("Pago no encontrado");
+   var p=new pe.edu.pucp.admitu.postulacion.bo.PostulacionBOImpl().buscarPorId(pago.getPostulacion().getId());
+   if(p.getPostulante().getId()!=a.getPostulanteId())throw new ForbiddenException("El pago pertenece a otro postulante");
+  }
+  if(a.getReferenciaId()>0&&"CERTIFICADO".equals(a.getTipo())){
+   var antecedente=new pe.edu.pucp.admitu.persona.bo.AntecedenteAcademicoBOImpl().buscarPorId(a.getReferenciaId());
+   if(antecedente==null)throw new NotFoundException("Antecedente no encontrado");
+   if(antecedente.getPostulante().getId()!=a.getPostulanteId())throw new ForbiddenException("El certificado pertenece a otro postulante");
+  }
+ }
  private ArchivoDigital buscar(int id){ArchivoDigital a=bo.buscarPorId(id);if(a==null)throw new NotFoundException("Archivo no encontrado");exigirLectura(a);return a;}
  private ArchivoDigital metadata(ArchivoDigital a){a.setContenidoBase64(null);return a;}
  @POST @Path("guardarArchivo") public ArchivoDigital guardar(ArchivoDigital a){escritura(a);return metadata(bo.guardar(a));}

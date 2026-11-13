@@ -47,8 +47,9 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
     @Override
     public int modificar(DocumentoPostulacion documento) {
         String sql = "{call MODIFICAR_DOCUMENTO_POSTULACION(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        try {
+            Connection con = TransactionContext.getConnection();
+            try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", documento.getId());
             cs.setInt("_postulacion_id", documento.getPostulacion().getId());
             cs.setInt("_requisito_id", documento.getRequisitoAplicable().getId());
@@ -62,6 +63,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             cs.setDate("_fecha_evaluacion", documento.getFechaEvaluacion() != null ? Date.valueOf(documento.getFechaEvaluacion()) : null);
             cs.setString("_comentario_evaluacion", documento.getComentarioEvaluacion());
             return cs.executeUpdate();
+            }
         } catch (Exception ex) {
             System.out.println("ERROR AL MODIFICAR DOCUMENTO POSTULACION: " + ex.getMessage());
             throw new RuntimeException(ex);

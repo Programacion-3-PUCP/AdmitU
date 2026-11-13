@@ -100,7 +100,7 @@ class Suite:
             with concurrent.futures.ThreadPoolExecutor(2) as e:r=list(e.map(lambda _:self.api.call('PostulacionRS/enviarPostulacion','POST',self.payload,self.user),range(2)))
             status=[x[0] for x in r];assert len([x for x in status if 200<=x<300])==1,status
             assert all(x in (200,201,400,409) for x in status),status
-            self.post=self.j('PostulacionRS/listarTodasPostulaciones',token=self.user)[0];assert len(self.j('PostulacionRS/listarTodasPostulaciones',token=self.user))==1
+            self.post=self.j('PostulacionRS/listarTodasPostulaciones',token=self.user)[0];self.j('PostulacionRS/asignarEvaluador/'+str(self.post['id'])+'/'+str(self.cred['evaluador']['personaId']),'PUT');assert len(self.j('PostulacionRS/listarTodasPostulaciones',token=self.user))==1
             pagos=self.j('PagoRS/listarTodosPagos',token=self.user);assert len(pagos)==1;self.pago=pagos[0]
             self.doc=self.j('DocumentoPostulacionRS/listarTodosDocumentosPostulacion',token=self.user)[0]
             return {'HTTP':status,'postulacion':self.post['id'],'pagos':len(pagos)}
@@ -126,8 +126,8 @@ class Suite:
         assert self.check('RF_12','aprobar voucher con fecha y bloquear cambios',pago)
         def observacion():
             self.doc['estadoDocumento']='OBSERVADO';self.modify('DocumentoPostulacion',self.doc)
-            d=self.insert('DocumentoObservacion',dict(documento={'id':self.doc['id']},evaluador={'id':self.cred['evaluador']['personaId']},tipoObservacion='ILEGIBLE',descripcion='Texto de prueba',fechaObservacion=str(self.today),estadoObservacion='PENDIENTE'))
-            d['descripcion']='Texto corregido';self.modify('DocumentoObservacion',d);assert self.get('DocumentoObservacion',d['id'])['descripcion']=='Texto corregido';self.observacion=d;return {'observacion':d['id']}
+            d=dict(documento={'id':self.doc['id']},evaluador={'id':self.cred['evaluador']['personaId']},tipoObservacion='ILEGIBLE',descripcion='Texto de prueba',fechaObservacion=str(self.today),estadoObservacion='PENDIENTE');d['id']=self.j('DocumentoObservacionRS/insertarDocumentoObservacion','POST',d,token=self.ev)
+            d['descripcion']='Texto corregido';self.j('DocumentoObservacionRS/modificarDocumentoObservacion','PUT',d,token=self.ev);assert self.get('DocumentoObservacion',d['id'])['descripcion']=='Texto corregido';self.observacion=d;return {'observacion':d['id']}
         self.check('RF_10','registrar consultar modificar observación',observacion)
     def reports(self):
         for rf,kind in [('RF_03','Ingresos'),('RF_09','Observados'),('RF_15','Vacantes')]:

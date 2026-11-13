@@ -45,7 +45,7 @@ BEGIN
  IF _anterior<>_estado_id THEN
   IF NOT((_anterior=1 AND _estado_id IN(2,8)) OR (_anterior=2 AND _estado_id IN(3,7,8)) OR (_anterior=3 AND _estado_id IN(4,5,7,8)) OR (_anterior=4 AND _estado_id IN(3,5,7,8)) OR (_anterior=5 AND _estado_id IN(6,7,8))) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Transición de estado no permitida';END IF;
   IF _estado_id IN(3,5,6) AND NOT EXISTS(SELECT 1 FROM pago WHERE postulacion_id=_id AND estado_pago='APROBADO') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El pago debe estar aprobado';END IF;
-  IF _estado_id IN(5,6) AND EXISTS(SELECT 1 FROM requisito_convocatoria_modalidad rm JOIN postulacion p ON p.modalidad_elegida_id=rm.convocatoria_modalidad_id WHERE p.id=_id AND rm.obligatorio=1 AND NOT EXISTS(SELECT 1 FROM documento_postulacion d JOIN archivo_digital a ON a.tipo='DOCUMENTO' AND a.referencia_id=d.id AND a.activo=1 AND OCTET_LENGTH(a.contenido)>0 WHERE d.postulacion_id=_id AND d.requisito_aplicable_id=rm.id AND d.estado_documento='APROBADO')) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Faltan documentos obligatorios aprobados';END IF;
+  IF _estado_id IN(5,6) AND EXISTS(SELECT 1 FROM requisito_convocatoria_modalidad rm JOIN postulacion p ON p.modalidad_elegida_id=rm.convocatoria_modalidad_id WHERE p.id=_id AND rm.obligatorio=1 AND NOT EXISTS(SELECT 1 FROM documento_postulacion d JOIN archivo_digital a ON a.tipo='DOCUMENTO' AND a.referencia_id=d.id AND a.postulante_id=p.postulante_id AND a.activo=1 AND OCTET_LENGTH(a.contenido)>0 WHERE d.postulacion_id=_id AND d.requisito_aplicable_id=rm.id AND d.estado_documento='APROBADO')) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Faltan documentos obligatorios aprobados';END IF;
   IF _estado_id=6 AND NOT EXISTS(SELECT 1 FROM carne_postulante WHERE postulacion_id=_id) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Primero genera el carné';END IF;
   INSERT INTO postulacion_historial(postulacion_id,estado_anterior_id,estado_actual_id,fecha_cambio,responsable_cambio,motivo_cambio) VALUES(_id,_anterior,_estado_id,DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR),COALESCE(@admitu_actor,'SISTEMA'),COALESCE(_observacion,'Cambio de estado'));
  END IF;
@@ -61,7 +61,7 @@ BEGIN
  SELECT estado_pago,postulacion_id INTO _anterior,_post FROM pago WHERE id=_id FOR UPDATE;
  IF _anterior IS NULL OR _anterior='APROBADO' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El pago no existe o ya está aprobado';END IF;
  IF NOT((_anterior='PENDIENTE' AND _estado IN('APROBADO','RECHAZADO')) OR (_anterior IN('GENERADO','PENDIENTE','RECHAZADO') AND _estado='VENCIDO')) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Transición de pago no permitida';END IF;
- IF _estado='APROBADO' AND NOT EXISTS(SELECT 1 FROM archivo_digital WHERE tipo='VOUCHER' AND referencia_id=_id AND activo=1 AND OCTET_LENGTH(contenido)>0) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Adjunta primero un voucher real';END IF;
+ IF _estado='APROBADO' AND NOT EXISTS(SELECT 1 FROM archivo_digital WHERE tipo='VOUCHER' AND referencia_id=_id AND postulante_id=(SELECT postulante_id FROM postulacion WHERE id=_post) AND activo=1 AND OCTET_LENGTH(contenido)>0) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Adjunta primero un voucher real';END IF;
  UPDATE pago SET estado_pago=_estado,fecha_pago=IF(_estado='APROBADO',COALESCE(fecha_pago,DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR)),fecha_pago) WHERE id=_id;
  IF _estado='APROBADO' AND EXISTS(SELECT 1 FROM postulacion WHERE id=_post AND estado_actual_id=2) THEN CALL MODIFICAR_POSTULACION(_post,3,'Pago aprobado');END IF;
 END$$
@@ -88,7 +88,7 @@ BEGIN
     SELECT postulacion_id,requisito_aplicable_id,estado_documento INTO _post_actual,_requisito_actual,_estado_actual FROM documento_postulacion WHERE id=_id FOR UPDATE;
     IF _post_actual IS NULL OR _post_actual<>_postulacion_id OR _requisito_actual<>_requisito_id THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se puede trasladar el documento a otro expediente o requisito';END IF;
     IF EXISTS(SELECT 1 FROM postulacion WHERE id=_post_actual AND estado_actual_id IN(5,6,7,8)) AND _estado_actual<>_estado_documento THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El expediente ya está resuelto';END IF;
-    IF _estado_documento='APROBADO' AND NOT EXISTS(SELECT 1 FROM archivo_digital WHERE tipo='DOCUMENTO' AND referencia_id=_id AND activo=1 AND OCTET_LENGTH(contenido)>0) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se puede aprobar un documento sin archivo durable activo';END IF;
+    IF _estado_documento='APROBADO' AND NOT EXISTS(SELECT 1 FROM archivo_digital WHERE tipo='DOCUMENTO' AND referencia_id=_id AND postulante_id=(SELECT postulante_id FROM postulacion WHERE id=_post_actual) AND activo=1 AND OCTET_LENGTH(contenido)>0) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se puede aprobar un documento sin archivo durable activo';END IF;
     UPDATE documento_postulacion SET postulacion_id = _postulacion_id, requisito_aplicable_id = _requisito_id,
         numero_version = _numero_version, nombre_archivo = _nombre_archivo, tipo_archivo = _tipo_archivo,
         tamanio_archivo = _tamanio_archivo, ruta_archivo = _ruta_archivo, fecha_carga = _fecha_carga,
@@ -108,7 +108,7 @@ CREATE PROCEDURE INSERTAR_POSTULACION_HISTORIAL(
     IN _motivo_cambio VARCHAR(255)
 )
 BEGIN
- SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El historial es inmutable; use transiciones del servidor';
+ SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El historial es inmutable; solo transiciones del servidor';
 END$$
 
 DROP PROCEDURE IF EXISTS MODIFICAR_POSTULACION_HISTORIAL$$
@@ -122,7 +122,7 @@ CREATE PROCEDURE MODIFICAR_POSTULACION_HISTORIAL(
     IN _motivo_cambio VARCHAR(255)
 )
 BEGIN
- SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El historial es inmutable; use transiciones del servidor';
+ SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El historial es inmutable; solo transiciones del servidor';
 END$$
 
 DROP PROCEDURE IF EXISTS ELIMINAR_POSTULACION_HISTORIAL$$
@@ -130,7 +130,7 @@ CREATE PROCEDURE ELIMINAR_POSTULACION_HISTORIAL(
     IN _id INT
 )
 BEGIN
- SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El historial es inmutable; use transiciones del servidor';
+ SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El historial es inmutable; solo transiciones del servidor';
 END$$
 
 DROP PROCEDURE IF EXISTS INSERTAR_DOCUMENTO_OBSERVACION$$
@@ -177,15 +177,17 @@ BEGIN
     DECLARE _estado_anterior VARCHAR(20);
     DECLARE _subsanacion DATE;
     DECLARE _comentario VARCHAR(255);
+    DECLARE _tipo_anterior VARCHAR(20);
+    DECLARE _descripcion_anterior VARCHAR(255);
     SELECT d.postulacion_id INTO _post FROM documento_observacion o JOIN documento_postulacion d ON d.id=o.documento_id WHERE o.id=_id;
     CALL AUDITORIA_EXIGIR_EXPEDIENTE(_post,0);
-    SELECT documento_id,evaluador_id,estado_observacion,fecha_subsanacion,comentario_subsanacion INTO _documento_anterior,_autor,_estado_anterior,_subsanacion,_comentario FROM documento_observacion WHERE id=_id FOR UPDATE;
+    SELECT documento_id,evaluador_id,estado_observacion,fecha_subsanacion,comentario_subsanacion,tipo_observacion,descripcion INTO _documento_anterior,_autor,_estado_anterior,_subsanacion,_comentario,_tipo_anterior,_descripcion_anterior FROM documento_observacion WHERE id=_id FOR UPDATE;
     IF _documento_anterior IS NULL OR _documento_anterior<>_documento_id OR _autor<>_evaluador_id THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se puede trasladar la observación ni sustituir su autor';END IF;
-    IF @admitu_actor_rol IS NOT NULL AND (@admitu_actor_rol<>'evaluador' OR NOT (_autor <=> @admitu_actor_persona)) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Solo su autor autenticado puede editar la observación';END IF;
-    IF _estado_anterior<>_estado_observacion OR NOT (_subsanacion <=> _fecha_subsanacion) OR NOT (_comentario <=> _comentario_subsanacion) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='La subsanación solo se registra al reemplazar el archivo';END IF;
+    IF @admitu_actor_rol='evaluador' AND NOT (_autor <=> @admitu_actor_persona) AND (NOT (_tipo_anterior <=> _tipo_observacion) OR NOT (_descripcion_anterior <=> _descripcion)) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Solo su autor autenticado puede editar el texto de la observación';END IF;
+    IF _estado_anterior='SUBSANADA' AND _estado_observacion<>'SUBSANADA' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='La subsanación registrada es irreversible; registre una nueva observación';END IF;
     UPDATE documento_observacion SET documento_id = _documento_id, evaluador_id = _evaluador_id,
         tipo_observacion = _tipo_observacion, descripcion = _descripcion,
-        estado_observacion = _estado_observacion, fecha_subsanacion = _fecha_subsanacion,
+        estado_observacion = _estado_observacion, fecha_subsanacion = IF(_estado_observacion='SUBSANADA',COALESCE(_subsanacion,DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR)),NULL),
         comentario_subsanacion = _comentario_subsanacion
     WHERE id = _id;
 END$$

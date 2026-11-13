@@ -42,3 +42,24 @@ se declaran pendientes. Esta tabla se actualizará con resultados reproducibles.
 
 No se certifican AWS, Windows/IIS, WSL ni 500 trámites concurrentes por preparar
 scripts o por obtener respuestas HTTP200 en un catálogo público.
+
+
+## Punto de reanudación
+
+Se verificó por Git el HEAD local y remoto `719ef8d05d3df6784f22fb0c8f600618c62112c5`.
+Los cinco commits de corrección publicados se conservan. La base remota sigue
+siendo `2ad4019`; master y lab11-diego conservan sus referencias previas.
+Se recuperaron los cambios locales y los servicios Cloud existentes sin recrear
+la base ni reiniciar el desarrollo. Los agentes de la ejecución interrumpida ya
+no estaban activos; las tareas pendientes se reasignaron.
+
+Evidencia disponible antes de reanudar: build Maven y Blazor exitosos; 32/32 BO;
+14/14 reglas de indicadores; 24 pruebas C# de carga/fechas/tarifas; tres límites
+REST/SQL de cierre y tarifas; tres PDF Jasper con contraste SQL; carga autenticada
+300/300 GET con cinco identidades. Estos resultados están acotados a sus scripts.
+La regresión REST tenía un fallo RF10 por usar admin como autor, ya corregido en
+el runner pero pendiente de repetición. Seguridad UI obtuvo 4/6 y requiere
+investigar el tiempo de ingreso evaluador; no se declara aprobada. La nueva
+suite MySQL se interrumpió por conversión decimal en su helper, pendiente de
+repetición tras corregirlo. La suite negativa REST nueva y los 15 RF Chromium
+siguen pendientes hasta ejecutar la versión integrada.

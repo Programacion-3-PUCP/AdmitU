@@ -53,6 +53,7 @@ public class DocumentoObservacionRS {
     @PUT
     @Path("modificarDocumentoObservacion")
     public int modificarDocumentoObservacion(DocumentoObservacion observacion) {
+        pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRoles(seguridad,"admin","evaluador");
         if(observacion==null)throw new BadRequestException("Observación requerida");
         var actual=boObservacion.buscarPorId(observacion.getId());
         if(actual==null)throw new NotFoundException("Observación no encontrada");
@@ -60,12 +61,16 @@ public class DocumentoObservacionRS {
         pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRevision(seguridad,documento.getPostulacion().getId());
         if(observacion.getDocumento()!=null&&observacion.getDocumento().getId()!=actual.getDocumento().getId())throw new ForbiddenException("La observación no puede cambiar de documento");
         if(observacion.getEvaluador()!=null&&observacion.getEvaluador().getId()!=actual.getEvaluador().getId())throw new ForbiddenException("El autor original es inmutable");
-        if(pe.edu.pucp.admitu.services.seguridad.Seguridad.rol(seguridad).equals("evaluador")&&actual.getEvaluador().getId()!=pe.edu.pucp.admitu.services.seguridad.Seguridad.id(seguridad)
-            &&(!java.util.Objects.equals(actual.getDescripcion(),observacion.getDescripcion())||actual.getTipoObservacion()!=observacion.getTipoObservacion()))throw new ForbiddenException("Solo el autor puede editar el texto de su observación");
-        actual.setTipoObservacion(observacion.getTipoObservacion());actual.setDescripcion(observacion.getDescripcion());
+        boolean cambiaTexto=!java.util.Objects.equals(actual.getDescripcion(),observacion.getDescripcion())||actual.getTipoObservacion()!=observacion.getTipoObservacion();
+        if(cambiaTexto&&pe.edu.pucp.admitu.services.seguridad.Seguridad.rol(seguridad).equals("evaluador")&&actual.getEvaluador().getId()!=pe.edu.pucp.admitu.services.seguridad.Seguridad.id(seguridad))throw new ForbiddenException("Solo el autor puede editar el texto de su observación");
+        if(observacion.getEstadoObservacion()==null)throw new BadRequestException("Estado de observación requerido");
+        if(actual.getEstadoObservacion()==pe.edu.pucp.admitu.postulacion.EstadoObservacion.SUBSANADA&&observacion.getEstadoObservacion()!=actual.getEstadoObservacion())throw new ForbiddenException("La subsanación es irreversible; registra otra observación");
+        if(actual.getEstadoObservacion()!=observacion.getEstadoObservacion()){
+            actual.setFechaSubsanacion(java.time.LocalDate.now(java.time.ZoneId.of("America/Lima")));
+            actual.setComentarioSubsanacion(observacion.getComentarioSubsanacion());
+        }
         actual.setEstadoObservacion(observacion.getEstadoObservacion());
-        actual.setFechaSubsanacion(observacion.getEstadoObservacion()==pe.edu.pucp.admitu.postulacion.EstadoObservacion.SUBSANADA?java.time.LocalDate.now(java.time.ZoneId.of("America/Lima")):null);
-        actual.setComentarioSubsanacion(observacion.getComentarioSubsanacion());
+        actual.setTipoObservacion(observacion.getTipoObservacion());actual.setDescripcion(observacion.getDescripcion());
         return boObservacion.modificar(actual);
     }
 
