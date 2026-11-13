@@ -1,0 +1,36 @@
+{
+  "entorno": "Codex Cloud; no WSL ni AWS",
+  "pdf_bytes": 21471,
+  "alcance": "PDF y HTML data URI contrastados con los mismos bytes PDF sobre HTTP loopback; no cambia políticas ni la aplicación",
+  "casos": [
+    {
+      "caso": "pdf_data_uri",
+      "pdf_viewer_habilitado": true,
+      "esquemas_frames": [
+        "chrome-error"
+      ],
+      "error_navegador": "Your organization doesn’t allow you to view this site",
+      "componente_pdf_cargado": false
+    },
+    {
+      "caso": "html_data_uri",
+      "pdf_viewer_habilitado": true,
+      "esquemas_frames": [
+        "chrome-error"
+      ],
+      "error_navegador": "Your organization doesn’t allow you to view this site",
+      "componente_pdf_cargado": false
+    },
+    {
+      "caso": "pdf_http_loopback",
+      "pdf_viewer_habilitado": true,
+      "esquemas_frames": [
+        "http",
+        "chrome-extension",
+        "http"
+      ],
+      "error_navegador": null,
+      "componente_pdf_cargado": true
+    }
+  ]
+}

@@ -28,7 +28,7 @@
     "case": "crear requisito en convocatoria y modalidad",
     "status": "PASS",
     "detail": {
-      "requisito": 12
+      "requisito": 13
     }
   },
   {
@@ -61,8 +61,8 @@
     "case": "wizard enviar documentos y registrar voucher",
     "status": "PASS",
     "detail": {
-      "postulacion": 117,
-      "un_solo_pago": 126
+      "postulacion": 118,
+      "un_solo_pago": 127
     }
   },
   {
@@ -79,8 +79,8 @@
     "status": "PASS",
     "detail": {
       "filtro_visible_funcional": true,
-      "mis_expedientes": 4,
-      "todos": 42
+      "mis_expedientes": 5,
+      "todos": 43
     }
   },
   {
@@ -96,7 +96,7 @@
     "case": "Jasper observados previsualizar y descargar",
     "status": "PASS",
     "detail": {
-      "pdf_bytes": 20765
+      "pdf_bytes": 20834
     }
   },
   {
@@ -104,7 +104,7 @@
     "case": "Jasper vacantes previsualizar y descargar",
     "status": "PASS",
     "detail": {
-      "pdf_bytes": 20481
+      "pdf_bytes": 20482
     }
   },
   {
@@ -120,7 +120,7 @@
     "case": "emitir carné apto desde administración",
     "status": "PASS",
     "detail": {
-      "carne_emitido": 41,
+      "carne_emitido": 42,
       "estado_SQL_y_Blazor_finalizada": true
     }
   }
