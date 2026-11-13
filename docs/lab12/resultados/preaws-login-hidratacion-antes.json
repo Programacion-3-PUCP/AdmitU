@@ -1,0 +1,26 @@
+{
+  "entorno": "Codex Cloud; Chromium real antes de eliminar carga de DatosSesion en Acceso",
+  "role": "evaluador",
+  "cases": [
+    {
+      "mode": "domcontentloaded",
+      "filled_before_submit": false,
+      "ok": false,
+      "login_requests": [],
+      "path": "/"
+    },
+    {
+      "mode": "networkidle",
+      "filled_before_submit": true,
+      "ok": true,
+      "login_requests": [
+        {
+          "status": 302,
+          "path": "/cuenta/ingresar",
+          "location": "/evaluador"
+        }
+      ],
+      "path": "/evaluador"
+    }
+  ]
+}

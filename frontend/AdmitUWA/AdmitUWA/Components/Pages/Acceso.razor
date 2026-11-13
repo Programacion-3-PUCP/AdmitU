@@ -1,14 +1,11 @@
 @page "/"
 @layout AdmitUWA.Components.Layout.AccesoLayout
-@inject DatosSesion Datos
 <PageTitle>Ingresar · AdmitU</PageTitle>
 <div class="login">
  <section class="login-brand"><a class="brand" href="/"><Logo/><span class="brand-text"><strong>Admit<em>U</em></strong><small>Admisión universitaria</small></span></a>
  <div class="login-copy"><h2>Tu admisión, paso a paso.</h2><p>Postula, presenta tus documentos y consulta el avance de tu expediente.</p></div>
- @if(Datos.ConvocatoriaVigente is {} conv){<div class="login-conv"><span class="eyebrow">Convocatoria vigente</span><h3>@conv.Nombre</h3></div>}
  </section>
  <section class="login-panel"><div class="login-card"><h1>Ingresar</h1><p class="page-sub">Usa el correo y contraseña de tu cuenta.</p>
- @if(Datos.ErrorCarga is not null){<p class="notice" role="alert">@Datos.ErrorCarga</p>}
  @if(Error is not null){<p class="validation-message" role="alert">@(Error=="servicio"?"No fue posible conectar con el servicio. Intenta nuevamente.":"Credenciales incorrectas o cuenta temporalmente bloqueada.")</p>}
  <form method="post" action="/cuenta/ingresar" class="stack" data-enhance="false" style="gap:16px;margin-top:20px">
   <AntiforgeryToken/>
@@ -20,5 +17,4 @@
 </div>
 @code {
  [SupplyParameterFromQuery(Name="error")] public string? Error {get;set;}
- protected override Task OnInitializedAsync() => Datos.InicializarAsync();
 }
