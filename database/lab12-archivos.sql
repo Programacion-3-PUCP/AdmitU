@@ -21,7 +21,7 @@ BEGIN
  DECLARE _institucion_id INT DEFAULT NULL;
  DECLARE _persona INT;
  SELECT persona_id INTO _persona FROM postulante WHERE persona_id=_postulante FOR UPDATE;
- IF _persona IS NULL OR _institucion IS NULL OR _tipo_institucion IS NULL OR _tipo_institucion NOT IN('COLEGIO','UNIVERSIDAD') OR CHAR_LENGTH(TRIM(_institucion))=0 OR _inicio<1900 OR _fin<_inicio OR _fin>YEAR(CURDATE()) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Datos de certificado inválidos';END IF;
+ IF _persona IS NULL OR _institucion IS NULL OR _tipo_institucion IS NULL OR _tipo_institucion NOT IN('COLEGIO','UNIVERSIDAD') OR CHAR_LENGTH(TRIM(_institucion))=0 OR _inicio<1900 OR _fin<_inicio OR _fin>YEAR(DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR)) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Datos de certificado inválidos';END IF;
  SELECT MIN(id) INTO _institucion_id FROM institucion_educativa WHERE nombre=TRIM(_institucion) AND activo=1;
  IF _institucion_id IS NULL THEN
   INSERT INTO institucion_educativa(pais_id,codigo_externo,nombre,tipo_institucion,activo) VALUES(1,NULL,TRIM(_institucion),_tipo_institucion,1);
@@ -56,14 +56,14 @@ BEGIN
  IF _estado IS NULL OR _estado NOT IN ('GENERADO','PENDIENTE','RECHAZADO') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El voucher solo se adjunta a un pago no aprobado';END IF;
  IF _monto<>_importe OR _monto<=0 OR _operacion IS NULL OR CHAR_LENGTH(_operacion)<4 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El importe o número de operación no es válido';END IF;
  IF EXISTS(SELECT 1 FROM pago WHERE id<>_pago AND referencia_pasarela=_operacion AND estado_pago IN('PENDIENTE','APROBADO')) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='El número de operación ya fue utilizado';END IF;
- UPDATE pago SET estado_pago='PENDIENTE',referencia_pasarela=_operacion,fecha_pago=CURDATE(),ruta_voucher=CONCAT('archivo:pago:',id) WHERE id=_pago;
+ UPDATE pago SET estado_pago='PENDIENTE',referencia_pasarela=_operacion,fecha_pago=DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR),ruta_voucher=CONCAT('archivo:pago:',id) WHERE id=_pago;
 END$$
 DROP PROCEDURE IF EXISTS GUARDAR_ARCHIVO_DIGITAL$$
 CREATE PROCEDURE GUARDAR_ARCHIVO_DIGITAL(OUT _id INT,IN _postulante INT,IN _tipo VARCHAR(20),IN _referencia INT,IN _nombre VARCHAR(150),IN _mime VARCHAR(100),IN _contenido MEDIUMBLOB,IN _sha CHAR(64),IN _fecha DATE,IN _requisito INT)
 BEGIN
  DECLARE _persona INT DEFAULT NULL;DECLARE _postulacion INT DEFAULT NULL;DECLARE _estado VARCHAR(20);DECLARE _maximo INT;DECLARE _formato VARCHAR(20);
  SELECT persona_id INTO _persona FROM postulante WHERE persona_id=_postulante FOR UPDATE;
- IF _persona IS NULL OR _fecha IS NULL OR _fecha>CURDATE() OR OCTET_LENGTH(_contenido)=0 OR OCTET_LENGTH(_contenido)>5242880 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Propietario, fecha o tamaño de archivo inválidos';END IF;
+ IF _persona IS NULL OR _fecha IS NULL OR _fecha>DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR) OR OCTET_LENGTH(_contenido)=0 OR OCTET_LENGTH(_contenido)>5242880 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Propietario, fecha o tamaño de archivo inválidos';END IF;
  IF _tipo IN('DNI','FOTOGRAFIA') THEN
   SET _referencia=0;
   IF _mime NOT IN('image/jpeg','image/png') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='DNI y fotografía deben ser JPG o PNG';END IF;

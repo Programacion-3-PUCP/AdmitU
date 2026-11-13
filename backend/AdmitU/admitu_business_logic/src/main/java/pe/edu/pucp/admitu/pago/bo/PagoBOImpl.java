@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.pago.bo;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import pe.edu.pucp.admitu.pago.EstadoPago;
 import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.config.TransactionContext;
@@ -38,7 +39,7 @@ public class PagoBOImpl implements IPagoBO {
 
     private void registrarFechaPago(Pago p) {
         if (p.getEstadoPago() == EstadoPago.APROBADO && p.getFechaPago() == null)
-            p.setFechaPago(LocalDate.now());
+            p.setFechaPago(LocalDate.now(ZoneId.of("America/Lima")));
     }
 
     @Override

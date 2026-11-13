@@ -26,7 +26,7 @@ public final class PruebasReglasLab12 {
     private static void setup()throws Exception {
         try(Connection c=DBManager.getInstance().getConnection();Statement s=c.createStatement()){
             try(ResultSet r=s.executeQuery("SELECT DATABASE()")){r.next();if(!"admitu_db".equals(r.getString(1)))throw new IllegalStateException("Solo admitu_db");}
-            try(ResultSet r=s.executeQuery("SELECT c.id,cm.id,o.id FROM convocatoria c JOIN convocatoria_modalidad cm ON cm.convocatoria_id=c.id JOIN oferta_carrera o ON o.convocatoria_id=c.id WHERE c.activo=1 AND c.estado='PUBLICADA' AND c.fecha_inicio<=CURDATE() AND c.fecha_fin>=CURDATE() LIMIT 1")){if(!r.next())throw new IllegalStateException("Se requiere convocatoria abierta de ensayo");convocatoria=r.getInt(1);modalidad=r.getInt(2);oferta=r.getInt(3);}
+            try(ResultSet r=s.executeQuery("SELECT c.id,cm.id,o.id FROM convocatoria c JOIN convocatoria_modalidad cm ON cm.convocatoria_id=c.id JOIN oferta_carrera o ON o.convocatoria_id=c.id WHERE c.activo=1 AND c.estado='PUBLICADA' AND c.fecha_inicio<=DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR) AND c.fecha_fin>=DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR) LIMIT 1")){if(!r.next())throw new IllegalStateException("Se requiere convocatoria abierta de ensayo");convocatoria=r.getInt(1);modalidad=r.getInt(2);oferta=r.getInt(3);}
             try(ResultSet r=s.executeQuery("SELECT id FROM sede WHERE activo=1 LIMIT 1")){r.next();sede=r.getInt(1);}
             String tag=UUID.randomUUID().toString().replace("-","");
             try(PreparedStatement p=c.prepareStatement("INSERT INTO persona(nombres,apellido_paterno,correo,tipo_documento,numero_documento) VALUES('Prueba','Lab12',?,'CE',?)",Statement.RETURN_GENERATED_KEYS)){p.setString(1,"lab12-"+tag+"@example.test");p.setString(2,tag.substring(0,16));p.executeUpdate();try(ResultSet k=p.getGeneratedKeys()){k.next();persona=k.getInt(1);}}
@@ -61,6 +61,10 @@ public final class PruebasReglasLab12 {
     public static void main(String[] args)throws Exception {
         if(!"true".equals(System.getenv("ADMITU_PRUEBAS_ESCRITURA")))throw new IllegalStateException("Exige ADMITU_PRUEBAS_ESCRITURA=true y destino ensayo propio ya verificado");
         try{
+            LocalDate hoyLima=LocalDate.now(ZoneId.of("America/Lima"));
+            pe.edu.pucp.admitu.bo.Validaciones.noFutura(hoyLima,"Fecha de ensayo");
+            boolean mananaRechazada=false;try{pe.edu.pucp.admitu.bo.Validaciones.noFutura(hoyLima.plusDays(1),"Fecha de ensayo");}catch(IllegalArgumentException expected){mananaRechazada=true;}
+            check(mananaRechazada,"validación de negocio acepta hoy Lima y rechaza mañana aunque UTC ya cambió de día");
             setup();
             boolean fallo=false;try{new PostulacionBOImpl().enviar(envio(false));}catch(RuntimeException expected){fallo=true;}
             check(fallo,"envío incompleto rechazado");
@@ -75,10 +79,15 @@ public final class PruebasReglasLab12 {
             check(scalar("SELECT COUNT(*) FROM postulacion_historial WHERE postulacion_id="+post)==1,"historial inicial atómico sin duplicar");
             check(scalar("SELECT estado_actual_id FROM postulacion WHERE id="+post)==2,"estado final enviado por cliente no se acepta");
             check(scalar("SELECT sede_id FROM postulacion WHERE id="+post)==sede,"sede elegida persistida");
+            check(scalar("SELECT COUNT(*) FROM postulacion p JOIN pago g ON g.postulacion_id=p.id WHERE p.id="+post+" AND p.fecha_registro='"+hoyLima+"' AND p.fecha_envio='"+hoyLima+"' AND g.fecha_generacion='"+hoyLima+"'")==1,"postulación y pago generado conservan la fecha de Lima en MySQL");
             var archivos=new ArchivoBOImpl();ArchivoDigital dni=archivos.guardar(personal("DNI"));
             check(Arrays.equals(PNG,Base64.getDecoder().decode(new ArchivoBOImpl().buscarPorId(dni.getId()).getContenidoBase64())),"bytes DNI recuperables desde otra instancia BO");
             var futura=personal("FOTOGRAFIA");futura.setFechaRegistro(LocalDate.now(ZoneId.of("America/Lima")).plusDays(1));fallo=false;try{archivos.guardar(futura);}catch(IllegalArgumentException expected){fallo=true;}check(fallo,"fecha futura rechazada");
+            futura.setSha256(dni.getSha256());futura.setTamanio(PNG.length);fallo=false;
+            try{new pe.edu.pucp.admitu.archivo.impl.ArchivoImpl().guardar(futura);}catch(RuntimeException expected){for(Throwable cause=expected;cause!=null;cause=cause.getCause())if(cause instanceof SQLException sql&&"45000".equals(sql.getSQLState()))fallo=true;}finally{TransactionContext.rollback();TransactionContext.close();}
+            check(fallo,"procedimiento de archivo rechaza mañana Lima sin depender de la validación Java");
             int pago=scalar("SELECT id FROM pago WHERE postulacion_id="+post);var boPago=new PagoBOImpl();Pago pagoActual=boPago.buscarPorId(pago);pagoActual.setEstadoPago(EstadoPago.APROBADO);fallo=false;try{boPago.modificar(pagoActual);}catch(RuntimeException expected){fallo=true;}check(fallo,"pago sin voucher no se aprueba");
+            check(hoyLima.equals(pagoActual.getFechaPago()),"fecha de aprobación por defecto Java usa Lima");
             ArchivoDigital voucher=personal("VOUCHER");voucher.setReferenciaId(pago);voucher.setCodigoOperacion("LAB12-"+post);voucher.setMonto(pagoActual.getMonto());archivos.guardarVoucher(voucher);
             check(scalar("SELECT COUNT(*) FROM pago WHERE id="+pago+" AND estado_pago='PENDIENTE'")==1,"voucher real deja pago pendiente");
             var gate=new CyclicBarrier(2);ExecutorService revision=Executors.newFixedThreadPool(2);
@@ -91,6 +100,7 @@ public final class PruebasReglasLab12 {
             if(retiro){voucher.setId(0);archivos.guardarVoucher(voucher);pagoActual=boPago.buscarPorId(pago);pagoActual.setEstadoPago(EstadoPago.APROBADO);boPago.modificar(pagoActual);}
             pagoActual=boPago.buscarPorId(pago);
             check(scalar("SELECT COUNT(*) FROM pago WHERE id="+pago+" AND estado_pago='APROBADO' AND fecha_pago IS NOT NULL")==1,"aprobación con fecha");
+            check(hoyLima.equals(pagoActual.getFechaPago()),"fecha del pago aprobado persistida coincide con hoy Lima");
             pagoActual.setEstadoPago(EstadoPago.RECHAZADO);fallo=false;try{boPago.modificar(pagoActual);}catch(RuntimeException expected){fallo=true;}check(fallo,"pago aprobado inmutable");
             check(scalar("SELECT estado_actual_id FROM postulacion WHERE id="+post)==3,"pago aprobado avanza expediente en misma transacción");
             var docsBo=new pe.edu.pucp.admitu.postulacion.bo.DocumentoPostulacionBOImpl();
