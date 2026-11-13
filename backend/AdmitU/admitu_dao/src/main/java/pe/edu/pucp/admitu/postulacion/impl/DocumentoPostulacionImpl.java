@@ -99,6 +99,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             rs.getDate("fecha_evaluacion") != null ? rs.getDate("fecha_evaluacion").toLocalDate() : null,
             rs.getString("comentario_evaluacion"), null);
         documento.setId(rs.getInt("id"));
+        documento.setArchivoActivo(rs.getBoolean("archivo_activo"));
         return documento;
     }
 

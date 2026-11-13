@@ -1,7 +1,6 @@
 package pe.edu.pucp.admitu.postulacion.impl;
 
 import pe.edu.pucp.admitu.config.DBManager;
-import pe.edu.pucp.admitu.config.TransactionContext;
 import pe.edu.pucp.admitu.postulacion.EstadoPostulacion;
 import pe.edu.pucp.admitu.postulacion.Postulacion;
 import pe.edu.pucp.admitu.postulacion.PostulacionHistorial;
@@ -15,59 +14,17 @@ public class PostulacionHistorialImpl implements PostulacionHistorialDAO {
 
     @Override
     public int insertar(PostulacionHistorial historial) {
-        String sql = "{call INSERTAR_POSTULACION_HISTORIAL(?, ?, ?, ?, ?, ?, ?)}";
-        try {
-            Connection con = TransactionContext.getConnection();
-            try (CallableStatement cs = con.prepareCall(sql)) {
-                cs.registerOutParameter("_id", Types.INTEGER);
-                cs.setInt("_postulacion_id", historial.getPostulacion().getId());
-                if (historial.getEstadoAnterior() == null) cs.setNull("_estado_anterior_id", Types.INTEGER);
-                else cs.setInt("_estado_anterior_id", historial.getEstadoAnterior().getId());
-                cs.setInt("_estado_actual_id", historial.getEstadoActual().getId());
-                cs.setDate("_fecha_cambio", historial.getFechaCambio() != null ? Date.valueOf(historial.getFechaCambio()) : null);
-                cs.setString("_responsable_cambio", historial.getResponsableCambio());
-                cs.setString("_motivo_cambio", historial.getMotivoCambio());
-                cs.executeUpdate();
-                historial.setId(cs.getInt("_id"));
-                return historial.getId();
-            }
-        } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR POSTULACION HISTORIAL: " + ex.getMessage());
-            throw new RuntimeException(ex);
-        }
+        throw new UnsupportedOperationException("El historial es inmutable; se genera únicamente por transiciones del servidor");
     }
 
     @Override
     public int modificar(PostulacionHistorial historial) {
-        String sql = "{call MODIFICAR_POSTULACION_HISTORIAL(?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
-            cs.setInt("_id", historial.getId());
-            cs.setInt("_postulacion_id", historial.getPostulacion().getId());
-            if (historial.getEstadoAnterior() == null) cs.setNull("_estado_anterior_id", Types.INTEGER);
-            else cs.setInt("_estado_anterior_id", historial.getEstadoAnterior().getId());
-            cs.setInt("_estado_actual_id", historial.getEstadoActual().getId());
-            cs.setDate("_fecha_cambio", historial.getFechaCambio() != null ? Date.valueOf(historial.getFechaCambio()) : null);
-            cs.setString("_responsable_cambio", historial.getResponsableCambio());
-            cs.setString("_motivo_cambio", historial.getMotivoCambio());
-            return cs.executeUpdate();
-        } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR POSTULACION HISTORIAL: " + ex.getMessage());
-            throw new RuntimeException(ex);
-        }
+        throw new UnsupportedOperationException("El historial es inmutable; se genera únicamente por transiciones del servidor");
     }
 
     @Override
     public int eliminar(int idHistorial) {
-        String sql = "{call ELIMINAR_POSTULACION_HISTORIAL(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
-            cs.setInt("_id", idHistorial);
-            return cs.executeUpdate();
-        } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR POSTULACION HISTORIAL: " + ex.getMessage());
-            throw new RuntimeException(ex);
-        }
+        throw new UnsupportedOperationException("El historial es inmutable; se genera únicamente por transiciones del servidor");
     }
 
     private PostulacionHistorial mapear(ResultSet rs) throws Exception {

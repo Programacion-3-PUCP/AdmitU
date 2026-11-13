@@ -56,13 +56,17 @@ public class DocumentoObservacionBOImpl implements IDocumentoObservacionBO {
     public int modificar(DocumentoObservacion o) {
         validar(o);
         if (o.getId() <= 0) throw new RuntimeException("Id de observacion no valido");
-        return daoObservacion.modificar(o);
+        try { int result=daoObservacion.modificar(o); TransactionContext.commit(); return result; }
+        catch (Exception ex) { TransactionContext.rollback(); throw new IllegalStateException("No se pudo modificar la observación",ex); }
+        finally { TransactionContext.close(); }
     }
 
     @Override
     public int eliminar(int id) {
         if (id <= 0) throw new RuntimeException("Id de observacion no valido");
-        return daoObservacion.eliminar(id);
+        try { int result=daoObservacion.eliminar(id); TransactionContext.commit(); return result; }
+        catch (Exception ex) { TransactionContext.rollback(); throw new IllegalStateException("No se pudo eliminar la observación",ex); }
+        finally { TransactionContext.close(); }
     }
 
     @Override

@@ -12,6 +12,7 @@ import pe.edu.pucp.admitu.postulacion.boi.IDocumentoPostulacionBO;
 @Produces(MediaType.APPLICATION_JSON)
 public class DocumentoPostulacionRS {
 
+    @jakarta.ws.rs.core.Context private jakarta.ws.rs.core.SecurityContext seguridad;
     private final IDocumentoPostulacionBO boDocumento;
 
     public DocumentoPostulacionRS() {
@@ -27,6 +28,7 @@ public class DocumentoPostulacionRS {
     @POST
     @Path("insertarDocumentoPostulacion")
     public int insertarDocumentoPostulacion(DocumentoPostulacion documento) {
+        pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRoles(seguridad,"admin");
         return boDocumento.insertar(documento);
     }
 
@@ -39,12 +41,21 @@ public class DocumentoPostulacionRS {
     @PUT
     @Path("modificarDocumentoPostulacion")
     public int modificarDocumentoPostulacion(DocumentoPostulacion documento) {
-        return boDocumento.modificar(documento);
+        if(documento==null||documento.getEstadoDocumento()==null)throw new BadRequestException("Documento y estado requeridos");
+        DocumentoPostulacion actual=boDocumento.buscarPorId(documento.getId());
+        if(actual==null)throw new NotFoundException("Documento no encontrado");
+        pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRevision(seguridad,actual.getPostulacion().getId());
+        if(documento.getPostulacion()!=null&&documento.getPostulacion().getId()!=actual.getPostulacion().getId())throw new ForbiddenException("No puedes cambiar el expediente del documento");
+        actual.setEstadoDocumento(documento.getEstadoDocumento());
+        actual.setComentarioEvaluacion(documento.getComentarioEvaluacion());
+        actual.setFechaEvaluacion(java.time.LocalDate.now(java.time.ZoneId.of("America/Lima")));
+        return boDocumento.modificar(actual);
     }
 
     @DELETE
     @Path("eliminarDocumentoPostulacion/{id}")
     public int eliminarDocumentoPostulacion(@PathParam("id") int idDocumento) {
+        pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRoles(seguridad,"admin");
         return boDocumento.eliminar(idDocumento);
     }
 }

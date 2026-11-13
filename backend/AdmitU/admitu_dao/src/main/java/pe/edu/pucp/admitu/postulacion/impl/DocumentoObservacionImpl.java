@@ -44,8 +44,9 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
     @Override
     public int modificar(DocumentoObservacion observacion) {
         String sql = "{call MODIFICAR_DOCUMENTO_OBSERVACION(?, ?, ?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        try {
+            Connection con = TransactionContext.getConnection();
+            try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", observacion.getId());
             cs.setInt("_documento_id", observacion.getDocumento().getId());
             cs.setInt("_evaluador_id", observacion.getEvaluador().getId());
@@ -56,6 +57,7 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
             cs.setDate("_fecha_subsanacion", observacion.getFechaSubsanacion() != null ? Date.valueOf(observacion.getFechaSubsanacion()) : null);
             cs.setString("_comentario_subsanacion", observacion.getComentarioSubsanacion());
             return cs.executeUpdate();
+            }
         } catch (Exception ex) {
             System.out.println("ERROR AL MODIFICAR DOCUMENTO OBSERVACION: " + ex.getMessage());
             throw new RuntimeException(ex);
@@ -65,10 +67,12 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
     @Override
     public int eliminar(int idObservacion) {
         String sql = "{call ELIMINAR_DOCUMENTO_OBSERVACION(?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        try {
+            Connection con = TransactionContext.getConnection();
+            try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", idObservacion);
             return cs.executeUpdate();
+            }
         } catch (Exception ex) {
             System.out.println("ERROR AL ELIMINAR DOCUMENTO OBSERVACION: " + ex.getMessage());
             throw new RuntimeException(ex);
