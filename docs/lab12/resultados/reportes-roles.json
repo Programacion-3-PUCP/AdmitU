@@ -1,0 +1,65 @@
+[
+  {
+    "role": "anonimo",
+    "report": "Ingresos",
+    "http": 401,
+    "expected": 401,
+    "pass": true
+  },
+  {
+    "role": "anonimo",
+    "report": "Observados",
+    "http": 401,
+    "expected": 401,
+    "pass": true
+  },
+  {
+    "role": "anonimo",
+    "report": "Vacantes",
+    "http": 401,
+    "expected": 401,
+    "pass": true
+  },
+  {
+    "role": "admin",
+    "report": "Ingresos",
+    "http": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "role": "admin",
+    "report": "Observados",
+    "http": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "role": "admin",
+    "report": "Vacantes",
+    "http": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "role": "evaluador",
+    "report": "Ingresos",
+    "http": 403,
+    "expected": 403,
+    "pass": true
+  },
+  {
+    "role": "evaluador",
+    "report": "Observados",
+    "http": 200,
+    "expected": 200,
+    "pass": true
+  },
+  {
+    "role": "evaluador",
+    "report": "Vacantes",
+    "http": 403,
+    "expected": 403,
+    "pass": true
+  }
+]

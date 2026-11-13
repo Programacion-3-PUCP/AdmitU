@@ -1,0 +1,122 @@
+[
+  {
+    "case": "Pago privado sin sesión",
+    "status": "PASS",
+    "detail": {
+      "http": 401
+    }
+  },
+  {
+    "case": "Reporte privado sin sesión",
+    "status": "PASS",
+    "detail": {
+      "http": 401
+    }
+  },
+  {
+    "case": "Contraseña incorrecta",
+    "status": "PASS",
+    "detail": {
+      "http": 401
+    }
+  },
+  {
+    "case": "Admin consulta pagos",
+    "status": "PASS",
+    "detail": {
+      "http": 200
+    }
+  },
+  {
+    "case": "Evaluador no cambia catálogos",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    }
+  },
+  {
+    "case": "Postulante no aprueba su pago",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    }
+  },
+  {
+    "case": "Postulante no valida documento",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    }
+  },
+  {
+    "case": "Postulante no altera estados",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    }
+  },
+  {
+    "case": "Postulante no consulta perfil ajeno",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    }
+  },
+  {
+    "case": "Postulante no cambia perfil ajeno",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    }
+  },
+  {
+    "case": "Postulante no consulta archivos ajenos",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    }
+  },
+  {
+    "case": "Postulante no abre ingresos",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    }
+  },
+  {
+    "case": "Evaluador no abre ingresos",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    }
+  },
+  {
+    "case": "Listados filtrados por propietario",
+    "status": "PASS",
+    "detail": {
+      "http": 200,
+      "rows": 1
+    }
+  },
+  {
+    "case": "Cinco fallos bloquean contraseña válida",
+    "status": "PASS",
+    "detail": {
+      "http": 401
+    }
+  },
+  {
+    "case": "Cerrar sesión revoca token",
+    "status": "PASS",
+    "detail": {
+      "http": 204
+    }
+  },
+  {
+    "case": "Token revocado no accede",
+    "status": "PASS",
+    "detail": {
+      "http": 401
+    }
+  }
+]

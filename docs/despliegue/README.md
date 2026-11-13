@@ -1,6 +1,6 @@
 # Despliegue AdmitU — GlassFish e IIS en EC2 Windows Server
 
-Estado: procedimiento preparado. AWS Academy, Windows Server e IIS no se han ejecutado desde esta sesión. Requieren acceso real al laboratorio autorizado, su cuota/crédito y una instancia existente. No se crean servicios AWS, instancias ni reglas de red con estos scripts. El desarrollo local y sus pruebas se documentan por separado.
+Estado: WAR generado y publicación C# Release win-x64 preparada y compilada localmente. AWS Academy, Windows Server e IIS no se han ejecutado desde esta sesión. Requieren acceso real al laboratorio autorizado, su cuota/crédito y una instancia existente. No se crean servicios AWS, instancias ni reglas de red con estos scripts. El desarrollo local y sus pruebas se documentan por separado.
 
 ## 1. Artefactos y requisitos
 
@@ -48,7 +48,7 @@ $env:ADMITU_DB_PROPERTIES = 'C:\AdmitU-Privado\db.properties'
 
 Si GlassFish ya funciona como servicio Windows, configurar esas variables para su cuenta/proceso y reiniciarlo en su ventana de mantenimiento; las variables de otra consola no cambian un proceso ya iniciado. No introducir claves como opciones JVM públicas ni desactivar comprobaciones TLS.
 
-La cuenta MySQL de aplicación debe acceder solo a admitu_db con privilegios mínimos necesarios para los SP y sus transacciones. La cuenta de migración se usa por separado para DDL. Ajustar la zona horaria MySQL al calendario del proceso de admisión en Lima y comprobarla con `SELECT @@session.time_zone, CURDATE()`.
+La cuenta MySQL de aplicación debe acceder solo a admitu_db con privilegios mínimos necesarios para los SP y sus transacciones. La cuenta de migración se usa por separado para DDL. Los SP LAB12 calculan el día de negocio como DATE(UTC_TIMESTAMP()-INTERVAL 5 HOUR) y Java utiliza America/Lima; los timestamps de sesión permanecen UTC. Comprobar ambos relojes con `SELECT CURDATE(), DATE(UTC_TIMESTAMP()-INTERVAL 5 HOUR)`, sin modificar fechas históricas.
 
 ## 4. Publicar sobre IIS/GlassFish existentes
 

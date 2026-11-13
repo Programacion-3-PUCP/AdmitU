@@ -1,0 +1,48 @@
+[
+  {
+    "case": "Login rechaza POST sin antiforgery",
+    "status": "PASS",
+    "detail": {
+      "http": 400
+    }
+  },
+  {
+    "case": "Login real y cookie admin",
+    "status": "PASS",
+    "detail": {
+      "route": "/admin",
+      "httpOnly": true,
+      "sameSite": "Strict"
+    }
+  },
+  {
+    "case": "Login real y cookie evaluador",
+    "status": "PASS",
+    "detail": {
+      "route": "/evaluador",
+      "httpOnly": true,
+      "sameSite": "Strict"
+    }
+  },
+  {
+    "case": "Sesión admin permanece independiente del evaluador",
+    "status": "PASS",
+    "detail": {
+      "admin_session_preserved": true
+    }
+  },
+  {
+    "case": "Evaluador no puede abrir área admin",
+    "status": "PASS",
+    "detail": {
+      "role_boundary": true
+    }
+  },
+  {
+    "case": "Cerrar sesión elimina cookie",
+    "status": "PASS",
+    "detail": {
+      "cookie_removed": true
+    }
+  }
+]

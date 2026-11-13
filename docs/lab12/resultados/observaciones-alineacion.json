@@ -1,0 +1,16 @@
+[
+  {
+    "case": "O6 selección y conjunto",
+    "status": "PASS",
+    "mine": 5,
+    "all": 43
+  },
+  {
+    "case": "O2 acciones alineadas escritorio",
+    "status": "PASS"
+  },
+  {
+    "case": "O2 sin desbordamiento de página móvil",
+    "status": "PASS"
+  }
+]

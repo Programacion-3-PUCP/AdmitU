@@ -1,0 +1,7 @@
+{
+  "case": "RF08 bytes recuperados tras reinicio completo GlassFish y frontend",
+  "status": "PASS",
+  "id": 64,
+  "bytes": 68,
+  "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+}
