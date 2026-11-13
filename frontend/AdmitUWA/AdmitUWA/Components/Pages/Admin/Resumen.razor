@@ -229,7 +229,7 @@ else
     private double maxRatio;
     private string Ancho(double ratio) => (maxRatio == 0 ? 0 : ratio * 100 / maxRatio).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 
-    private static bool EsApta(Postulacion p) => p.Estado is EstadoPostulacion.Apta or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
+    private static bool EsApta(Postulacion p) => p.Estado is EstadoPostulacion.Apta or EstadoPostulacion.Finalizada or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
 
     private string EtapaTexto()
     {

@@ -13,7 +13,7 @@
     @if (creado is not null)
     {
         <section class="card">
-            <EmptyState Icono="check-circle" Titulo="@($"¡Listo, {creado.Nombres}! Tu cuenta fue creada")" Mensaje="@($"Te enviaremos un correo a {creado.Correo} para validarlo. Ya puedes ingresar e iniciar tu postulación.")">
+            <EmptyState Icono="check-circle" Titulo="@($"¡Listo, {creado.Nombres}! Tu cuenta fue creada")" Mensaje="@($"Tu cuenta está registrada. Ya puedes ingresar con tu correo y contraseña.")">
                 <a class="btn btn-primary empty-cta" href="/">Ir a ingresar</a>
             </EmptyState>
         </section>
@@ -38,6 +38,7 @@
                 </div>
                 <div class="field"><label for="r-num">Número de documento <span class="req">*</span></label><InputText id="r-num" @bind-Value="modelo.NumeroDocumento" /><ValidationMessage For="() => modelo.NumeroDocumento" /></div>
                 <div class="field"><label for="r-correo">Correo electrónico <span class="req">*</span></label><InputText id="r-correo" type="email" @bind-Value="modelo.Correo" autocomplete="email" /><ValidationMessage For="() => modelo.Correo" /></div>
+                <div class="field"><label for="r-clave">Contraseña (12 a 128 caracteres)</label><input id="r-clave" type="password" @bind="clave" minlength="12" maxlength="128" required autocomplete="new-password" /></div>
                 <div class="field"><label for="r-tel">Teléfono</label><InputText id="r-tel" type="tel" @bind-Value="modelo.Telefono" placeholder="987 654 321" /><ValidationMessage For="() => modelo.Telefono" /></div>
                 <label class="switch full">
                     <InputCheckbox @bind-Value="modelo.TieneDiscapacidad" />
@@ -51,7 +52,7 @@
             @if (error is not null) { <p class="validation-message" role="alert" style="margin-top:14px">@error</p> }
             <div class="form-footer">
                 <a class="btn btn-ghost" href="/">Cancelar</a>
-                <button type="submit" class="btn btn-primary"><Icon Name="check" Size="16" />Crear cuenta</button>
+                <button type="submit" class="btn btn-primary" disabled="@guardando"><Icon Name="check" Size="16" />Crear cuenta</button>
             </div>
         </EditForm>
     }
@@ -61,9 +62,16 @@
     private DatosPersonales modelo = new() { FechaNacimiento = new DateOnly(2008, 1, 1) };
     private Postulante? creado;
     private string? error;
+    private string clave = "";
+    private bool guardando;
 
-    private void Registrar()
+    private async Task Registrar()
     {
+        if (guardando) return;
+        if (clave.Length < 12 || clave.Length > 128) { error = "La contraseña debe tener entre 12 y 128 caracteres."; return; }
+        guardando = true;
+        try
+        {
         var numero = modelo.NumeroDocumento.Trim().ToUpperInvariant();
         var correo = modelo.Correo.Trim();
         if (Datos.Postulantes.Any(p => p.TipoDocumento == modelo.TipoDocumento && p.NumeroDocumento == numero))
@@ -76,13 +84,15 @@
             error = "Ese correo ya está registrado.";
             return;
         }
-        creado = Datos.RegistrarNuevoPostulante(new Postulante
+        creado = await Task.Run(() => Datos.RegistrarNuevoPostulante(new Postulante
         {
             Nombres = modelo.Nombres.Trim(), ApellidoPaterno = modelo.ApellidoPaterno.Trim(), ApellidoMaterno = modelo.ApellidoMaterno.Trim(),
             TipoDocumento = modelo.TipoDocumento, NumeroDocumento = numero, Correo = correo,
             Telefono = string.IsNullOrWhiteSpace(modelo.Telefono) ? null : modelo.Telefono.Trim(), FechaNacimiento = modelo.FechaNacimiento,
             TieneDiscapacidad = modelo.TieneDiscapacidad, CarnetConadis = modelo.TieneDiscapacidad ? modelo.CarnetConadis?.Trim() : null
-        });
+        }, clave));
         error = null;
+        } catch (Exception) { error = "No se pudo registrar la cuenta. Comprueba el documento y correo; pueden estar registrados."; }
+        finally { guardando = false; }
     }
 }

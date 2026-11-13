@@ -21,12 +21,13 @@ public sealed record AreaInfo(
 
 public static class Areas
 {
-    public static AreaInfo Crear(string clave, DatosSesion datos) => clave switch
+    public static AreaInfo Crear(string clave, DatosSesion datos)
     {
-        "evaluador" => Evaluador(datos),
-        "postulante" => Postulante(datos),
-        _ => Administrador(datos)
-    };
+        if (datos.ErrorCarga is not null)
+            return new(clave, clave == "evaluador" ? RolUsuario.Evaluador : clave == "postulante" ? RolUsuario.Postulante : RolUsuario.Administrador,
+                "AdmitU", "/", "Sesión iniciada", "Datos no disponibles", null, null, 0, []);
+        return clave switch { "evaluador" => Evaluador(datos), "postulante" => Postulante(datos), _ => Administrador(datos) };
+    }
 
     private static AreaInfo Administrador(DatosSesion datos)
     {

@@ -1,6 +1,6 @@
 @if (Abierto)
 {
-    <div class="overlay" @onclick="Cancelar"></div>
+    <div class="overlay" disabled="@ocupado" @onclick="Cancelar"></div>
     <div class="dialog" role="alertdialog" aria-modal="true" aria-label="@Titulo">
         <div class="dialog-icon tone-@Tono"><Icon Name="@(Tono == "danger" ? "alert" : "check-circle")" Size="22" /></div>
         <h2>@Titulo</h2>
@@ -9,13 +9,13 @@
         {
             <div class="dialog-body">@ChildContent</div>
         }
-        @if (Error is not null)
+        @if (Error is not null || errorInterno is not null)
         {
-            <p class="validation-message" role="alert">@Error</p>
+            <p class="validation-message" role="alert">@(Error ?? errorInterno)</p>
         }
         <div class="dialog-actions">
-            <button type="button" class="btn btn-ghost" @onclick="Cancelar">Cancelar</button>
-            <button type="button" class="btn @(Tono == "danger" ? "btn-danger" : "btn-primary")" @onclick="Confirmar">@TextoConfirmar</button>
+            <button type="button" class="btn btn-ghost" disabled="@ocupado" @onclick="Cancelar">Cancelar</button>
+            <button type="button" class="btn @(Tono == "danger" ? "btn-danger" : "btn-primary")" disabled="@ocupado" @onclick="Confirmar">@(ocupado ? "Procesando…" : TextoConfirmar)</button>
         </div>
     </div>
 }
@@ -32,6 +32,15 @@
     [Parameter] public EventCallback OnConfirmar { get; set; }
     [Parameter] public EventCallback OnCancelar { get; set; }
 
-    private Task Confirmar() => OnConfirmar.InvokeAsync();
-    private Task Cancelar() => OnCancelar.InvokeAsync();
+    private bool ocupado;
+    private string? errorInterno;
+    private async Task Confirmar()
+    {
+        if (ocupado) return;
+        ocupado = true; errorInterno = null;
+        try { await OnConfirmar.InvokeAsync(); }
+        catch { errorInterno = "No se pudo completar la operación. Revisa los datos e inténtalo de nuevo."; }
+        finally { ocupado = false; }
+    }
+    private Task Cancelar() { errorInterno = null; return ocupado ? Task.CompletedTask : OnCancelar.InvokeAsync(); }
 }

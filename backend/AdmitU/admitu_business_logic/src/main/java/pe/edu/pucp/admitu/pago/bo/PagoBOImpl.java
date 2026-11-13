@@ -1,6 +1,7 @@
 package pe.edu.pucp.admitu.pago.bo;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import pe.edu.pucp.admitu.pago.EstadoPago;
 import pe.edu.pucp.admitu.bo.Validaciones;
 import pe.edu.pucp.admitu.config.TransactionContext;
@@ -38,7 +39,7 @@ public class PagoBOImpl implements IPagoBO {
 
     private void registrarFechaPago(Pago p) {
         if (p.getEstadoPago() == EstadoPago.APROBADO && p.getFechaPago() == null)
-            p.setFechaPago(LocalDate.now());
+            p.setFechaPago(LocalDate.now(ZoneId.of("America/Lima")));
     }
 
     @Override
@@ -51,7 +52,7 @@ public class PagoBOImpl implements IPagoBO {
             return r;
         } catch (Exception ex) {
             TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
+            throw new IllegalStateException("La operación no pudo completarse", ex);
         } finally {
             TransactionContext.close();
         }
@@ -76,7 +77,9 @@ public class PagoBOImpl implements IPagoBO {
         }
         registrarFechaPago(p);
         validar(p);
-        return daoPago.modificar(p);
+        try{int r=daoPago.modificar(p);TransactionContext.commit();return r;}
+        catch(Exception e){TransactionContext.rollback();throw new IllegalStateException("No se pudo validar el pago",e);}
+        finally{TransactionContext.close();}
     }
 
     @Override

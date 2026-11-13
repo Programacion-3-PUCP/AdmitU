@@ -8,7 +8,7 @@ namespace AdmitUWA.Services;
 /// Fuente de datos de la sesión conectada en tiempo real a los servicios web RESTful de Java (admitu_services en GlassFish 8 -> MySQL RDS).
 /// Mantiene la misma interfaz pública para las páginas Razor y sincroniza cada operación CRUD con el backend.
 /// </summary>
-public sealed class DatosSesion
+public sealed partial class DatosSesion
 {
     public const string Sistema = "Sistema";
 
@@ -21,24 +21,32 @@ public sealed class DatosSesion
     private List<RequisitoDto> _requisitosBaseDto = [];
     private List<InstitucionEducativaDto> _institucionesDto = [];
 
-    public DatosSesion(AdmitURestClient? api = null)
+    public DatosSesion(AdmitURestClient api, Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider autenticacion)
     {
-        Hoy = DateOnly.FromDateTime(DateTime.Today);
+        Hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTimeOffset.UtcNow, "America/Lima").DateTime);
         _api = api;
+        _api.ActualizarSesion(autenticacion.GetAuthenticationStateAsync().GetAwaiter().GetResult().User);
         _demo = new DatosDemo(Hoy);
-
-        if (_api is not null)
+        PostulanteActualId = _api.Rol == "postulante" ? _api.PersonaId : 0;
+        EvaluadorActualId = _api.Rol == "evaluador" ? _api.PersonaId : 0;
+        Facultades.Clear(); Carreras.Clear(); Sedes.Clear(); Modalidades.Clear(); Convocatorias.Clear(); Ofertas.Clear(); Requisitos.Clear();
+        Postulantes.Clear(); Evaluadores.Clear(); Postulaciones.Clear(); Pagos.Clear(); Vouchers.Clear(); Documentos.Clear(); Observaciones.Clear();
+        Historial.Clear(); Carnes.Clear(); Antecedentes.Clear(); DocumentosPersonales.Clear(); Notificaciones.Clear();
+        try { CargarDesdeBackend(); }
+        catch (Exception ex) when (ex is AggregateException or HttpRequestException or System.Text.Json.JsonException)
         {
-            CargarDesdeBackend();
+            ErrorCarga = "No fue posible cargar los datos del servidor o la sesión expiró. Intenta recargar o vuelve a ingresar.";
         }
     }
+
+    public string? ErrorCarga { get; private set; }
 
     /// <summary>Se dispara cuando cambia algo que afecta a contadores o menús.</summary>
     public event Action? Cambio;
 
     public DateOnly Hoy { get; }
-    public int PostulanteActualId { get; set; } = DatosDemo.PostulanteActualId;
-    public int EvaluadorActualId { get; set; } = 5; // Rosa Delgado Chávez en BD
+    public int PostulanteActualId { get; private set; }
+    public int EvaluadorActualId { get; private set; }
     public string NombreAdministrador => "Admin Admisión";
 
     public List<Facultad> Facultades => _demo.Facultades;
@@ -138,7 +146,7 @@ public sealed class DatosSesion
         // 4. Convocatorias, Ofertas y ConvocatoriaModalidad
         var convDtos = tConv.Result;
         Convocatorias.Clear();
-        foreach (var c in convDtos)
+        foreach (var c in convDtos.Where(c => c.Activo))
         {
             var ini = c.FechaInicio ?? Hoy.AddDays(-15);
             var fin = c.FechaFin ?? Hoy.AddMonths(2);
@@ -233,10 +241,6 @@ public sealed class DatosSesion
                 CorreoValidado = p.CorreoValidado
             });
         }
-        if (Postulantes.Count > 0 && !Postulantes.Any(p => p.Id == PostulanteActualId))
-        {
-            PostulanteActualId = Postulantes[0].Id;
-        }
 
         var evalDtos = tEval.Result;
         Evaluadores.Clear();
@@ -253,10 +257,6 @@ public sealed class DatosSesion
                 Especialidad = e.Cargo,
                 Activo = e.Activo
             });
-        }
-        if (Evaluadores.Count > 0 && !Evaluadores.Any(e => e.Id == EvaluadorActualId))
-        {
-            EvaluadorActualId = Evaluadores[0].Id;
         }
 
         // 8. Instituciones y Antecedentes Académicos
@@ -365,8 +365,8 @@ public sealed class DatosSesion
                 ConvocatoriaId = p.Convocatoria?.Id ?? ConvocatoriaPorDefecto,
                 CarreraId = oferta?.Carrera?.Id ?? (Carreras.FirstOrDefault()?.Id ?? 1),
                 ModalidadId = cm?.Modalidad?.Id ?? (Modalidades.FirstOrDefault()?.Id ?? 1),
-                SedeId = carnePost?.SedeId ?? (Sedes.FirstOrDefault()?.Id ?? 1),
-                EvaluadorId = evalObs ?? (estadoPost != EstadoPostulacion.Borrador ? EvaluadorActualId : null),
+                SedeId = p.SedeId ?? carnePost?.SedeId ?? 0,
+                EvaluadorId = p.EvaluadorId,
                 Estado = estadoPost,
                 FechaRegistro = p.FechaRegistro ?? Hoy,
                 FechaEnvio = p.FechaEnvio ?? p.FechaRegistro ?? Hoy,
@@ -470,23 +470,6 @@ public sealed class DatosSesion
             }
         }
 
-        // Asegurar que toda postulación enviada tenga su registro Pago visible en UI
-        foreach (var post in Postulaciones.Where(x => x.Estado != EstadoPostulacion.Borrador))
-        {
-            if (!Pagos.Any(pg => pg.PostulacionId == post.Id))
-            {
-                var mod = Modalidades.FirstOrDefault(m => m.Id == post.ModalidadId);
-                Pagos.Add(new Pago
-                {
-                    Id = post.Id,
-                    Codigo = $"PAG-{post.Id:0000}",
-                    PostulacionId = post.Id,
-                    Monto = mod?.DerechoInscripcion ?? 350m,
-                    FechaGeneracion = post.FechaRegistro,
-                    Estado = EstadoPago.Generado
-                });
-            }
-        }
     }
 
     // ---- Mapeadores de enumeraciones ---------------------------------------
@@ -548,29 +531,33 @@ public sealed class DatosSesion
             _ => "ILEGIBLE"
         };
 
-    private static EstadoPostulacion MapEstadoPostulacion(int id, string? codigo)
-    {
-        var cod = (codigo ?? "").ToUpperInvariant();
-        if (cod == "BORRADOR" || id == 6) return EstadoPostulacion.Borrador;
-        if (cod == "REGISTRADA" || id == 1) return EstadoPostulacion.Enviada;
-        if (cod == "ENVIADA" || cod == "COMPLETADA" || id == 2 || id == 7) return EstadoPostulacion.EnRevision;
-        if (cod == "EN_PROCESO" || id == 8) return EstadoPostulacion.EnRevision;
-        if (cod == "OBSERVADA" || id == 3) return EstadoPostulacion.Observada;
-        if (cod == "APROBADA" || id == 4) return EstadoPostulacion.Apta;
-        if (cod == "FINALIZADA" || id == 5) return EstadoPostulacion.NoApta;
-        return EstadoPostulacion.EnRevision;
-    }
+    // Identificadores oficiales de estado_postulacion en MySQL (LAB11/LAB12).
+    private static EstadoPostulacion MapEstadoPostulacion(int id, string? codigo) =>
+        id switch
+        {
+            1 => EstadoPostulacion.Borrador,
+            2 => EstadoPostulacion.Enviada,
+            3 => EstadoPostulacion.EnRevision,
+            4 => EstadoPostulacion.Observada,
+            5 => EstadoPostulacion.Apta,
+            6 => EstadoPostulacion.Finalizada,
+            7 => EstadoPostulacion.NoApta,
+            8 => EstadoPostulacion.Anulada,
+            _ => throw new InvalidOperationException("Estado de postulación desconocido en el servicio")
+        };
 
     private static int MapEstadoPostulacionToDbId(EstadoPostulacion estado) =>
         estado switch
         {
-            EstadoPostulacion.Borrador => 6,
-            EstadoPostulacion.Enviada => 1,
-            EstadoPostulacion.EnRevision => 2,
-            EstadoPostulacion.Observada => 3,
-            EstadoPostulacion.Apta or EstadoPostulacion.Admitida => 4,
-            EstadoPostulacion.NoApta or EstadoPostulacion.NoAdmitida => 5,
-            _ => 2
+            EstadoPostulacion.Borrador => 1,
+            EstadoPostulacion.Enviada => 2,
+            EstadoPostulacion.EnRevision => 3,
+            EstadoPostulacion.Observada => 4,
+            EstadoPostulacion.Apta => 5,
+            EstadoPostulacion.Finalizada or EstadoPostulacion.Admitida => 6,
+            EstadoPostulacion.NoApta or EstadoPostulacion.NoAdmitida => 7,
+            EstadoPostulacion.Anulada => 8,
+            _ => throw new InvalidOperationException("Transición de postulación no reconocida")
         };
 
     private static EstadoPago MapEstadoPago(string? estado) =>
@@ -606,8 +593,8 @@ public sealed class DatosSesion
 
     public int ConvocatoriaPorDefecto => (ConvocatoriaVigente ?? Convocatorias.OrderByDescending(c => c.Inicio).FirstOrDefault())?.Id ?? 0;
 
-    public Postulante PostulanteActual => Postulante(PostulanteActualId) ?? Postulantes.First();
-    public Evaluador EvaluadorActual => Evaluador(EvaluadorActualId) ?? Evaluadores.First();
+    public Postulante PostulanteActual => Postulante(PostulanteActualId) ?? throw new InvalidOperationException("La sesión no identifica un postulante válido.");
+    public Evaluador EvaluadorActual => Evaluador(EvaluadorActualId) ?? throw new InvalidOperationException("La sesión no identifica un evaluador válido.");
 
     public IEnumerable<Postulacion> PostulacionesDeConvocatoria(int convocatoriaId) =>
         Postulaciones.Where(p => convocatoriaId == 0 || p.ConvocatoriaId == convocatoriaId);
@@ -657,26 +644,10 @@ public sealed class DatosSesion
     // =========================================================================
 
     // ---- RF_02: Selección de sesión / Login y Registro de Postulante --------
-    public bool IniciarSesionComo(string rol, string correo)
-    {
-        if (rol == "postulante")
-        {
-            var post = Postulantes.FirstOrDefault(p => p.Correo.Equals(correo.Trim(), StringComparison.OrdinalIgnoreCase))
-                       ?? Postulantes.FirstOrDefault();
-            if (post is not null) PostulanteActualId = post.Id;
-            return post is not null;
-        }
-        if (rol == "evaluador")
-        {
-            var eval = Evaluadores.FirstOrDefault(e => e.Correo.Equals(correo.Trim(), StringComparison.OrdinalIgnoreCase))
-                       ?? Evaluadores.FirstOrDefault();
-            if (eval is not null) EvaluadorActualId = eval.Id;
-            return eval is not null;
-        }
-        return true;
-    }
+    [Obsolete("La sesión se establece exclusivamente mediante la autenticación del servidor.")]
+    public bool IniciarSesionComo(string rol, string correo) => false;
 
-    public Postulante RegistrarNuevoPostulante(Postulante nuevo)
+    public Postulante RegistrarNuevoPostulante(Postulante nuevo, string clave)
     {
         if (_api is not null)
         {
@@ -694,8 +665,7 @@ public sealed class DatosSesion
                 NumeroCarnetConadis = nuevo.CarnetConadis,
                 CorreoValidado = false
             };
-            var creado = _api.Insertar("PostulanteRS", dto);
-            if (creado is not null) nuevo.Id = creado.Id;
+            nuevo.Id = _api.RegistrarCuentaAsync(dto, clave).GetAwaiter().GetResult();
         }
         if (nuevo.Id <= 0) nuevo.Id = SiguienteId(Postulantes, x => x.Id);
         Postulantes.Add(nuevo);
@@ -734,8 +704,10 @@ public sealed class DatosSesion
 
     public void CambiarEstadoFacultad(Facultad f, bool activo)
     {
+        if (_api is null) throw new InvalidOperationException("El servicio no está disponible");
+        if (activo) _api.Reactivar("FacultadRS", f.Id);
+        else if (!_api.Eliminar("FacultadRS", f.Id)) throw new InvalidOperationException("No se pudo dar de baja");
         f.Activo = activo;
-        if (_api is not null && !activo) _api.Eliminar("FacultadRS", f.Id);
         Avisar();
     }
 
@@ -781,8 +753,10 @@ public sealed class DatosSesion
 
     public void CambiarEstadoCarrera(Carrera c, bool activo)
     {
+        if (_api is null) throw new InvalidOperationException("El servicio no está disponible");
+        if (activo) _api.Reactivar("CarreraRS", c.Id);
+        else if (!_api.Eliminar("CarreraRS", c.Id)) throw new InvalidOperationException("No se pudo dar de baja");
         c.Activo = activo;
-        if (_api is not null && !activo) _api.Eliminar("CarreraRS", c.Id);
         Avisar();
     }
 
@@ -858,8 +832,10 @@ public sealed class DatosSesion
 
     public void CambiarEstadoModalidad(Modalidad m, bool activo)
     {
+        if (_api is null) throw new InvalidOperationException("El servicio no está disponible");
+        if (activo) _api.Reactivar("ModalidadRS", m.Id);
+        else if (!_api.Eliminar("ModalidadRS", m.Id)) throw new InvalidOperationException("No se pudo dar de baja");
         m.Activo = activo;
-        if (_api is not null && !activo) _api.Eliminar("ModalidadRS", m.Id);
         Avisar();
     }
 
@@ -910,8 +886,10 @@ public sealed class DatosSesion
 
     public void CambiarEstadoSede(Sede s, bool activo)
     {
+        if (_api is null) throw new InvalidOperationException("El servicio no está disponible");
+        if (activo) _api.Reactivar("SedeRS", s.Id);
+        else if (!_api.Eliminar("SedeRS", s.Id)) throw new InvalidOperationException("No se pudo dar de baja");
         s.Activo = activo;
-        if (_api is not null && !activo) _api.Eliminar("SedeRS", s.Id);
         Avisar();
     }
 
@@ -1126,11 +1104,18 @@ public sealed class DatosSesion
 
     public void CambiarEstadoRequisito(RequisitoAplicable r, bool activo)
     {
+        if (_api is null || r.RequisitoId <= 0) throw new InvalidOperationException("Requisito no disponible");
+        if (activo) _api.Reactivar("RequisitoRS", r.RequisitoId);
+        else if (!_api.Eliminar("RequisitoRS", r.RequisitoId)) throw new InvalidOperationException("No se pudo dar de baja");
         r.Activo = activo;
-        if (_api is not null && !activo && r.RequisitoId > 0)
-        {
-            _api.Eliminar("RequisitoRS", r.RequisitoId);
-        }
+        Avisar();
+    }
+
+    public void EliminarBorradorConvocatoria(Convocatoria c)
+    {
+        if (c.Estado != EstadoConvocatoria.Borrador) throw new InvalidOperationException("Solo se eliminan borradores");
+        if (_api is null || !_api.Eliminar("ConvocatoriaRS", c.Id)) throw new InvalidOperationException("No se pudo eliminar el borrador");
+        Convocatorias.Remove(c);
         Avisar();
     }
 
@@ -1216,8 +1201,10 @@ public sealed class DatosSesion
 
     public void CambiarEstadoEvaluador(Evaluador e, bool activo)
     {
+        if (_api is null) throw new InvalidOperationException("El servicio no está disponible");
+        if (activo) _api.Reactivar("EvaluadorRS", e.Id);
+        else if (!_api.Eliminar("EvaluadorRS", e.Id)) throw new InvalidOperationException("No se pudo dar de baja");
         e.Activo = activo;
-        if (_api is not null && !activo) _api.Eliminar("EvaluadorRS", e.Id);
         Avisar();
     }
 
@@ -1326,150 +1313,44 @@ public sealed class DatosSesion
     }
 
     // ---- RF_06: Registro de Postulación y Carga de Documentos ---------------
-    public Postulacion EnviarNuevaPostulacion(Convocatoria c, int carreraId, int modalidadId, int sedeId, Dictionary<int, string> archivos)
+    public IEnumerable<Modalidad> ModalidadesParaConvocatoria(int convocatoriaId) => Modalidades.Where(m => m.Activo && _convModalidades.Any(cm => cm.Convocatoria?.Id == convocatoriaId && cm.Modalidad?.Id == m.Id));
+
+    public async Task<Postulacion> EnviarNuevaPostulacionAsync(Convocatoria c, int carreraId, int modalidadId, int sedeId, Dictionary<int, ArchivoSeleccionado> archivos)
     {
+        if (_api is null) throw new InvalidOperationException("El servicio no está disponible");
         var yo = PostulanteActual;
-        var modalidad = Modalidad(modalidadId)!;
-        int cmId = ObtenerOCrearConvocatoriaModalidadId(c.Id, modalidadId);
-        int ofertaId = _ofertasDto.FirstOrDefault(o => o.Convocatoria?.Id == c.Id && o.Carrera?.Id == carreraId)?.Id
-                       ?? Ofertas.FirstOrDefault(o => o.ConvocatoriaId == c.Id && o.CarreraId == carreraId)?.Id ?? 1;
-
-        var id = SiguienteId(Postulaciones, x => x.Id);
-        var codigo = $"INS-{c.Periodo.Split('-')[0]}-{1000 + id + Random.Shared.Next(10, 99)}";
-
-        if (_api is not null)
-        {
-            var creada = _api.Insertar("PostulacionRS", new PostulacionDto
-            {
-                Postulante = new PostulanteDto { Id = yo.Id },
-                Convocatoria = new ConvocatoriaDto { Id = c.Id },
-                ModalidadElegida = new ConvocatoriaModalidadDto { Id = cmId },
-                CarreraElegida = new OfertaCarreraDto { Id = ofertaId },
-                EstadoActual = new EstadoPostulacionDto { Id = 2 }, // ENVIADA
-                CodigoInscripcion = codigo,
-                ObservacionGeneral = "Postulación enviada por el postulante"
-            });
-            if (creada is not null) id = creada.Id;
-        }
-
-        var p = new Postulacion
-        {
-            Id = id,
-            Codigo = codigo,
-            PostulanteId = yo.Id,
-            ConvocatoriaId = c.Id,
-            CarreraId = carreraId,
-            ModalidadId = modalidadId,
-            SedeId = sedeId,
-            EvaluadorId = EvaluadorActualId,
-            Estado = EstadoPostulacion.Borrador,
-            FechaRegistro = Hoy,
-            FechaEnvio = Hoy
-        };
-        Postulaciones.Add(p);
-
-        var requisitos = RequisitosPara(c.Id, modalidadId);
-        foreach (var r in requisitos.Where(r => archivos.ContainsKey(r.Id)))
-        {
-            var archivo = archivos[r.Id];
-            var ext = Path.GetExtension(archivo).TrimStart('.').ToUpperInvariant();
-            var tipoDb = ext is "JPG" or "JPEG" or "PNG" ? "IMAGEN" : "PDF";
-            int docId = SiguienteId(Documentos, x => x.Id);
-
-            if (_api is not null)
-            {
-                var docCreado = _api.Insertar("DocumentoPostulacionRS", new DocumentoPostulacionDto
-                {
-                    Postulacion = new PostulacionDto { Id = p.Id },
-                    RequisitoAplicable = new RequisitoConvocatoriaModalidadDto { Id = r.Id },
-                    NumeroVersion = 1,
-                    NombreArchivo = archivo,
-                    TipoArchivo = tipoDb,
-                    TamanioArchivo = 655360,
-                    RutaArchivo = $"/docs/{p.Id}/{archivo}",
-                    FechaCarga = Hoy,
-                    EstadoDocumento = "PENDIENTE"
-                });
-                if (docCreado is not null) docId = docCreado.Id;
-            }
-
-            Documentos.Add(new Documento
-            {
-                Id = docId,
-                PostulacionId = p.Id,
-                RequisitoAplicableId = r.Id,
-                Requisito = r.Nombre,
-                Archivo = archivo,
-                RutaArchivo = $"/docs/{p.Id}/{archivo}",
-                Tipo = ext == "" ? "PDF" : ext,
-                TamanioKb = 640,
-                FechaCarga = Hoy,
-                Estado = EstadoDocumento.Pendiente
-            });
-        }
-
-        Pagos.Add(new Pago
-        {
-            Id = SiguienteId(Pagos, x => x.Id),
-            Codigo = $"PAG-{20_000 + p.Id * 37}",
-            PostulacionId = p.Id,
-            Monto = modalidad.DerechoInscripcion,
-            FechaGeneracion = Hoy,
-            Estado = EstadoPago.Generado
+        if (Postulaciones.Any(p => p.PostulanteId == yo.Id && p.ConvocatoriaId == c.Id)) throw new InvalidOperationException("Ya tienes una postulación en esta convocatoria");
+        int cmId = _convModalidades.FirstOrDefault(x => x.Convocatoria?.Id == c.Id && x.Modalidad?.Id == modalidadId)?.Id ?? 0;
+        int ofertaId = _ofertasDto.FirstOrDefault(x => x.Convocatoria?.Id == c.Id && x.Carrera?.Id == carreraId)?.Id ?? 0;
+        if (cmId == 0 || ofertaId == 0 || sedeId <= 0) throw new InvalidOperationException("Selecciona una oferta y modalidad válidas");
+        int id = await _api.EnviarPostulacionAsync(new {
+            postulacion = new PostulacionDto {
+                Postulante = new PostulanteDto { Id = yo.Id }, Convocatoria = new ConvocatoriaDto { Id = c.Id },
+                ModalidadElegida = new ConvocatoriaModalidadDto { Id = cmId }, CarreraElegida = new OfertaCarreraDto { Id = ofertaId },
+                EstadoActual = new EstadoPostulacionDto { Id = 2 }, CodigoInscripcion = "INS-" + Guid.NewGuid().ToString("N")[..20], SedeId = sedeId
+            }, sedeId,
+            documentos = archivos.Select(x => new { requisitoAplicableId = x.Key, nombre = x.Value.Nombre, mime = x.Value.Mime, contenidoBase64 = x.Value.ContenidoBase64 }).ToArray()
         });
-
-        CambiarEstado(p, EstadoPostulacion.Enviada, "Postulación enviada", yo.NombreCompleto);
-        Notificar(RolUsuario.Administrador, "Nueva postulación recibida", $"{yo.NombreCompleto} envió su postulación a {Carrera(carreraId)?.Nombre}.", "Postulación");
-        return p;
+        CargarDesdeBackend();
+        return Postulaciones.First(p => p.Id == id);
     }
 
     // ---- RF_13: Seguimiento y Actualización de Estado de Postulación --------
     public void CambiarEstado(Postulacion p, EstadoPostulacion nuevo, string motivo, string responsable)
     {
         if (p.Estado == nuevo) return;
-        var anterior = p.Estado;
-        p.Estado = nuevo;
-
-        int histId = SiguienteId(Historial, x => x.Id);
-        if (_api is not null)
-        {
-            int cmId = ObtenerOCrearConvocatoriaModalidadId(p.ConvocatoriaId, p.ModalidadId);
-            int ofertaId = _ofertasDto.FirstOrDefault(o => o.Convocatoria?.Id == p.ConvocatoriaId && o.Carrera?.Id == p.CarreraId)?.Id ?? 1;
-            _api.Modificar("PostulacionRS", new PostulacionDto
-            {
-                Id = p.Id,
-                Postulante = new PostulanteDto { Id = p.PostulanteId },
-                Convocatoria = new ConvocatoriaDto { Id = p.ConvocatoriaId },
-                ModalidadElegida = new ConvocatoriaModalidadDto { Id = cmId },
-                CarreraElegida = new OfertaCarreraDto { Id = ofertaId },
-                EstadoActual = new EstadoPostulacionDto { Id = MapEstadoPostulacionToDbId(nuevo) },
-                CodigoInscripcion = p.Codigo,
-                ObservacionGeneral = p.Observacion ?? motivo
-            });
-
-            var hCreado = _api.Insertar("PostulacionHistorialRS", new PostulacionHistorialDto
-            {
-                Postulacion = new PostulacionDto { Id = p.Id },
-                EstadoAnterior = new EstadoPostulacionDto { Id = MapEstadoPostulacionToDbId(anterior) },
-                EstadoActual = new EstadoPostulacionDto { Id = MapEstadoPostulacionToDbId(nuevo) },
-                FechaCambio = Hoy,
-                ResponsableCambio = responsable,
-                MotivoCambio = motivo
-            });
-            if (hCreado is not null) histId = hCreado.Id;
-        }
-
-        Historial.Add(new MovimientoEstado
-        {
-            Id = histId,
-            PostulacionId = p.Id,
-            Anterior = anterior,
-            Nuevo = nuevo,
-            Motivo = motivo,
-            Responsable = responsable,
-            Fecha = DateTime.Now
+        if (_api is null) throw new InvalidOperationException("El servicio no está disponible");
+        int cmId = _convModalidades.FirstOrDefault(x => x.Convocatoria?.Id == p.ConvocatoriaId && x.Modalidad?.Id == p.ModalidadId)?.Id ?? 0;
+        int ofertaId = _ofertasDto.FirstOrDefault(o => o.Convocatoria?.Id == p.ConvocatoriaId && o.Carrera?.Id == p.CarreraId)?.Id ?? 0;
+        _api.Modificar("PostulacionRS", new PostulacionDto {
+            Id = p.Id, Postulante = new PostulanteDto { Id = p.PostulanteId },
+            Convocatoria = new ConvocatoriaDto { Id = p.ConvocatoriaId }, ModalidadElegida = new ConvocatoriaModalidadDto { Id = cmId },
+            CarreraElegida = new OfertaCarreraDto { Id = ofertaId }, EstadoActual = new EstadoPostulacionDto { Id = MapEstadoPostulacionToDbId(nuevo) },
+            CodigoInscripcion = p.Codigo, ObservacionGeneral = motivo
         });
-        Notificar(RolUsuario.Postulante, $"Tu postulación ahora está: {nuevo.Etiqueta().ToLowerInvariant()}", motivo, "Postulación", p.PostulanteId);
+        // El procedimiento registra el historial en la misma transacción.
+        p.Estado = nuevo;
+        CargarDesdeBackend();
         Avisar();
     }
 
@@ -1655,6 +1536,8 @@ public sealed class DatosSesion
 
     public void AsignarEvaluador(Postulacion p, int evaluadorId)
     {
+        if (_api is null) throw new InvalidOperationException("El servicio no está disponible");
+        _api.AsignarEvaluador(p.Id, evaluadorId);
         p.EvaluadorId = evaluadorId;
         Notificar(RolUsuario.Evaluador, "Nueva postulación asignada", $"Se te asignó la postulación {p.Codigo}.", "Postulación");
         Avisar();

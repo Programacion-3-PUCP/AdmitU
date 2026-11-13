@@ -1,0 +1,21 @@
+{
+  "scenario": "GET catálogo con conexiones HTTP simultáneas",
+  "path": "/admitu_services/webresources/CarreraRS/listarTodasCarreras",
+  "concurrency": 20,
+  "requests": 20,
+  "seconds": 0.3401575609999554,
+  "statuses": {
+    "200": 20
+  },
+  "latency_seconds": {
+    "median": 0.2103283220000094,
+    "p95": 0.3326284659999601,
+    "p99": 0.3379380979999951,
+    "max": 0.3379380979999951
+  },
+  "all_http_200": true,
+  "all_under_3_seconds": true,
+  "distinct_authenticated_tokens": 0,
+  "full_applicant_workflows_tested": false,
+  "scope": "Lectura de un endpoint local; no certifica RNF04 de 500 postulantes completando flujos."
+}

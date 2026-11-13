@@ -1,0 +1,11 @@
+# Copiar fuera del repositorio. GlassFish recibe ADMITU_DB_PROPERTIES con su ruta.
+db.hostname=MYSQL_HOST_VERIFICADO
+db.port=3306
+db.database=admitu_db
+db.user=REEMPLAZAR_USUARIO_EN_COPIA_PRIVADA
+db.password=REEMPLAZAR_SOLO_EN_COPIA_PRIVADA
+db.sslMode=VERIFY_IDENTITY
+# Si la CA es privada, importar a un truststore y configurar estas tres propiedades.
+# db.trustStoreUrl=file:/RUTA_PRIVADA/mysql-truststore.p12
+# db.trustStorePassword=REEMPLAZAR_SOLO_EN_COPIA_PRIVADA
+# db.trustStoreType=PKCS12

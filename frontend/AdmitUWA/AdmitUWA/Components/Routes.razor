@@ -1,6 +1,3 @@
 <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NoEncontrado)">
-    <Found Context="routeData">
-        <RouteView RouteData="routeData" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
-    </Found>
+ <Found Context="routeData"><AuthorizeRouteView RouteData="routeData"><NotAuthorized><section class="card card-pad"><h1>Acceso restringido</h1><p>Ingresa con una cuenta del perfil correspondiente.</p><a class="btn btn-primary" href="/">Ir a ingresar</a></section></NotAuthorized></AuthorizeRouteView><FocusOnNavigate RouteData="routeData" Selector="h1"/></Found>
 </Router>

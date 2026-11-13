@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class Postulacion {
+    private Integer sedeId; private Integer evaluadorId;
+    public Integer getSedeId(){return sedeId;} public void setSedeId(Integer id){sedeId=id;}
+    public Integer getEvaluadorId(){return evaluadorId;} public void setEvaluadorId(Integer id){evaluadorId=id;}
+
     private static int siguienteId = 1;
     private int id;
     private Postulante postulante;

@@ -1,0 +1,3 @@
+package pe.edu.pucp.admitu.services.seguridad;
+import jakarta.ws.rs.WebApplicationException;import jakarta.ws.rs.core.*;import jakarta.ws.rs.ext.*;import java.util.Map;
+@Provider public class SeguridadMapper implements ExceptionMapper<WebApplicationException>{public Response toResponse(WebApplicationException e){return Response.fromResponse(e.getResponse()).type(MediaType.APPLICATION_JSON_TYPE).entity(Map.of("mensaje",e.getResponse().getStatus()==401?"Inicia sesión con credenciales válidas":e.getResponse().getStatus()==403?"Tu perfil no autoriza esta operación":"No fue posible completar la solicitud")).build();}}

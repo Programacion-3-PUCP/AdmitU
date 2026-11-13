@@ -1,45 +1,9 @@
 package pe.edu.pucp.admitu.config;
-
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.util.ResourceBundle;
-
-public class DBManager {
-    private static DBManager instance;
-
-    private final String hostname;
-    private final String user;
-    private final String password;
-    private final String port;
-    private final String database;
-
-    private Connection con;
-    private final String DB_CREDENTIALS_FILE = "db";
-
-    private DBManager(){
-        ResourceBundle db = ResourceBundle.getBundle(DB_CREDENTIALS_FILE);
-        hostname = db.getString("db.hostname");
-        user = db.getString("db.user");
-        password = db.getString("db.password");
-        port = db.getString("db.port");
-        database = db.getString("db.database");
-    }
-
-    public static DBManager getInstance(){
-        if(instance == null)
-            instance = new DBManager();
-        return instance;
-    }
-
-    public Connection getConnection(){
-        try{
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            String url = "jdbc:mysql://" + hostname + ":" + port + "/" + database + "?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8";
-            con = DriverManager.getConnection(url,user,password);
-        }catch(Exception ex){
-            throw new IllegalStateException("No fue posible conectar con MySQL. Revise db.properties local.", ex);
-        }
-        return con;
-    }
+import java.io.InputStream;import java.nio.file.*;import java.sql.*;import java.util.*;
+public final class DBManager {
+ private static final class Holder{private static final DBManager INSTANCE=new DBManager();}private final Properties config=new Properties();
+ private DBManager(){String f=System.getenv("ADMITU_DB_PROPERTIES");if(f!=null&&!f.isBlank()){try(InputStream in=Files.newInputStream(Path.of(f))){config.load(in);}catch(Exception e){throw new IllegalStateException("No se pudo leer configuración externa",e);}}else{try{ResourceBundle b=ResourceBundle.getBundle("db");b.keySet().forEach(k->config.setProperty(k,b.getString(k)));}catch(MissingResourceException ignored){}}}
+ public static DBManager getInstance(){return Holder.INSTANCE;}
+ private String setting(String env,String key,String fallback){String s=System.getenv(env);if(s==null||s.isBlank())s=config.getProperty(key,fallback);if(s==null)throw new IllegalStateException("Falta configurar "+env);return s;}
+ public Connection getConnection(){try{Class.forName("com.mysql.cj.jdbc.Driver");String host=setting("ADMITU_DB_HOST","db.hostname",null),port=setting("ADMITU_DB_PORT","db.port","3306"),name=setting("ADMITU_DB_NAME","db.database","admitu_db");if(!port.matches("[0-9]{1,5}")||!name.matches("[A-Za-z0-9_]+")||!host.matches("[A-Za-z0-9._-]+"))throw new IllegalStateException("Configuración MySQL no válida");String mode=setting("ADMITU_DB_SSL_MODE","db.sslMode",Set.of("127.0.0.1","localhost").contains(host)?"PREFERRED":"VERIFY_IDENTITY");if(!mode.matches("DISABLED|PREFERRED|REQUIRED|VERIFY_CA|VERIFY_IDENTITY"))throw new IllegalStateException("Modo TLS no válido");Properties p=new Properties();p.setProperty("user",setting("ADMITU_DB_USER","db.user",null));p.setProperty("password",setting("ADMITU_DB_PASSWORD","db.password",null));p.setProperty("sslMode",mode);p.setProperty("fallbackToSystemKeyStore","false");p.setProperty("characterEncoding","utf8");p.setProperty("connectionTimeZone","UTC");p.setProperty("allowPublicKeyRetrieval","true");p.setProperty("connectTimeout","10000");p.setProperty("socketTimeout","30000");String trust=setting("ADMITU_DB_TRUSTSTORE_URL","db.trustStoreUrl","");if(!trust.isBlank()){p.setProperty("trustCertificateKeyStoreUrl",trust);p.setProperty("trustCertificateKeyStorePassword",setting("ADMITU_DB_TRUSTSTORE_PASSWORD","db.trustStorePassword",null));p.setProperty("trustCertificateKeyStoreType",setting("ADMITU_DB_TRUSTSTORE_TYPE","db.trustStoreType","PKCS12"));p.setProperty("fallbackToSystemTrustStore","false");}return DriverManager.getConnection("jdbc:mysql://"+host+":"+port+"/"+name,p);}catch(Exception e){throw new IllegalStateException("No fue posible conectar con MySQL. Revise la configuración privada del servidor.",e);}}
 }

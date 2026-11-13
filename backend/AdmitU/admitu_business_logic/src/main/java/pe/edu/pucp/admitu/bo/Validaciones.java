@@ -4,6 +4,7 @@ import pe.edu.pucp.admitu.persona.TipoDocumento;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 /**
  * Reglas de validacion reutilizables por toda la capa de logica de negocio.
@@ -93,7 +94,7 @@ public final class Validaciones {
 
     /** La fecha no puede ser posterior a hoy (las nulas se ignoran). */
     public static void noFutura(LocalDate fecha, String campo) {
-        if (fecha != null && fecha.isAfter(LocalDate.now()))
+        if (fecha != null && fecha.isAfter(LocalDate.now(ZoneId.of("America/Lima"))))
             throw new IllegalArgumentException(campo + " no puede ser futura");
     }
 

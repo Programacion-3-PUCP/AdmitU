@@ -33,13 +33,15 @@
         else if (e == EstadoPostulacion.NoApta) { yield return new("Expediente no apto", p.Observacion ?? "No cumple los requisitos", "x", "is-bad"); }
         else { yield return new("Expediente apto", "Documentos y pago conformes", "check", "is-done"); }
 
-        bool apta = e is EstadoPostulacion.Apta or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
+        bool apta = e is EstadoPostulacion.Apta or EstadoPostulacion.Finalizada or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
         yield return carne is not null
             ? new("Carné emitido", $"{carne.Codigo} · {Datos.Sede(carne.SedeId)?.Nombre}, aula {carne.Aula}", "check", "is-done")
             : new("Carné de postulante", apta ? "Se emite al validarse el pago" : "Se emite automáticamente al ser apto", "id-card", apta ? "is-now" : "is-todo");
 
         yield return e switch
         {
+            EstadoPostulacion.Finalizada => new("Inscripción finalizada", "Carné de postulante emitido", "check", "is-done"),
+            EstadoPostulacion.Anulada => new("Postulación anulada", "Este expediente fue anulado", "x", "is-bad"),
             EstadoPostulacion.Admitida => new("Resultado de admisión", "Ingresó a la carrera", "check", "is-done"),
             EstadoPostulacion.NoAdmitida => new("Resultado de admisión", "No alcanzó vacante en esta convocatoria", "x", "is-bad"),
             _ => new("Resultado de admisión", "Se publicará al cierre del proceso", "graduation-cap", "is-todo")

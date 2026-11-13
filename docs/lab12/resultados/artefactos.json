@@ -1,0 +1,8 @@
+{
+  "maven_clean_package": "PASS",
+  "war_bytes": 26642367,
+  "war_sin_configuracion_privada": true,
+  "publish_windows_win_x64": "PASS",
+  "iis_execution": "NOT_RUN",
+  "private_credential_scan_matches": 0
+}

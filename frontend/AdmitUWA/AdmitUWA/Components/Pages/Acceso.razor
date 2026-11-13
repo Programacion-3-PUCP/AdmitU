@@ -1,111 +1,21 @@
 @page "/"
 @layout AdmitUWA.Components.Layout.AccesoLayout
-@inject NavigationManager Navegacion
 @inject DatosSesion Datos
-
 <PageTitle>Ingresar · AdmitU</PageTitle>
-
 <div class="login">
-    <section class="login-brand">
-        <a class="brand" href="/">
-            <Logo />
-            <span class="brand-text"><strong>Admit<em>U</em></strong><small>Admisión universitaria</small></span>
-        </a>
-        <div class="login-copy">
-            <h2>Postula, sigue tu proceso y recibe tu carné en un solo lugar.</h2>
-            <p>Registra tu postulación, sube tus documentos y adjunta tu voucher de pago. Te avisaremos de cada avance.</p>
-        </div>
-
-        @if (Datos.ConvocatoriaVigente is { } conv)
-        {
-            <div class="login-conv">
-                <span class="eyebrow">Inscripciones abiertas</span>
-                <h3>@conv.Nombre</h3>
-                <ul class="login-dates">
-                    @foreach (var h in Datos.HitosDe(conv).Where(h => h.Fecha >= Datos.Hoy))
-                    {
-                        <li><span>@h.Nombre</span><strong>@Formato.Fecha(h.Fecha)</strong></li>
-                    }
-                </ul>
-            </div>
-        }
-
-        <div class="login-help">
-            <strong>Oficina de admisión</strong>
-            <span>admision@admitu.edu.pe · (01) 555-0100</span>
-            <span>Lunes a viernes, de 8:00 a 17:00</span>
-        </div>
-    </section>
-
-    <section class="login-panel">
-        <div class="login-card">
-            <h1>Ingresar</h1>
-            <p class="page-sub">Accede con tu correo y contraseña.</p>
-
-            <form class="stack" style="gap:16px;margin-top:20px" @onsubmit="Ingresar" @onsubmit:preventDefault>
-                <fieldset class="roles" aria-label="Perfil del prototipo">
-                    <legend class="sr-only">Perfil</legend>
-                    @foreach (var r in roles)
-                    {
-                        var actual = r;
-                        <label class="role">
-                            <input type="radio" name="rol" value="@actual.Clave" checked="@(rol == actual.Clave)" @onchange="() => Elegir(actual)" />
-                            <Icon Name="@actual.Icono" Size="20" />
-                            @actual.Nombre
-                        </label>
-                    }
-                </fieldset>
-                <div class="field">
-                    <label for="correo">Correo electrónico</label>
-                    <input id="correo" type="email" @bind="correo" autocomplete="username" />
-                </div>
-                <div class="field">
-                    <label for="clave">Contraseña</label>
-                    <input id="clave" type="password" @bind="clave" autocomplete="current-password" placeholder="Tu contraseña" />
-                </div>
-                <button type="submit" class="btn btn-primary" style="height:46px">Ingresar<Icon Name="arrow-right" Size="16" /></button>
-                <p class="hint">Prototipo: elige un perfil para recorrer su portal. Las credenciales se validarán al integrar el backend.</p>
-            </form>
-
-            <div class="login-register">
-                <div><strong>¿Postulas por primera vez?</strong><small>Crea tu cuenta para iniciar tu postulación.</small></div>
-                <a class="btn btn-ghost" href="/registro">Crear cuenta</a>
-            </div>
-        </div>
-    </section>
+ <section class="login-brand"><a class="brand" href="/"><Logo/><span class="brand-text"><strong>Admit<em>U</em></strong><small>Admisión universitaria</small></span></a>
+ <div class="login-copy"><h2>Tu admisión, paso a paso.</h2><p>Postula, presenta tus documentos y consulta el avance de tu expediente.</p></div>
+ @if(Datos.ConvocatoriaVigente is {} conv){<div class="login-conv"><span class="eyebrow">Convocatoria vigente</span><h3>@conv.Nombre</h3></div>}
+ </section>
+ <section class="login-panel"><div class="login-card"><h1>Ingresar</h1><p class="page-sub">Usa el correo y contraseña de tu cuenta.</p>
+ @if(Datos.ErrorCarga is not null){<p class="notice" role="alert">@Datos.ErrorCarga</p>}
+ @if(Error is not null){<p class="validation-message" role="alert">@(Error=="servicio"?"No fue posible conectar con el servicio. Intenta nuevamente.":"Credenciales incorrectas o cuenta temporalmente bloqueada.")</p>}
+ <form method="post" action="/cuenta/ingresar" class="stack" data-enhance="false" style="gap:16px;margin-top:20px">
+  <AntiforgeryToken/>
+  <div class="field"><label for="correo">Correo electrónico</label><input id="correo" name="correo" type="email" required autocomplete="username" maxlength="150" /></div>
+  <div class="field"><label for="clave">Contraseña</label><input id="clave" name="clave" type="password" required autocomplete="current-password" maxlength="128" /></div>
+  <button type="submit" class="btn btn-primary">Ingresar<Icon Name="arrow-right" Size="16"/></button>
+ </form><div class="login-register"><div><strong>¿Postulas por primera vez?</strong><small>Crea tu cuenta para iniciar tu postulación.</small></div><a class="btn btn-ghost" href="/registro">Crear cuenta</a></div>
+ </div></section>
 </div>
-
-@code {
-    private sealed record Rol(string Clave, string Nombre, string Icono, string Correo, string Ruta);
-
-    private Rol[] roles = [];
-    private string rol = "postulante";
-    private string correo = "";
-    private string clave = "";
-
-    protected override void OnInitialized()
-    {
-        var correoPost = Datos.Postulantes.FirstOrDefault()?.Correo ?? "ana.torres@example.com";
-        var correoEval = Datos.Evaluadores.FirstOrDefault()?.Correo ?? "rosa.delgado@pucp.edu.pe";
-        roles =
-        [
-            new("postulante", "Postulante", "graduation-cap", correoPost, "/postulante"),
-            new("evaluador", "Evaluador", "user-check", correoEval, "/evaluador"),
-            new("admin", "Administrador", "dashboard", "admin@admitu.edu.pe", "/admin")
-        ];
-        rol = roles[0].Clave;
-        correo = roles[0].Correo;
-    }
-
-    private void Elegir(Rol r)
-    {
-        rol = r.Clave;
-        correo = r.Correo;
-    }
-
-    private void Ingresar()
-    {
-        Datos.IniciarSesionComo(rol, correo);
-        Navegacion.NavigateTo(roles.First(r => r.Clave == rol).Ruta);
-    }
-}
+@code{[SupplyParameterFromQuery(Name="error")]public string? Error {get;set;}}

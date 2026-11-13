@@ -41,13 +41,15 @@ public class PagoImpl implements PagoDAO {
     @Override
     public int modificar(Pago pago) {
         String sql = "{call MODIFICAR_PAGO(?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        try {
+            Connection con=TransactionContext.getConnection();
+            try(CallableStatement cs=con.prepareCall(sql)){
             cs.setInt("_id", pago.getId());
             cs.setString("_estado", pago.getEstadoPago().name());
             cs.setString("_referencia", pago.getReferenciaPasarela());
             cs.setString("_voucher", pago.getRutaVoucher());
             return cs.executeUpdate();
+            }
         } catch (Exception ex) {
             System.out.println("ERROR AL MODIFICAR PAGO: " + ex.getMessage());
             throw new RuntimeException(ex);

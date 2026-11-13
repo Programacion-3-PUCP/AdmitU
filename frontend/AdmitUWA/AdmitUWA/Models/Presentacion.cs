@@ -12,6 +12,8 @@ public static class Presentacion
         EstadoPostulacion.Apta => "Apta",
         EstadoPostulacion.NoApta => "No apta",
         EstadoPostulacion.Admitida => "Admitida",
+        EstadoPostulacion.Finalizada => "Finalizada",
+        EstadoPostulacion.Anulada => "Anulada",
         _ => "No admitida"
     };
 
@@ -24,6 +26,8 @@ public static class Presentacion
         EstadoPostulacion.Apta => "success",
         EstadoPostulacion.NoApta => "danger",
         EstadoPostulacion.Admitida => "success",
+        EstadoPostulacion.Finalizada => "success",
+        EstadoPostulacion.Anulada => "neutral",
         _ => "danger"
     };
 
@@ -32,7 +36,7 @@ public static class Presentacion
 
     /// <summary>El evaluador ya emitió su decisión final sobre el expediente (Observada no lo es: espera subsanación).</summary>
     public static bool EsResuelta(this EstadoPostulacion e) =>
-        e is EstadoPostulacion.Apta or EstadoPostulacion.NoApta or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
+        e is EstadoPostulacion.Apta or EstadoPostulacion.NoApta or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida or EstadoPostulacion.Finalizada or EstadoPostulacion.Anulada;
 
     public static string Etiqueta(this EstadoPago e) => e switch
     {

@@ -33,7 +33,7 @@ public class SedeBOImpl implements ISedeBO {
             return r;
         } catch (Exception ex) {
             TransactionContext.rollback();
-            throw new RuntimeException("Error: " + ex.getMessage());
+            throw new IllegalStateException("La operación no pudo completarse", ex);
         } finally {
             TransactionContext.close();
         }

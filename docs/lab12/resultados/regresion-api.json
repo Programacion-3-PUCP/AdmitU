@@ -1,0 +1,242 @@
+[
+  {
+    "rf": "RF_04",
+    "case": "CRUD modalidad y reactivación persistente",
+    "status": "PASS",
+    "detail": {
+      "id": 12,
+      "CRUD_reactivacion": true
+    },
+    "seconds": 2.546
+  },
+  {
+    "rf": "RF_06",
+    "case": "CRUD carrera y reactivación persistente",
+    "status": "PASS",
+    "detail": {
+      "id": 24,
+      "CRUD_reactivacion": true
+    },
+    "seconds": 1.205
+  },
+  {
+    "rf": "RF_01",
+    "case": "CRUD convocatoria y baja borrador",
+    "status": "PASS",
+    "detail": {
+      "convocatoria": 14,
+      "borrador_baja": 15
+    },
+    "seconds": 0.996
+  },
+  {
+    "rf": "RF_07",
+    "case": "configurar requisito obligatorio y oferta",
+    "status": "PASS",
+    "detail": {
+      "asociacion": 40
+    },
+    "seconds": 0.653
+  },
+  {
+    "rf": "RF_02",
+    "case": "registro con contraseña y perfil durable",
+    "status": "PASS",
+    "detail": {
+      "persona": 125,
+      "perfil_durable": true
+    },
+    "seconds": 1.339
+  },
+  {
+    "rf": "RF_08",
+    "case": "bytes DNI/foto descarga y validaciones",
+    "status": "PASS",
+    "detail": {
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec",
+      "foto_baja": 81
+    },
+    "seconds": 0.797
+  },
+  {
+    "rf": "RF_05",
+    "case": "certificado PDF durable modificar y eliminar",
+    "status": "PASS",
+    "detail": {
+      "archivo": 82,
+      "reemplazo_y_baja": true
+    },
+    "seconds": 0.327
+  },
+  {
+    "rf": "RNF_05",
+    "case": "rollback envío sin documento obligatorio",
+    "status": "PASS",
+    "detail": {
+      "postulaciones": 0,
+      "pagos": 0
+    },
+    "seconds": 0.319
+  },
+  {
+    "rf": "O3_O7",
+    "case": "dos POST concurrentes una postulación y un pago",
+    "status": "PASS",
+    "detail": {
+      "HTTP": [
+        200,
+        409
+      ],
+      "postulacion": 111,
+      "pagos": 1
+    },
+    "seconds": 0.529
+  },
+  {
+    "rf": "O7",
+    "case": "otra carrera y otro código en misma convocatoria rechazados",
+    "status": "PASS",
+    "detail": {
+      "http": 409,
+      "carrera_y_codigo_distintos": true,
+      "postulaciones": 1,
+      "pagos": 1
+    },
+    "seconds": 0.368
+  },
+  {
+    "rf": "RNF_03",
+    "case": "REST privado sin token",
+    "status": "PASS",
+    "detail": {
+      "http": 401
+    },
+    "seconds": 0.007
+  },
+  {
+    "rf": "RNF_03",
+    "case": "perfil ajeno denegado",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    },
+    "seconds": 0.056
+  },
+  {
+    "rf": "RNF_03",
+    "case": "postulante no autoaprueba pago",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    },
+    "seconds": 0.035
+  },
+  {
+    "rf": "RNF_03",
+    "case": "postulante no modifica catálogo",
+    "status": "PASS",
+    "detail": {
+      "http": 403
+    },
+    "seconds": 0.026
+  },
+  {
+    "rf": "RF_11",
+    "case": "voucher bytes durable sin duplicar",
+    "status": "PASS",
+    "detail": {
+      "pago": 120,
+      "doble_envio_un_solo_voucher": true
+    },
+    "seconds": 0.4
+  },
+  {
+    "rf": "RF_12",
+    "case": "aprobar voucher con fecha y bloquear cambios",
+    "status": "PASS",
+    "detail": {
+      "fecha": "2026-11-12",
+      "inmutable": true
+    },
+    "seconds": 0.208
+  },
+  {
+    "rf": "RF_10",
+    "case": "registrar consultar modificar observación",
+    "status": "PASS",
+    "detail": {
+      "observacion": 44
+    },
+    "seconds": 0.25
+  },
+  {
+    "rf": "RF_03",
+    "case": "Jasper PDF filtrado Ingresos",
+    "status": "PASS",
+    "detail": {
+      "bytes": 19827,
+      "convocatoria": 14
+    },
+    "seconds": 2.513
+  },
+  {
+    "rf": "RF_09",
+    "case": "Jasper PDF filtrado Observados",
+    "status": "PASS",
+    "detail": {
+      "bytes": 20410,
+      "convocatoria": 14
+    },
+    "seconds": 0.265
+  },
+  {
+    "rf": "RF_15",
+    "case": "Jasper PDF filtrado Vacantes",
+    "status": "PASS",
+    "detail": {
+      "bytes": 20496,
+      "convocatoria": 14
+    },
+    "seconds": 0.26
+  },
+  {
+    "rf": "RF_13",
+    "case": "transición con historial durable",
+    "status": "PASS",
+    "detail": {
+      "historial": 3
+    },
+    "seconds": 0.303
+  },
+  {
+    "rf": "RF_14",
+    "case": "elegibilidad emisión búsqueda y baja carné",
+    "status": "PASS",
+    "detail": {
+      "carne": 42,
+      "inapto_rechazado": true,
+      "emitir_baja": true
+    },
+    "seconds": 0.567
+  },
+  {
+    "rf": "O7",
+    "case": "otro postulante sí puede usar la misma convocatoria",
+    "status": "PASS",
+    "detail": {
+      "postulacion": 112,
+      "otro_postulante_misma_convocatoria": true
+    },
+    "seconds": 0.892
+  },
+  {
+    "rf": "O7",
+    "case": "mismo postulante sí puede usar otra convocatoria",
+    "status": "PASS",
+    "detail": {
+      "postulacion": 113,
+      "mismo_postulante_otra_convocatoria": true
+    },
+    "seconds": 0.393
+  }
+]

@@ -75,7 +75,7 @@
         "enviadas" => p.Estado != EstadoPostulacion.Borrador,
         "pago" => p.Estado != EstadoPostulacion.Borrador && Datos.PagoAprobado(p.Id),
         "documentos" => p.Estado != EstadoPostulacion.Borrador && Datos.DocumentosCompletos(p.Id),
-        "aptas" => p.Estado is EstadoPostulacion.Apta or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida,
+        "aptas" => p.Estado is EstadoPostulacion.Apta or EstadoPostulacion.Finalizada or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida,
         "carne" => Datos.CarneVigenteDe(p.Id) is not null,
         _ => true
     };

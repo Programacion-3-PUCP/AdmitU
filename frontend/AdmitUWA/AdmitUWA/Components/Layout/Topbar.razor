@@ -13,7 +13,7 @@
     }
 
     <div class="topbar-actions">
-        <span class="pill pill-demo" title="Prototipo de interfaz: los datos se guardan solo durante la sesión y aún no hay conexión con la API Java.">Prototipo</span>
+
         <span class="pill pill-role"><i class="dot"></i>@Area.Nombre</span>
         <button type="button" class="icon-btn theme-btn" aria-label="Cambiar entre tema claro y oscuro" title="Cambiar tema" onclick="admitu.alternarTema()">
             <span class="theme-moon"><Icon Name="moon" Size="19" /></span>
@@ -27,7 +27,7 @@
             <Avatar Nombre="@Area.Usuario" Tamano="sm" />
             <span class="user-text"><strong>@Area.Usuario</strong><small>@Area.Cargo</small></span>
         </div>
-        <a class="icon-btn" href="/" aria-label="Cerrar sesión" title="Cerrar sesión"><Icon Name="log-out" Size="19" /></a>
+        <form method="post" action="/cuenta/salir" data-enhance="false"><AntiforgeryToken/><button type="submit" class="icon-btn" aria-label="Cerrar sesión" title="Cerrar sesión"><Icon Name="log-out" Size="19" /></button></form>
     </div>
 </header>
 
