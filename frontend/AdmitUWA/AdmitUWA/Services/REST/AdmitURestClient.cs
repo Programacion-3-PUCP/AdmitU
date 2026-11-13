@@ -198,6 +198,7 @@ public class DocumentoPostulacionDto
     public string TipoArchivo { get; set; } = "PDF";
     public long TamanioArchivo { get; set; } = 102400;
     public string RutaArchivo { get; set; } = "";
+    public bool ArchivoActivo { get; set; }
     public DateOnly? FechaCarga { get; set; }
     public string EstadoDocumento { get; set; } = "PENDIENTE";
     public DateOnly? FechaEvaluacion { get; set; }
@@ -247,6 +248,7 @@ public partial class AdmitURestClient
 {
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly SemaphoreSlim _lecturas = new(6, 6);
 
     private static readonly Dictionary<string, string> RutasListar = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -289,6 +291,21 @@ public partial class AdmitURestClient
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
+    }
+
+    /// <summary>Lecturas no bloqueantes, acotadas por sesión para evitar ráfagas de conexiones JDBC.</summary>
+    public async Task<List<T>> ListarTodosAsync<T>(string recurso, CancellationToken cancelacion = default)
+    {
+        if (!Autenticado && !RecursosPublicos.Contains(recurso)) return [];
+        if (Rol == "postulante" && recurso == "EvaluadorRS") return [];
+        await _lecturas.WaitAsync(cancelacion).ConfigureAwait(false);
+        try
+        {
+            using var response = await _httpClient.GetAsync($"{recurso}/{ObtenerRutaListar(recurso)}", cancelacion).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<T>>(_jsonOptions, cancelacion).ConfigureAwait(false) ?? [];
+        }
+        finally { _lecturas.Release(); }
     }
 
     public List<T> ListarTodos<T>(string recurso)

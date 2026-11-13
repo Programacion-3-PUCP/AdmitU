@@ -10,7 +10,7 @@
     <Encabezado><th>Fecha</th><th>Postulación</th><th>Postulante</th><th>Decisión</th><th>Comentario</th><th class="th-actions">Acciones</th></Encabezado>
     <Fila Context="m">
         <tr>
-            <td>@Formato.FechaHora(m.Fecha)</td>
+            <td>@Formato.Fecha(m.Fecha)</td>
             <td><span class="mono">@Datos.Postulacion(m.PostulacionId)?.Codigo</span></td>
             <td>@Datos.PersonaDePostulacion(m.PostulacionId)?.NombreCompleto</td>
             <td><StatusBadge Texto="@m.Nuevo.Etiqueta()" Tono="@m.Nuevo.Tono()" /></td>

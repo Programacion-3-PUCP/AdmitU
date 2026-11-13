@@ -63,8 +63,8 @@ else
 
     <div class="grid-2">
         <section class="card card-pad">
-            <div class="card-head"><div><h2>Avance de las postulaciones</h2><p>Cuántas pasan de una etapa a la siguiente. Haz clic en una etapa para ver quiénes están ahí.</p></div></div>
-            <Embudo Etapas="embudo" />
+            <div class="card-head"><div><h2>Indicadores de las postulaciones</h2><p>Cantidades independientes de la convocatoria; no son tasas de conversión entre etapas.</p></div></div>
+            <Embudo Etapas="embudo" MostrarConversion="false" />
         </section>
 
         <section class="card card-pad">
@@ -163,10 +163,10 @@ else
         if (conv is null) return;
 
         var todas = Datos.PostulacionesDeConvocatoria(convId).ToList();
-        var envio = todas.Where(p => p.Estado != EstadoPostulacion.Borrador).ToList();
+        var envio = todas.Where(IndicadoresExpediente.Enviada).ToList();
         registradas = todas.Count;
         enviadas = envio.Count;
-        aptas = envio.Count(EsApta);
+        aptas = envio.Count(Datos.EsApta);
         carnes = envio.Count(p => Datos.CarneVigenteDe(p.Id) is not null);
         recaudado = envio.Select(p => Datos.PagoDe(p.Id)).Where(x => x?.Estado == EstadoPago.Aprobado).Sum(x => x!.Monto);
         esperado = envio.Select(p => Datos.PagoDe(p.Id)).Where(x => x is not null).Sum(x => x!.Monto);
@@ -198,11 +198,11 @@ else
         ];
 
         semanas = [];
-        var fin = conv.Fin < Datos.Hoy ? conv.Fin : Datos.Hoy;
-        for (var inicio = conv.Inicio; inicio <= fin; inicio = inicio.AddDays(7))
+        var fin = conv.Fin is { } fechaFin && fechaFin < Datos.Hoy ? fechaFin : Datos.Hoy;
+        for (var inicio = conv.Inicio; inicio.HasValue && inicio.Value <= fin; inicio = inicio.Value.AddDays(7))
         {
-            var corte = inicio.AddDays(7);
-            semanas.Add((Formato.FechaCorta(inicio), todas.Count(p => p.FechaRegistro >= inicio && p.FechaRegistro < corte)));
+            var corte = inicio.Value.AddDays(7);
+            semanas.Add((Formato.FechaCorta(inicio.Value), todas.Count(p => p.FechaRegistro >= inicio.Value && p.FechaRegistro < corte)));
         }
         semanas = semanas.TakeLast(10).ToList();
         if (semanas.All(s => s.Valor == 0)) semanas = [];
@@ -229,15 +229,14 @@ else
     private double maxRatio;
     private string Ancho(double ratio) => (maxRatio == 0 ? 0 : ratio * 100 / maxRatio).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 
-    private static bool EsApta(Postulacion p) => p.Estado is EstadoPostulacion.Apta or EstadoPostulacion.Finalizada or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
-
     private string EtapaTexto()
     {
         var c = conv!;
         if (c.Estado == EstadoConvocatoria.Borrador) return $"En preparación · abre el {Formato.Fecha(c.Inicio)}";
         if (c.Estado == EstadoConvocatoria.Cerrada) return $"Cerrada el {Formato.Fecha(c.Fin)}";
-        int total = c.Fin.DayNumber - c.Inicio.DayNumber;
-        int dia = Math.Clamp(Datos.Hoy.DayNumber - c.Inicio.DayNumber + 1, 1, Math.Max(1, total));
+        if (c.Inicio is not { } apertura || c.Fin is not { } fin) return "Calendario no registrado";
+        int total = fin.DayNumber - apertura.DayNumber + 1;
+        int dia = Math.Clamp(Datos.Hoy.DayNumber - apertura.DayNumber + 1, 1, Math.Max(1, total));
         var cierre = c.CierreInscripciones ?? c.Fin;
         string etapa = Datos.Hoy <= cierre ? "Inscripciones" : Datos.Hoy <= (c.LimiteEvaluacion ?? c.Fin) ? "Evaluación de expedientes" : "Publicación de resultados";
         return $"Día {dia} de {total} · Etapa: {etapa}";

@@ -1,7 +1,7 @@
 @inject DatosSesion Datos
 @inject ToastService Avisos
 
-<PageHeader Titulo="Notificaciones" Subtitulo="@Subtitulo" Migas="@(["Notificaciones"])">
+<PageHeader Titulo="Avisos de esta sesión" Subtitulo="No hay una bandeja persistente ni entrega de correo; revisa los expedientes y su historial para consultar cambios." Migas="@(["Notificaciones"])">
     <Acciones>
         <button type="button" class="btn btn-ghost" disabled="@(Datos.SinLeer(Rol) == 0)" @onclick="MarcarLeidas"><Icon Name="check" Size="16" />Marcar todo como leído</button>
     </Acciones>
@@ -25,6 +25,6 @@
     private void MarcarLeidas()
     {
         Datos.MarcarLeidas(Rol);
-        Avisos.Exito("Notificaciones marcadas como leídas");
+        Avisos.Exito("Avisos de esta sesión marcados como leídos");
     }
 }

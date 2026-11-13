@@ -152,7 +152,7 @@ else
         subiendo=true;
         try {
             await Api.GuardarArchivoAsync(new(){Tipo="DOCUMENTO",PostulanteId=Datos.PostulanteActualId,ReferenciaId=doc.Id,Nombre=archivo.Nombre,Mime=archivo.Mime,ContenidoBase64=archivo.ContenidoBase64,FechaRegistro=Datos.Hoy});
-            Datos.CargarDesdeBackend();documentos=p is null?[]:Datos.DocumentosDe(p.Id);nuevos.Remove(doc.Id);
+            await Datos.CargarDesdeBackendAsync();documentos=p is null?[]:Datos.DocumentosDe(p.Id);nuevos.Remove(doc.Id);
             Avisos.Exito("Nueva versión enviada para reevaluación");
         }catch(Exception ex){Avisos.Error(ex.Message);}finally{subiendo=false;}
     }

@@ -69,7 +69,7 @@ else
                             @foreach (var m in Datos.HistorialDe(p.Id))
                             {
                                 <tr>
-                                    <td>@Formato.FechaHora(m.Fecha)</td>
+                                    <td>@Formato.Fecha(m.Fecha)</td>
                                     <td>@(m.Anterior is { } a ? a.Etiqueta() : "—")</td>
                                     <td><StatusBadge Texto="@m.Nuevo.Etiqueta()" Tono="@m.Nuevo.Tono()" /></td>
                                     <td>@m.Responsable</td>

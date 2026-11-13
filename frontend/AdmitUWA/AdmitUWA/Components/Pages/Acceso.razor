@@ -18,4 +18,7 @@
  </form><div class="login-register"><div><strong>¿Postulas por primera vez?</strong><small>Crea tu cuenta para iniciar tu postulación.</small></div><a class="btn btn-ghost" href="/registro">Crear cuenta</a></div>
  </div></section>
 </div>
-@code{[SupplyParameterFromQuery(Name="error")]public string? Error {get;set;}}
+@code {
+ [SupplyParameterFromQuery(Name="error")] public string? Error {get;set;}
+ protected override Task OnInitializedAsync() => Datos.InicializarAsync();
+}

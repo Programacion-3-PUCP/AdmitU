@@ -12,7 +12,7 @@
                 <span class="funnel-track"><i style="width:@ancho.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"></i></span>
                 <strong class="num">@e.Valor</strong>
                 <span class="funnel-rate">
-                    @if (previo is { } p)
+                    @if (MostrarConversion && previo is { } p)
                     {
                         @Formato.Porcentaje(e.Valor, p)
                         @if (mayorCaida) { <em>mayor caída</em> }
@@ -27,6 +27,7 @@
     public sealed record Etapa(string Etiqueta, int Valor, string Href);
 
     [Parameter, EditorRequired] public IReadOnlyList<Etapa> Etapas { get; set; } = [];
+    [Parameter] public bool MostrarConversion { get; set; } = true;
 
     private int maximo;
     private int indiceMayorCaida = -1;
@@ -35,6 +36,7 @@
     {
         maximo = Etapas.Count == 0 ? 0 : Etapas.Max(e => e.Valor);
         indiceMayorCaida = -1;
+        if (!MostrarConversion) return;
         double peor = 1.0;
         for (int i = 1; i < Etapas.Count; i++)
         {

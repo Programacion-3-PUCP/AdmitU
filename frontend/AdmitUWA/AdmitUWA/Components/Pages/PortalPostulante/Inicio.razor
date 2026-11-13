@@ -99,7 +99,7 @@
     {
         yo = Datos.PostulanteActual;
         conv = Datos.ConvocatoriaVigente;
-        dias = conv is null ? 0 : Math.Max(0, (conv.CierreInscripciones ?? conv.Fin).DayNumber - Datos.Hoy.DayNumber);
+        dias = conv?.Fin is { } fin ? Math.Max(0, fin.DayNumber - Datos.Hoy.DayNumber) : 0;
         mia = Datos.PostulacionActualDelPostulante();
 
         var docs = mia is null ? [] : Datos.DocumentosDe(mia.Id);

@@ -14,6 +14,8 @@ public sealed partial class DatosSesion
 
     private readonly AdmitURestClient? _api;
     private readonly DatosDemo _demo;
+    private readonly Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider _autenticacion;
+    private Task? _inicializacion;
 
     // Cachés auxiliares de tablas puente del backend para mapeo exacto de llaves foráneas
     private List<ConvocatoriaModalidadDto> _convModalidades = [];
@@ -25,21 +27,37 @@ public sealed partial class DatosSesion
     {
         Hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTimeOffset.UtcNow, "America/Lima").DateTime);
         _api = api;
-        _api.ActualizarSesion(autenticacion.GetAuthenticationStateAsync().GetAwaiter().GetResult().User);
+        _autenticacion = autenticacion;
         _demo = new DatosDemo(Hoy);
-        PostulanteActualId = _api.Rol == "postulante" ? _api.PersonaId : 0;
-        EvaluadorActualId = _api.Rol == "evaluador" ? _api.PersonaId : 0;
         Facultades.Clear(); Carreras.Clear(); Sedes.Clear(); Modalidades.Clear(); Convocatorias.Clear(); Ofertas.Clear(); Requisitos.Clear();
         Postulantes.Clear(); Evaluadores.Clear(); Postulaciones.Clear(); Pagos.Clear(); Vouchers.Clear(); Documentos.Clear(); Observaciones.Clear();
         Historial.Clear(); Carnes.Clear(); Antecedentes.Clear(); DocumentosPersonales.Clear(); Notificaciones.Clear();
-        try { CargarDesdeBackend(); }
-        catch (Exception ex) when (ex is AggregateException or HttpRequestException or System.Text.Json.JsonException)
-        {
-            ErrorCarga = "No fue posible cargar los datos del servidor o la sesión expiró. Intenta recargar o vuelve a ingresar.";
-        }
     }
 
     public string? ErrorCarga { get; private set; }
+    public bool CargaCompletada { get; private set; }
+    public long UltimaCargaMilisegundos { get; private set; }
+
+    // Una tarea por scope/circuito: varios componentes comparten la misma carga,
+    // nunca las listas ni la identidad de otro usuario.
+    public Task InicializarAsync() => _inicializacion ??= InicializarSesionAsync();
+
+    private async Task InicializarSesionAsync()
+    {
+        try
+        {
+            var estado = await _autenticacion.GetAuthenticationStateAsync();
+            _api!.ActualizarSesion(estado.User);
+            PostulanteActualId = _api.Rol == "postulante" ? _api.PersonaId : 0;
+            EvaluadorActualId = _api.Rol == "evaluador" ? _api.PersonaId : 0;
+            await CargarDesdeBackendAsync();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or System.Text.Json.JsonException or TaskCanceledException)
+        {
+            ErrorCarga = "No fue posible cargar los datos del servidor o la sesión expiró. Intenta recargar o vuelve a ingresar.";
+        }
+        finally { CargaCompletada = true; }
+    }
 
     /// <summary>Se dispara cuando cambia algo que afecta a contadores o menús.</summary>
     public event Action? Cambio;
@@ -72,34 +90,39 @@ public sealed partial class DatosSesion
     // =========================================================================
     // SINCRONIZACIÓN CON BACKEND JAVA REST (GlassFish 8 + MySQL RDS)
     // =========================================================================
-    public void CargarDesdeBackend()
+    // Compatibilidad con las acciones CRUD sincrónicas existentes. La carga inicial
+    // y las operaciones con archivos usan el método asíncrono directamente.
+    public void CargarDesdeBackend() => CargarDesdeBackendAsync().GetAwaiter().GetResult();
+
+    public async Task CargarDesdeBackendAsync()
     {
         if (_api is null) return;
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
 
         // 1. Carga paralela desde los endpoints REST de GlassFish 8
-        var tFac = Task.Run(() => _api.ListarTodos<FacultadDto>("FacultadRS"));
-        var tCar = Task.Run(() => _api.ListarTodos<CarreraDto>("CarreraRS"));
-        var tSed = Task.Run(() => _api.ListarTodos<SedeDto>("SedeRS"));
-        var tConv = Task.Run(() => _api.ListarTodos<ConvocatoriaDto>("ConvocatoriaRS"));
-        var tOfe = Task.Run(() => _api.ListarTodos<OfertaCarreraDto>("OfertaCarreraRS"));
-        var tCm = Task.Run(() => _api.ListarTodos<ConvocatoriaModalidadDto>("ConvocatoriaModalidadRS"));
-        var tMod = Task.Run(() => _api.ListarTodos<ModalidadDto>("ModalidadRS"));
-        var tReq = Task.Run(() => _api.ListarTodos<RequisitoDto>("RequisitoRS"));
-        var tRcm = Task.Run(() => _api.ListarTodos<RequisitoConvocatoriaModalidadDto>("RequisitoConvocatoriaModalidadRS"));
-        var tPost = Task.Run(() => _api.ListarTodos<PostulanteDto>("PostulanteRS"));
-        var tEval = Task.Run(() => _api.ListarTodos<EvaluadorDto>("EvaluadorRS"));
-        var tInst = Task.Run(() => _api.ListarTodos<InstitucionEducativaDto>("InstitucionEducativaRS"));
-        var tAnt = Task.Run(() => _api.ListarTodos<AntecedenteAcademicoDto>("AntecedenteAcademicoRS"));
-        var tCarne = Task.Run(() => _api.ListarTodos<CarnePostulanteDto>("CarnePostulanteRS"));
-        var tDoc = Task.Run(() => _api.ListarTodos<DocumentoPostulacionDto>("DocumentoPostulacionRS"));
-        var tObs = Task.Run(() => _api.ListarTodos<DocumentoObservacionDto>("DocumentoObservacionRS"));
-        var tPos = Task.Run(() => _api.ListarTodos<PostulacionDto>("PostulacionRS"));
-        var tHis = Task.Run(() => _api.ListarTodos<PostulacionHistorialDto>("PostulacionHistorialRS"));
-        var tPag = Task.Run(() => _api.ListarTodos<PagoDto>("PagoRS"));
+        var tFac = _api.ListarTodosAsync<FacultadDto>("FacultadRS");
+        var tCar = _api.ListarTodosAsync<CarreraDto>("CarreraRS");
+        var tSed = _api.ListarTodosAsync<SedeDto>("SedeRS");
+        var tConv = _api.ListarTodosAsync<ConvocatoriaDto>("ConvocatoriaRS");
+        var tOfe = _api.ListarTodosAsync<OfertaCarreraDto>("OfertaCarreraRS");
+        var tCm = _api.ListarTodosAsync<ConvocatoriaModalidadDto>("ConvocatoriaModalidadRS");
+        var tMod = _api.ListarTodosAsync<ModalidadDto>("ModalidadRS");
+        var tReq = _api.ListarTodosAsync<RequisitoDto>("RequisitoRS");
+        var tRcm = _api.ListarTodosAsync<RequisitoConvocatoriaModalidadDto>("RequisitoConvocatoriaModalidadRS");
+        var tPost = _api.ListarTodosAsync<PostulanteDto>("PostulanteRS");
+        var tEval = _api.ListarTodosAsync<EvaluadorDto>("EvaluadorRS");
+        var tInst = _api.ListarTodosAsync<InstitucionEducativaDto>("InstitucionEducativaRS");
+        var tAnt = _api.ListarTodosAsync<AntecedenteAcademicoDto>("AntecedenteAcademicoRS");
+        var tCarne = _api.ListarTodosAsync<CarnePostulanteDto>("CarnePostulanteRS");
+        var tDoc = _api.ListarTodosAsync<DocumentoPostulacionDto>("DocumentoPostulacionRS");
+        var tObs = _api.ListarTodosAsync<DocumentoObservacionDto>("DocumentoObservacionRS");
+        var tPos = _api.ListarTodosAsync<PostulacionDto>("PostulacionRS");
+        var tHis = _api.ListarTodosAsync<PostulacionHistorialDto>("PostulacionHistorialRS");
+        var tPag = _api.ListarTodosAsync<PagoDto>("PagoRS");
 
-        Task.WaitAll(tFac, tCar, tSed, tConv, tOfe, tCm, tMod, tReq, tRcm, tPost, tEval, tInst, tAnt, tCarne, tDoc, tObs, tPos, tHis, tPag);
+        await Task.WhenAll(tFac, tCar, tSed, tConv, tOfe, tCm, tMod, tReq, tRcm, tPost, tEval, tInst, tAnt, tCarne, tDoc, tObs, tPos, tHis, tPag).ConfigureAwait(false);
 
-        var facDtos = tFac.Result;
+        var facDtos = await tFac;
         Facultades.Clear();
         foreach (var f in facDtos)
         {
@@ -113,7 +136,7 @@ public sealed partial class DatosSesion
         }
 
         // 2. Carreras
-        var carDtos = tCar.Result;
+        var carDtos = await tCar;
         Carreras.Clear();
         foreach (var c in carDtos)
         {
@@ -128,7 +151,7 @@ public sealed partial class DatosSesion
         }
 
         // 3. Sedes
-        var sedeDtos = tSed.Result;
+        var sedeDtos = await tSed;
         Sedes.Clear();
         foreach (var s in sedeDtos)
         {
@@ -144,12 +167,12 @@ public sealed partial class DatosSesion
         }
 
         // 4. Convocatorias, Ofertas y ConvocatoriaModalidad
-        var convDtos = tConv.Result;
+        var convDtos = await tConv;
         Convocatorias.Clear();
         foreach (var c in convDtos.Where(c => c.Activo))
         {
-            var ini = c.FechaInicio ?? Hoy.AddDays(-15);
-            var fin = c.FechaFin ?? Hoy.AddMonths(2);
+            var ini = c.FechaInicio;
+            var fin = c.FechaFin;
             Convocatorias.Add(new Convocatoria
             {
                 Id = c.Id,
@@ -157,15 +180,15 @@ public sealed partial class DatosSesion
                 Nombre = c.Nombre,
                 Periodo = c.Periodo,
                 Inicio = ini,
-                CierreInscripciones = fin.AddDays(-15) > ini ? fin.AddDays(-15) : fin,
-                LimiteEvaluacion = fin.AddDays(-5) > ini ? fin.AddDays(-5) : fin,
+                CierreInscripciones = fin,
+                LimiteEvaluacion = null,
                 Fin = fin,
                 Estado = MapEstadoConvocatoria(c.Estado),
                 Descripcion = c.Descripcion ?? ""
             });
         }
 
-        _ofertasDto = tOfe.Result;
+        _ofertasDto = await tOfe;
         Ofertas.Clear();
         foreach (var o in _ofertasDto)
         {
@@ -178,28 +201,28 @@ public sealed partial class DatosSesion
             });
         }
 
-        _convModalidades = tCm.Result;
+        _convModalidades = await tCm;
 
         // 5. Modalidades
-        var modDtos = tMod.Result;
+        var modDtos = await tMod;
         Modalidades.Clear();
         foreach (var m in modDtos)
         {
-            var cm = _convModalidades.FirstOrDefault(x => x.Modalidad?.Id == m.Id);
+            var cm = _convModalidades.FirstOrDefault(x => x.Convocatoria?.Id == ConvocatoriaPorDefecto && x.Modalidad?.Id == m.Id);
             Modalidades.Add(new Modalidad
             {
                 Id = m.Id,
                 Codigo = m.CodigoModalidad,
                 Nombre = m.Nombre,
                 Descripcion = m.Descripcion ?? "",
-                DerechoInscripcion = cm is not null && cm.CostoInscripcion > 0 ? (decimal)cm.CostoInscripcion : 350m,
+                DerechoInscripcion = cm is not null ? (decimal)cm.CostoInscripcion : 0m,
                 Activo = m.Activo
             });
         }
 
         // 6. Requisitos y RequisitoConvocatoriaModalidad
-        _requisitosBaseDto = tReq.Result;
-        var rcmDtos = tRcm.Result;
+        _requisitosBaseDto = await tReq;
+        var rcmDtos = await tRcm;
         Requisitos.Clear();
         foreach (var rcm in rcmDtos)
         {
@@ -221,7 +244,7 @@ public sealed partial class DatosSesion
         }
 
         // 7. Postulantes y Evaluadores
-        var postDtos = tPost.Result;
+        var postDtos = await tPost;
         Postulantes.Clear();
         foreach (var p in postDtos)
         {
@@ -242,7 +265,7 @@ public sealed partial class DatosSesion
             });
         }
 
-        var evalDtos = tEval.Result;
+        var evalDtos = await tEval;
         Evaluadores.Clear();
         foreach (var e in evalDtos)
         {
@@ -260,8 +283,8 @@ public sealed partial class DatosSesion
         }
 
         // 8. Instituciones y Antecedentes Académicos
-        _institucionesDto = tInst.Result;
-        var antDtos = tAnt.Result;
+        _institucionesDto = await tInst;
+        var antDtos = await tAnt;
         Antecedentes.Clear();
         foreach (var a in antDtos)
         {
@@ -272,18 +295,18 @@ public sealed partial class DatosSesion
                 PostulanteId = a.Postulante?.Id ?? PostulanteActualId,
                 InstitucionId = inst?.Id ?? 1,
                 Tipo = inst?.TipoInstitucion == "UNIVERSIDAD" ? "Certificado universitario" : "Certificado de notas",
-                Institucion = inst?.Nombre ?? "Institución Educativa",
+                Institucion = inst?.Nombre ?? "No registrada",
                 Archivo = !string.IsNullOrWhiteSpace(a.Descripcion) && a.Descripcion.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
                     ? a.Descripcion
-                    : $"certificado_{a.Id}_{a.AnioFin}.pdf",
-                AnioInicio = a.AnioInicio > 0 ? a.AnioInicio : 2019,
-                AnioFin = a.AnioFin > 0 ? a.AnioFin : 2024,
-                Fecha = new DateOnly(a.AnioFin > 1900 && a.AnioFin <= Hoy.Year ? a.AnioFin : Hoy.Year, 12, 15)
+                    : "",
+                AnioInicio = a.AnioInicio,
+                AnioFin = a.AnioFin,
+                Fecha = null
             });
         }
 
         // 9.Carnés (para conocer la sede de cada postulación)
-        var carneDtos = tCarne.Result;
+        var carneDtos = await tCarne;
         Carnes.Clear();
         foreach (var c in carneDtos)
         {
@@ -302,8 +325,8 @@ public sealed partial class DatosSesion
         }
 
         // 10. Documentos y Observaciones
-        var docDtos = tDoc.Result;
-        var obsDtos = tObs.Result;
+        var docDtos = await tDoc;
+        var obsDtos = await tObs;
 
         Documentos.Clear();
         DocumentosPersonales.Clear();
@@ -319,6 +342,7 @@ public sealed partial class DatosSesion
                 Requisito = reqNombre,
                 Archivo = d.NombreArchivo,
                 RutaArchivo = d.RutaArchivo,
+                ArchivoActivo = d.ArchivoActivo,
                 Tipo = d.TipoArchivo == "IMAGEN" ? "JPG" : "PDF",
                 TamanioKb = (int)Math.Max(1, d.TamanioArchivo / 1024),
                 Version = d.NumeroVersion,
@@ -346,7 +370,7 @@ public sealed partial class DatosSesion
         }
 
         // 11. Postulaciones e Historial
-        var postulacionDtos = tPos.Result;
+        var postulacionDtos = await tPos;
         Postulaciones.Clear();
         foreach (var p in postulacionDtos)
         {
@@ -369,7 +393,7 @@ public sealed partial class DatosSesion
                 EvaluadorId = p.EvaluadorId,
                 Estado = estadoPost,
                 FechaRegistro = p.FechaRegistro ?? Hoy,
-                FechaEnvio = p.FechaEnvio ?? p.FechaRegistro ?? Hoy,
+                FechaEnvio = p.FechaEnvio,
                 Observacion = p.ObservacionGeneral
             });
         }
@@ -394,11 +418,10 @@ public sealed partial class DatosSesion
             }
         }
 
-        var histDtos = tHis.Result;
+        var histDtos = await tHis;
         Historial.Clear();
         foreach (var h in histDtos)
         {
-            var fechaBase = h.FechaCambio ?? Hoy;
             Historial.Add(new MovimientoEstado
             {
                 Id = h.Id,
@@ -407,14 +430,14 @@ public sealed partial class DatosSesion
                     ? MapEstadoPostulacion(h.EstadoAnterior.Id, h.EstadoAnterior.Codigo)
                     : null,
                 Nuevo = MapEstadoPostulacion(h.EstadoActual?.Id ?? 1, h.EstadoActual?.Codigo),
-                Fecha = fechaBase.ToDateTime(new TimeOnly(10, 0)),
+                Fecha = h.FechaCambio?.ToDateTime(TimeOnly.MinValue),
                 Responsable = string.IsNullOrWhiteSpace(h.ResponsableCambio) ? Sistema : h.ResponsableCambio,
                 Motivo = h.MotivoCambio
             });
         }
 
         // 12. Pagos y Vouchers
-        var pagoDtos = tPag.Result;
+        var pagoDtos = await tPag;
         Pagos.Clear();
         Vouchers.Clear();
         foreach (var pg in pagoDtos.OrderBy(x => x.Id))
@@ -470,6 +493,9 @@ public sealed partial class DatosSesion
             }
         }
 
+        reloj.Stop();
+        UltimaCargaMilisegundos = reloj.ElapsedMilliseconds;
+        ErrorCarga = null;
     }
 
     // ---- Mapeadores de enumeraciones ---------------------------------------
@@ -613,25 +639,28 @@ public sealed partial class DatosSesion
 
     public List<Hito> HitosDe(Convocatoria c)
     {
-        var hitos = new List<Hito> { new("Apertura de inscripciones", c.Inicio, "Inicio del registro de postulaciones.") };
+        var hitos = new List<Hito>();
+        if (c.Inicio is { } inicio) hitos.Add(new("Apertura de inscripciones", inicio, "Inicio del registro de postulaciones."));
         if (c.CierreInscripciones is { } cierre) hitos.Add(new("Cierre de inscripciones", cierre, "Último día para enviar la postulación y el voucher."));
         if (c.LimiteEvaluacion is { } limite) hitos.Add(new("Fin de evaluación de expedientes", limite, "Fecha límite para que los evaluadores resuelvan."));
-        hitos.Add(new("Publicación de resultados", c.Fin, "Lista de admitidos por carrera y modalidad."));
         return hitos;
     }
 
     // ---- Reglas del expediente --------------------------------------------
     public bool DocumentosCompletos(int postulacionId)
     {
-        var docs = DocumentosDe(postulacionId);
-        return docs.Count > 0 && docs.All(x => x.Estado == EstadoDocumento.Aprobado);
+        var p = Postulacion(postulacionId);
+        return p is not null && IndicadoresExpediente.DocumentosCompletos(p, Requisitos, Documentos);
     }
+
+    public bool EsApta(Postulacion p) => IndicadoresExpediente.EstadoApto(p.Estado)
+        && DocumentosCompletos(p.Id) && PagoAprobado(p.Id);
 
     public bool PagoAprobado(int postulacionId) => PagoDe(postulacionId)?.Estado == EstadoPago.Aprobado;
 
     public string? MotivoNoApta(Postulacion p)
     {
-        if (!DocumentosCompletos(p.Id)) return "Todos los documentos deben estar aprobados.";
+        if (!DocumentosCompletos(p.Id)) return "Cada requisito obligatorio debe tener un archivo activo aprobado.";
         if (!PagoAprobado(p.Id)) return "El pago de inscripción debe estar validado.";
         return null;
     }
@@ -760,8 +789,9 @@ public sealed partial class DatosSesion
         Avisar();
     }
 
-    public void GuardarModalidad(Modalidad modelo)
+    public void GuardarModalidad(Modalidad modelo, int convocatoriaId = 0)
     {
+        if (convocatoriaId <= 0) convocatoriaId = ConvocatoriaPorDefecto;
         if (modelo.Id == 0)
         {
             modelo.Codigo = modelo.Codigo.Trim().ToUpperInvariant();
@@ -779,11 +809,11 @@ public sealed partial class DatosSesion
                     Activo = true
                 });
                 if (creado is not null) modelo.Id = creado.Id;
-                if (ConvocatoriaPorDefecto > 0)
+                if (convocatoriaId > 0)
                 {
                     var cm = _api.Insertar("ConvocatoriaModalidadRS", new ConvocatoriaModalidadDto
                     {
-                        Convocatoria = new ConvocatoriaDto { Id = ConvocatoriaPorDefecto },
+                        Convocatoria = new ConvocatoriaDto { Id = convocatoriaId },
                         Modalidad = new ModalidadDto { Id = modelo.Id },
                         CostoInscripcion = (double)modelo.DerechoInscripcion,
                         Observacion = modelo.Descripcion
@@ -812,18 +842,29 @@ public sealed partial class DatosSesion
                     RequiereUniversidad = false,
                     Activo = m.Activo
                 });
-                var cm = _convModalidades.FirstOrDefault(x => x.Modalidad?.Id == m.Id);
+                var cm = _convModalidades.FirstOrDefault(x => x.Convocatoria?.Id == convocatoriaId && x.Modalidad?.Id == m.Id);
                 if (cm is not null)
                 {
                     cm.CostoInscripcion = (double)m.DerechoInscripcion;
                     _api.Modificar("ConvocatoriaModalidadRS", new ConvocatoriaModalidadDto
                     {
                         Id = cm.Id,
-                        Convocatoria = new ConvocatoriaDto { Id = cm.Convocatoria?.Id ?? ConvocatoriaPorDefecto },
+                        Convocatoria = new ConvocatoriaDto { Id = cm.Convocatoria?.Id ?? convocatoriaId },
                         Modalidad = new ModalidadDto { Id = m.Id },
                         CostoInscripcion = (double)m.DerechoInscripcion,
                         Observacion = cm.Observacion ?? m.Descripcion
                     });
+                }
+                else if (convocatoriaId > 0)
+                {
+                    var creada = _api.Insertar("ConvocatoriaModalidadRS", new ConvocatoriaModalidadDto
+                    {
+                        Convocatoria = new ConvocatoriaDto { Id = convocatoriaId },
+                        Modalidad = new ModalidadDto { Id = m.Id },
+                        CostoInscripcion = (double)modelo.DerechoInscripcion,
+                        Observacion = m.Descripcion
+                    });
+                    if (creada is not null) _convModalidades.Add(creada);
                 }
             }
         }
@@ -1246,8 +1287,8 @@ public sealed partial class DatosSesion
                 {
                     Postulante = new PostulanteDto { Id = PostulanteActualId },
                     Institucion = new InstitucionEducativaDto { Id = instId },
-                    AnioInicio = modelo.AnioInicio > 0 ? modelo.AnioInicio : 2019,
-                    AnioFin = modelo.AnioFin > 0 ? modelo.AnioFin : 2024,
+                    AnioInicio = modelo.AnioInicio,
+                    AnioFin = modelo.AnioFin,
                     Descripcion = modelo.Archivo,
                     Activo = true
                 });
@@ -1271,8 +1312,8 @@ public sealed partial class DatosSesion
                     Id = a.Id,
                     Postulante = new PostulanteDto { Id = a.PostulanteId },
                     Institucion = new InstitucionEducativaDto { Id = instId },
-                    AnioInicio = a.AnioInicio > 0 ? a.AnioInicio : 2019,
-                    AnioFin = a.AnioFin > 0 ? a.AnioFin : 2024,
+                    AnioInicio = a.AnioInicio,
+                    AnioFin = a.AnioFin,
                     Descripcion = a.Archivo,
                     Activo = true
                 });
@@ -1318,6 +1359,7 @@ public sealed partial class DatosSesion
     public async Task<Postulacion> EnviarNuevaPostulacionAsync(Convocatoria c, int carreraId, int modalidadId, int sedeId, Dictionary<int, ArchivoSeleccionado> archivos)
     {
         if (_api is null) throw new InvalidOperationException("El servicio no está disponible");
+        if (!InscripcionesAbiertas(c)) throw new InvalidOperationException("La convocatoria no está recibiendo postulaciones");
         var yo = PostulanteActual;
         if (Postulaciones.Any(p => p.PostulanteId == yo.Id && p.ConvocatoriaId == c.Id)) throw new InvalidOperationException("Ya tienes una postulación en esta convocatoria");
         int cmId = _convModalidades.FirstOrDefault(x => x.Convocatoria?.Id == c.Id && x.Modalidad?.Id == modalidadId)?.Id ?? 0;
@@ -1331,7 +1373,7 @@ public sealed partial class DatosSesion
             }, sedeId,
             documentos = archivos.Select(x => new { requisitoAplicableId = x.Key, nombre = x.Value.Nombre, mime = x.Value.Mime, contenidoBase64 = x.Value.ContenidoBase64 }).ToArray()
         });
-        CargarDesdeBackend();
+        await CargarDesdeBackendAsync();
         return Postulaciones.First(p => p.Id == id);
     }
 
@@ -1801,8 +1843,8 @@ public sealed partial class DatosSesion
             Titulo = titulo,
             Detalle = detalle,
             Tipo = tipo,
-            Medio = "Sistema",
-            Fecha = DateTime.Now
+            Medio = "Esta sesión",
+            Fecha = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTimeOffset.UtcNow, "America/Lima").DateTime
         });
     }
 

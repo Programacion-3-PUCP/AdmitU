@@ -247,7 +247,7 @@ public sealed class DatosDemo
         var conv = Convocatorias.First(c => c.Id == 3);
         for (int i = 0; i < 8; i++)
         {
-            var registro = conv.Inicio.AddDays(5 + i * 4);
+            var registro = conv.Inicio!.Value.AddDays(5 + i * 4);
             var final = i % 3 == 2 ? EstadoPostulacion.NoAdmitida : EstadoPostulacion.Admitida;
             var p = new Postulacion
             {

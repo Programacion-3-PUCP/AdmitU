@@ -17,6 +17,7 @@ public static class Formato
     public static string Fecha(DateOnly? fecha) => fecha is { } f ? Fecha(f) : "—";
     public static string Mes(DateOnly fecha) => fecha.ToString("MMM", Peru);
     public static string FechaCorta(DateOnly fecha) => fecha.ToString("dd MMM", Peru);
+    public static string Fecha(DateTime? fecha) => fecha is { } f ? f.ToString("dd MMM yyyy", Peru) : "No registrada";
     public static string FechaHora(DateTime fecha) => fecha.ToString("dd MMM yyyy, HH:mm", Peru);
     public static string Soles(decimal monto) => "S/ " + monto.ToString("N2", CultureInfo.InvariantCulture);
     public static string Numero(int n) => n.ToString("N0", CultureInfo.InvariantCulture);

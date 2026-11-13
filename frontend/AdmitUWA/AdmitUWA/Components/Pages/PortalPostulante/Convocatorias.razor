@@ -8,7 +8,7 @@
 <div class="conv-grid">
     @foreach (var c in Datos.Convocatorias.Where(c => c.Estado != EstadoConvocatoria.Borrador).OrderByDescending(c => c.Inicio))
     {
-        bool abierta = c.Estado == EstadoConvocatoria.Publicada;
+        bool abierta = Datos.InscripcionesAbiertas(c);
         var ofertas = Datos.Ofertas.Where(o => o.ConvocatoriaId == c.Id).ToList();
         <article class="card conv">
             <div class="conv-top">
@@ -18,11 +18,14 @@
             <p>@c.Descripcion</p>
             <div class="summary-rows">
                 <div><span>Inscripciones</span><strong>@Formato.Fecha(c.Inicio) – @Formato.Fecha(c.CierreInscripciones)</strong></div>
-                <div><span>Resultados</span><strong>@Formato.Fecha(c.Fin)</strong></div>
+                @foreach (var m in Datos.ModalidadesParaConvocatoria(c.Id))
+                {
+                    <div><span>@m.Nombre</span><strong>@Datos.TarifaInscripcionTexto(c.Id, m.Id)</strong></div>
+                }
                 <div><span>Oferta</span><strong>@ofertas.Count carreras · @ofertas.Sum(o => o.Vacantes) vacantes</strong></div>
             </div>
             <div class="conv-foot">
-                <span>@(abierta ? $"Cierra en {Math.Max(0, (c.CierreInscripciones ?? c.Fin).DayNumber - Datos.Hoy.DayNumber)} días" : "Proceso concluido")</span>
+                <span>@(abierta ? (c.Fin is { } fin ? $"Cierra en {Math.Max(0, fin.DayNumber - Datos.Hoy.DayNumber)} días" : "Cierre no registrado") : "Fuera del periodo de inscripción")</span>
                 @if (abierta)
                 {
                     <a class="btn btn-primary btn-sm" href="/postulante/postular/@c.Id">Postular<Icon Name="arrow-right" Size="14" /></a>
@@ -37,7 +40,7 @@
     <div class="grid-eq" style="margin-top:0">
         @foreach (var m in Datos.Modalidades.Where(m => m.Activo))
         {
-            <div class="quick-item"><span class="q-icon"><Icon Name="list-checks" Size="18" /></span><div><strong>@m.Nombre</strong><small>@m.Descripcion Derecho de inscripción: @Formato.Soles(m.DerechoInscripcion).</small></div></div>
+            <div class="quick-item"><span class="q-icon"><Icon Name="list-checks" Size="18" /></span><div><strong>@m.Nombre</strong><small>@m.Descripcion Consulta la tarifa en cada convocatoria.</small></div></div>
         }
     </div>
 </section>

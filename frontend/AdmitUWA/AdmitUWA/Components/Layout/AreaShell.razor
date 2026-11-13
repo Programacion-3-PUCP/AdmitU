@@ -2,6 +2,12 @@
 @inject NavigationManager Navegacion
 @inject DatosSesion Datos
 
+@if (!Datos.CargaCompletada)
+{
+    <main class="content" aria-busy="true"><p role="status">Cargando los datos de tu sesión…</p></main>
+}
+else
+{
 <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
 <CascadingValue Value="area">
@@ -41,6 +47,7 @@
 </CascadingValue>
 
 <ToastHost />
+}
 
 @code {
     [Parameter, EditorRequired] public string Clave { get; set; } = "admin";
@@ -50,13 +57,18 @@
     private ErrorBoundary? limite;
     private bool menuAbierto;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         Navegacion.LocationChanged += AlCambiarRuta;
         Datos.Cambio += AlCambiarDatos;
+        await Datos.InicializarAsync();
+        area = Areas.Crear(Clave, Datos);
     }
 
-    protected override void OnParametersSet() => area = Areas.Crear(Clave, Datos);
+    protected override void OnParametersSet()
+    {
+        if (Datos.CargaCompletada) area = Areas.Crear(Clave, Datos);
+    }
 
     private void AlternarMenu() => menuAbierto = !menuAbierto;
     private void CerrarMenu() => menuAbierto = false;

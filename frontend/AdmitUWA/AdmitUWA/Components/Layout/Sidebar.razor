@@ -29,11 +29,11 @@
     @if (Datos.ConvocatoriaVigente is { } conv)
     {
         var cierre = conv.CierreInscripciones ?? conv.Fin;
-        var dias = cierre.DayNumber - Datos.Hoy.DayNumber;
+        var dias = cierre is { } fechaCierre ? fechaCierre.DayNumber - Datos.Hoy.DayNumber : (int?)null;
         <div class="side-card">
             <span class="side-card-label">Convocatoria vigente</span>
             <strong>@conv.Nombre</strong>
-            <p>@(dias >= 0 ? $"Inscripciones hasta el {Formato.FechaCorta(cierre)} · {dias} días" : "Inscripciones cerradas")</p>
+            <p>@(cierre is null ? "Cierre no registrado" : dias >= 0 ? $"Inscripciones hasta el {Formato.FechaCorta(cierre.Value)} · {dias} días" : "Inscripciones cerradas")</p>
         </div>
     }
 </aside>

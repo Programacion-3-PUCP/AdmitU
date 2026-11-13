@@ -86,9 +86,10 @@ public class Convocatoria : IValidatableObject
     [Required(ErrorMessage = "Ingrese el periodo.")]
     [StringLength(10, ErrorMessage = "El periodo admite como máximo {1} caracteres.")]
     public string Periodo { get; set; } = "";
-    public DateOnly Inicio { get; set; } = DateOnly.FromDateTime(DateTime.Today);
-    public DateOnly Fin { get; set; } = DateOnly.FromDateTime(DateTime.Today).AddMonths(2);
-    public DateOnly? CierreInscripciones { get; set; }
+    public DateOnly? Inicio { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public DateOnly? Fin { get; set; } = DateOnly.FromDateTime(DateTime.Today).AddMonths(2);
+    // fecha_fin es el cierre inclusivo de inscripción almacenado en MySQL.
+    public DateOnly? CierreInscripciones { get => Fin; set => Fin = value; }
     public DateOnly? LimiteEvaluacion { get; set; }
     public EstadoConvocatoria Estado { get; set; } = EstadoConvocatoria.Borrador;
     [StringLength(300, ErrorMessage = "La descripción admite como máximo {1} caracteres.")]
@@ -96,8 +97,8 @@ public class Convocatoria : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext contexto)
     {
-        if (Fin <= Inicio)
-            yield return new ValidationResult("La fecha de resultados debe ser posterior a la de apertura.", [nameof(Fin)]);
+        if (Fin is { } fin && Inicio is { } inicio && fin < inicio)
+            yield return new ValidationResult("El cierre de inscripciones no puede ser anterior a la apertura.", [nameof(Fin)]);
         if (CierreInscripciones is { } cierre && (cierre < Inicio || cierre > Fin))
             yield return new ValidationResult("El cierre de inscripciones debe estar entre la apertura y los resultados.", [nameof(CierreInscripciones)]);
         if (LimiteEvaluacion is { } limite && (limite < (CierreInscripciones ?? Inicio) || limite > Fin))
@@ -198,6 +199,8 @@ public class Documento
     public string Requisito { get; set; } = "";
     public string Archivo { get; set; } = "";
     public string RutaArchivo { get; set; } = "";
+    // Lo calcula MySQL a partir de bytes activos; un nombre/ruta históricos no prueban una carga.
+    public bool ArchivoActivo { get; set; }
     public string Tipo { get; set; } = "PDF";
     public int TamanioKb { get; set; }
     public int Version { get; set; } = 1;
@@ -227,7 +230,7 @@ public class MovimientoEstado
     public EstadoPostulacion Nuevo { get; set; }
     public string Motivo { get; set; } = "";
     public string Responsable { get; set; } = "";
-    public DateTime Fecha { get; set; }
+    public DateTime? Fecha { get; set; }
 }
 
 public class Carne
@@ -248,12 +251,12 @@ public class Antecedente
     public int Id { get; set; }
     public int PostulanteId { get; set; }
     public int InstitucionId { get; set; }
-    public int AnioInicio { get; set; } = 2020;
-    public int AnioFin { get; set; } = 2024;
+    public int AnioInicio { get; set; }
+    public int AnioFin { get; set; }
     public string Tipo { get; set; } = "Certificado de notas";
     public string Institucion { get; set; } = "";
     public string Archivo { get; set; } = "";
-    public DateOnly Fecha { get; set; }
+    public DateOnly? Fecha { get; set; }
 }
 
 public class DocumentoPersonal
