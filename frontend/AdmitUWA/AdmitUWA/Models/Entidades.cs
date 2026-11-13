@@ -4,7 +4,7 @@ namespace AdmitUWA.Models;
 
 // Estados del expediente: el evaluador decide Apta / Observada / NoApta;
 // Admitida y NoAdmitida son el resultado de admisión que se publica al cierre.
-public enum EstadoPostulacion { Borrador, Enviada, EnRevision, Observada, Apta, NoApta, Admitida, NoAdmitida }
+public enum EstadoPostulacion { Borrador, Enviada, EnRevision, Observada, Apta, NoApta, Admitida, NoAdmitida, Finalizada, Anulada }
 public enum EstadoPago { Generado, Pendiente, Aprobado, Rechazado, Vencido }
 public enum EstadoDocumento { Pendiente, Aprobado, Observado, Rechazado }
 public enum EstadoConvocatoria { Borrador, Publicada, Cerrada }

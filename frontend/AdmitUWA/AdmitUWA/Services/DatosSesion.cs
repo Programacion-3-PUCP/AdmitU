@@ -531,29 +531,33 @@ public sealed partial class DatosSesion
             _ => "ILEGIBLE"
         };
 
-    private static EstadoPostulacion MapEstadoPostulacion(int id, string? codigo)
-    {
-        var cod = (codigo ?? "").ToUpperInvariant();
-        if (cod == "BORRADOR" || id == 6) return EstadoPostulacion.Borrador;
-        if (cod == "REGISTRADA" || id == 1) return EstadoPostulacion.Enviada;
-        if (cod == "ENVIADA" || cod == "COMPLETADA" || id == 2 || id == 7) return EstadoPostulacion.EnRevision;
-        if (cod == "EN_PROCESO" || id == 8) return EstadoPostulacion.EnRevision;
-        if (cod == "OBSERVADA" || id == 3) return EstadoPostulacion.Observada;
-        if (cod == "APROBADA" || id == 4) return EstadoPostulacion.Apta;
-        if (cod == "FINALIZADA" || id == 5) return EstadoPostulacion.NoApta;
-        return EstadoPostulacion.EnRevision;
-    }
+    // Identificadores oficiales de estado_postulacion en MySQL (LAB11/LAB12).
+    private static EstadoPostulacion MapEstadoPostulacion(int id, string? codigo) =>
+        id switch
+        {
+            1 => EstadoPostulacion.Borrador,
+            2 => EstadoPostulacion.Enviada,
+            3 => EstadoPostulacion.EnRevision,
+            4 => EstadoPostulacion.Observada,
+            5 => EstadoPostulacion.Apta,
+            6 => EstadoPostulacion.Finalizada,
+            7 => EstadoPostulacion.NoApta,
+            8 => EstadoPostulacion.Anulada,
+            _ => throw new InvalidOperationException("Estado de postulación desconocido en el servicio")
+        };
 
     private static int MapEstadoPostulacionToDbId(EstadoPostulacion estado) =>
         estado switch
         {
-            EstadoPostulacion.Borrador => 6,
-            EstadoPostulacion.Enviada => 1,
-            EstadoPostulacion.EnRevision => 2,
-            EstadoPostulacion.Observada => 3,
-            EstadoPostulacion.Apta or EstadoPostulacion.Admitida => 4,
-            EstadoPostulacion.NoApta or EstadoPostulacion.NoAdmitida => 5,
-            _ => 2
+            EstadoPostulacion.Borrador => 1,
+            EstadoPostulacion.Enviada => 2,
+            EstadoPostulacion.EnRevision => 3,
+            EstadoPostulacion.Observada => 4,
+            EstadoPostulacion.Apta => 5,
+            EstadoPostulacion.Finalizada or EstadoPostulacion.Admitida => 6,
+            EstadoPostulacion.NoApta or EstadoPostulacion.NoAdmitida => 7,
+            EstadoPostulacion.Anulada => 8,
+            _ => throw new InvalidOperationException("Transición de postulación no reconocida")
         };
 
     private static EstadoPago MapEstadoPago(string? estado) =>

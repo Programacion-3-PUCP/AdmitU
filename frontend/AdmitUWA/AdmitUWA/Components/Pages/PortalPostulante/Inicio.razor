@@ -105,7 +105,7 @@
         var docs = mia is null ? [] : Datos.DocumentosDe(mia.Id);
         var pago = mia is null ? null : Datos.PagoDe(mia.Id);
         bool enviada = mia is not null && mia.Estado != EstadoPostulacion.Borrador;
-        bool apta = mia?.Estado is EstadoPostulacion.Apta or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
+        bool apta = mia?.Estado is EstadoPostulacion.Apta or EstadoPostulacion.Finalizada or EstadoPostulacion.Admitida or EstadoPostulacion.NoAdmitida;
         var carne = mia is null ? null : Datos.CarneVigenteDe(mia.Id);
         string pagoDetalle = pago?.Estado switch
         {
