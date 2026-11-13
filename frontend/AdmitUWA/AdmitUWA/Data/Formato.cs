@@ -14,7 +14,7 @@ public static class Formato
     }
 
     public static string Fecha(DateOnly fecha) => fecha.ToString("dd MMM yyyy", Peru);
-    public static string Fecha(DateOnly? fecha) => fecha is { } f ? Fecha(f) : "—";
+    public static string Fecha(DateOnly? fecha) => fecha is { } f ? Fecha(f) : "No registrada";
     public static string Mes(DateOnly fecha) => fecha.ToString("MMM", Peru);
     public static string FechaCorta(DateOnly fecha) => fecha.ToString("dd MMM", Peru);
     public static string Fecha(DateTime? fecha) => fecha is { } f ? f.ToString("dd MMM yyyy", Peru) : "No registrada";
@@ -37,6 +37,8 @@ public static class Formato
     }
 
     /// <summary>Antigüedad en días de algo pendiente, para resaltar lo que lleva más de 48 horas.</summary>
+    public static string Antiguedad(DateOnly? desde, DateOnly hoy) => desde is { } fecha ? Antiguedad(fecha, hoy) : "fecha no registrada";
+
     public static string Antiguedad(DateOnly desde, DateOnly hoy)
     {
         var dias = hoy.DayNumber - desde.DayNumber;

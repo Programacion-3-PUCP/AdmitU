@@ -257,7 +257,7 @@ public sealed partial class DatosSesion
                 NumeroDocumento = p.NumeroDocumento,
                 Correo = p.Correo,
                 Telefono = p.Telefono,
-                FechaNacimiento = p.FechaNacimiento ?? new DateOnly(2007, 1, 1),
+                FechaNacimiento = p.FechaNacimiento,
                 TieneDiscapacidad = p.TieneDiscapacidad,
                 CarnetConadis = p.NumeroCarnetConadis,
                 CorreoValidado = p.CorreoValidado
@@ -593,6 +593,7 @@ public sealed partial class DatosSesion
             "APROBADO" => EstadoPago.Aprobado,
             "PENDIENTE" => EstadoPago.Pendiente,
             "RECHAZADO" => EstadoPago.Rechazado,
+            "VENCIDO" => EstadoPago.Vencido,
             _ => EstadoPago.Generado
         };
 
@@ -1400,12 +1401,12 @@ public sealed partial class DatosSesion
     // ---- RF_10: Gestión de Observaciones en Documentos de Postulación -------
     public void AprobarDocumento(Documento doc, string responsable)
     {
-        doc.Estado = EstadoDocumento.Aprobado;
-        doc.Comentario = null;
         if (_api is not null)
         {
             _api.Modificar("DocumentoPostulacionRS", BuildDocumentoDto(doc, "APROBADO", "Documento aprobado"));
         }
+        doc.Estado = EstadoDocumento.Aprobado;
+        doc.Comentario = null;
         foreach (var o in Observaciones.Where(o => o.DocumentoId == doc.Id && o.Estado == EstadoObservacion.Abierta).ToList())
         {
             SubsanarObservacion(o, "Documento aprobado por el evaluador");
@@ -1416,8 +1417,6 @@ public sealed partial class DatosSesion
 
     public Observacion ObservarDocumento(Documento doc, TipoObservacion tipo, string descripcion, int? evaluadorId, string responsable)
     {
-        doc.Estado = EstadoDocumento.Observado;
-        doc.Comentario = descripcion;
         int evalId = evaluadorId ?? EvaluadorActualId;
         int obsId = SiguienteId(Observaciones, x => x.Id);
 
@@ -1433,9 +1432,12 @@ public sealed partial class DatosSesion
                 FechaObservacion = Hoy,
                 EstadoObservacion = "PENDIENTE"
             });
-            if (creada is not null) obsId = creada.Id;
+            if (creada is null) throw new InvalidOperationException("No se pudo registrar la observación.");
+            obsId = creada.Id;
         }
 
+        doc.Estado = EstadoDocumento.Observado;
+        doc.Comentario = descripcion;
         var obs = new Observacion
         {
             Id = obsId,
@@ -1454,12 +1456,9 @@ public sealed partial class DatosSesion
 
     public void ModificarObservacion(Observacion obs, TipoObservacion tipo, string descripcion, EstadoObservacion estado, string? comentarioSubsanacion)
     {
-        obs.Tipo = tipo;
-        obs.Descripcion = descripcion.Trim();
-        obs.Estado = estado;
-        obs.ComentarioSubsanacion = string.IsNullOrWhiteSpace(comentarioSubsanacion) ? null : comentarioSubsanacion.Trim();
-        if (estado == EstadoObservacion.Subsanada && obs.FechaSubsanacion is null)
-            obs.FechaSubsanacion = Hoy;
+        var texto = descripcion.Trim();
+        var comentario = string.IsNullOrWhiteSpace(comentarioSubsanacion) ? null : comentarioSubsanacion.Trim();
+        DateOnly? fechaSubsanacion = estado == EstadoObservacion.Subsanada ? obs.FechaSubsanacion ?? Hoy : null;
 
         if (_api is not null)
         {
@@ -1468,16 +1467,20 @@ public sealed partial class DatosSesion
                 Id = obs.Id,
                 Documento = new DocumentoPostulacionDto { Id = obs.DocumentoId },
                 Evaluador = new EvaluadorDto { Id = obs.EvaluadorId ?? EvaluadorActualId },
-                TipoObservacion = MapTipoObservacionToDb(obs.Tipo),
-                Descripcion = obs.Descripcion,
-                FechaObservacion = obs.Fecha <= Hoy ? obs.Fecha : Hoy,
-                EstadoObservacion = obs.Estado == EstadoObservacion.Subsanada ? "SUBSANADA" : "PENDIENTE",
-                FechaSubsanacion = obs.Estado == EstadoObservacion.Subsanada
-                    ? (obs.FechaSubsanacion >= obs.Fecha ? obs.FechaSubsanacion : Hoy)
-                    : null,
-                ComentarioSubsanacion = obs.ComentarioSubsanacion
+                TipoObservacion = MapTipoObservacionToDb(tipo),
+                Descripcion = texto,
+                FechaObservacion = obs.Fecha,
+                EstadoObservacion = estado == EstadoObservacion.Subsanada ? "SUBSANADA" : "PENDIENTE",
+                FechaSubsanacion = fechaSubsanacion,
+                ComentarioSubsanacion = comentario
             });
         }
+
+        obs.Tipo = tipo;
+        obs.Descripcion = texto;
+        obs.Estado = estado;
+        obs.ComentarioSubsanacion = comentario;
+        obs.FechaSubsanacion = fechaSubsanacion;
 
         if (Documento(obs.DocumentoId) is { } doc)
         {
@@ -1499,7 +1502,8 @@ public sealed partial class DatosSesion
     {
         if (_api is not null)
         {
-            _api.Eliminar("DocumentoObservacionRS", obs.Id);
+            if (!_api.Eliminar("DocumentoObservacionRS", obs.Id))
+                throw new InvalidOperationException("No se pudo eliminar la observación.");
         }
         Observaciones.Remove(obs);
         if (Documento(obs.DocumentoId) is { } doc && !Observaciones.Any(o => o.DocumentoId == doc.Id && o.Estado == EstadoObservacion.Abierta))
@@ -1671,9 +1675,6 @@ public sealed partial class DatosSesion
 
     public void AprobarVoucher(Voucher v, string responsable)
     {
-        v.Estado = EstadoVoucher.Aprobado;
-        v.FechaRevision = Hoy;
-        v.MotivoRechazo = null;
         if (_api is not null)
         {
             _api.Modificar("PagoRS", new PagoDto
@@ -1688,6 +1689,9 @@ public sealed partial class DatosSesion
                 RutaVoucher = $"/vouchers/{v.Archivo}"
             });
         }
+        v.Estado = EstadoVoucher.Aprobado;
+        v.FechaRevision = Hoy;
+        v.MotivoRechazo = null;
         if (PagoDe(v.PostulacionId) is { } pago)
         {
             pago.Estado = EstadoPago.Aprobado;
@@ -1704,9 +1708,6 @@ public sealed partial class DatosSesion
 
     public void RechazarVoucher(Voucher v, string motivo)
     {
-        v.Estado = EstadoVoucher.Rechazado;
-        v.FechaRevision = Hoy;
-        v.MotivoRechazo = motivo.Trim();
         if (_api is not null)
         {
             _api.Modificar("PagoRS", new PagoDto
@@ -1721,6 +1722,9 @@ public sealed partial class DatosSesion
                 RutaVoucher = $"/vouchers/{v.Archivo}"
             });
         }
+        v.Estado = EstadoVoucher.Rechazado;
+        v.FechaRevision = Hoy;
+        v.MotivoRechazo = motivo.Trim();
         if (PagoDe(v.PostulacionId) is { } pago && pago.Estado != EstadoPago.Aprobado) pago.Estado = EstadoPago.Rechazado;
         if (Postulacion(v.PostulacionId) is { } p)
             Notificar(RolUsuario.Postulante, "Voucher rechazado", $"Motivo: {motivo.Trim()} Adjunta un nuevo voucher.", "Pago", p.PostulanteId);

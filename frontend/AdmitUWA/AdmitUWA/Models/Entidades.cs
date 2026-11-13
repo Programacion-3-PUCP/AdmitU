@@ -161,7 +161,7 @@ public class Postulacion
     public int SedeId { get; set; }
     public int? EvaluadorId { get; set; }
     public EstadoPostulacion Estado { get; set; }
-    public DateOnly FechaRegistro { get; set; }
+    public DateOnly? FechaRegistro { get; set; }
     public DateOnly? FechaEnvio { get; set; }
     public string? Observacion { get; set; }
 }
@@ -173,7 +173,7 @@ public class Pago
     public int PostulacionId { get; set; }
     public string Medio { get; set; } = "Transferencia";
     public decimal Monto { get; set; }
-    public DateOnly FechaGeneracion { get; set; }
+    public DateOnly? FechaGeneracion { get; set; }
     public DateOnly? FechaAprobacion { get; set; }
     public EstadoPago Estado { get; set; }
 }
@@ -185,7 +185,7 @@ public class Voucher
     public string CodigoOperacion { get; set; } = "";
     public string Archivo { get; set; } = "";
     public decimal Monto { get; set; }
-    public DateOnly FechaRegistro { get; set; }
+    public DateOnly? FechaRegistro { get; set; }
     public EstadoVoucher Estado { get; set; } = EstadoVoucher.Pendiente;
     public DateOnly? FechaRevision { get; set; }
     public string? MotivoRechazo { get; set; }
@@ -204,7 +204,7 @@ public class Documento
     public string Tipo { get; set; } = "PDF";
     public int TamanioKb { get; set; }
     public int Version { get; set; } = 1;
-    public DateOnly FechaCarga { get; set; }
+    public DateOnly? FechaCarga { get; set; }
     public EstadoDocumento Estado { get; set; }
     public string? Comentario { get; set; }
 }
@@ -217,7 +217,7 @@ public class Observacion
     public TipoObservacion Tipo { get; set; } = TipoObservacion.Ilegible;
     public string Descripcion { get; set; } = "";
     public EstadoObservacion Estado { get; set; } = EstadoObservacion.Abierta;
-    public DateOnly Fecha { get; set; }
+    public DateOnly? Fecha { get; set; }
     public DateOnly? FechaSubsanacion { get; set; }
     public string? ComentarioSubsanacion { get; set; }
 }
@@ -240,7 +240,9 @@ public class Carne
     public string Codigo { get; set; } = "";
     public int SedeId { get; set; }
     public string Aula { get; set; } = "";
-    public DateOnly FechaEmision { get; set; }
+    public DateOnly? FechaEmision { get; set; }
+    public DateOnly? InicioVigencia { get; set; }
+    public DateOnly? FinVigencia { get; set; }
     public EstadoCarne Estado { get; set; } = EstadoCarne.Vigente;
     public bool Automatico { get; set; } = true;
     public string? Motivo { get; set; }
@@ -265,7 +267,7 @@ public class DocumentoPersonal
     public int PostulanteId { get; set; }
     public string Tipo { get; set; } = "DNI";
     public string Archivo { get; set; } = "";
-    public DateOnly Fecha { get; set; }
+    public DateOnly? Fecha { get; set; }
 }
 
 public class Evaluador

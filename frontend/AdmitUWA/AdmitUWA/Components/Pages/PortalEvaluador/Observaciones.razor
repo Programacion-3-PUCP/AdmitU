@@ -4,7 +4,7 @@
 
 <PageTitle>Observaciones · AdmitU</PageTitle>
 
-<PageHeader Titulo="Seguimiento de observaciones" Subtitulo="Registra, consulta, modifica, subsana o elimina observaciones sobre los documentos de las postulaciones." Migas="@(["Observaciones"])">
+<PageHeader Titulo="Seguimiento de observaciones" Subtitulo="Consulta los expedientes y gestiona las observaciones de tus postulaciones asignadas." Migas="@(["Observaciones"])">
     <Acciones>
         <button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva observación</button>
     </Acciones>
@@ -50,16 +50,18 @@
             <td><StatusBadge Texto="@o.Estado.Etiqueta()" Tono="@o.Estado.Tono()" /></td>
             <td class="td-actions">
                 <span class="row-actions">
-                    @if (p is not null)
+                    @if (p?.EvaluadorId == Datos.EvaluadorActualId)
                     {
                         <BotonAccion Tipo="BotonAccion.Accion.Ver" Texto="Abrir revisión" Sobre="@p.Codigo" Href="@($"/evaluador/postulaciones/{p.Id}")" />
                     }
-                    <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@(doc?.Requisito ?? "Observación")" OnClick="() => Editar(o)" />
-                    @if (o.Estado == EstadoObservacion.Abierta)
+                    @if (p?.EvaluadorId == Datos.EvaluadorActualId && o.EvaluadorId == Datos.EvaluadorActualId)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Editar" Sobre="@(doc?.Requisito ?? "Observación")" OnClick="() => Editar(o)" />
+                    }
+                    @if (o.Estado == EstadoObservacion.Abierta && p?.EvaluadorId == Datos.EvaluadorActualId)
                     {
                         <BotonAccion Tipo="BotonAccion.Accion.Aprobar" Texto="Marcar como subsanada" Sobre="@(doc?.Requisito ?? "Observación")" OnClick="() => Subsanar(o)" />
                     }
-                    <BotonAccion Tipo="BotonAccion.Accion.Eliminar" Sobre="@(doc?.Requisito ?? "Observación")" OnClick="() => porEliminar = o" />
                 </span>
             </td>
         </tr>
@@ -131,7 +133,7 @@
             {
                 <div class="field">
                     <label for="o-est">Estado de la observación</label>
-                    <select id="o-est" @bind="formEstado">
+                    <select id="o-est" @bind="formEstado" disabled="@(editando.Estado == EstadoObservacion.Subsanada)">
                         @foreach (var e in Enum.GetValues<EstadoObservacion>())
                         {
                             <option value="@e">@e.Etiqueta()</option>
@@ -156,10 +158,6 @@
     </form>
 </Drawer>
 
-<ConfirmDialog Abierto="porEliminar is not null" Titulo="Eliminar observación"
-               Mensaje="@($"Se eliminará la observación sobre «{Datos.Documento(porEliminar?.DocumentoId ?? 0)?.Requisito}».")"
-               TextoConfirmar="Eliminar" OnCancelar="() => porEliminar = null" OnConfirmar="ConfirmarEliminar" />
-
 @code {
     private EstadoObservacion? estado;
     private string tipo = "";
@@ -167,7 +165,6 @@
 
     private bool abierto;
     private Observacion? editando;
-    private Observacion? porEliminar;
 
     private int convSeleccionadaId;
     private string filtroExpediente = "";
@@ -187,6 +184,7 @@
 
     private IEnumerable<Postulacion> PostulacionesFiltradas =>
         Datos.PostulacionesDeConvocatoria(convSeleccionadaId)
+            .Where(p => p.EvaluadorId == Datos.EvaluadorActualId)
             .Where(p => string.IsNullOrWhiteSpace(filtroExpediente)
                 || p.Codigo.Contains(filtroExpediente, StringComparison.OrdinalIgnoreCase)
                 || (Datos.PersonaDe(p)?.NombreCompleto.Contains(filtroExpediente, StringComparison.OrdinalIgnoreCase) ?? false)
@@ -262,30 +260,37 @@
             return;
         }
 
-        if (editando is null)
+        try
         {
-            Datos.ObservarDocumento(doc, formTipo, formDescripcion.Trim(), Datos.EvaluadorActualId, Datos.EvaluadorActual.Nombre);
-            Avisos.Exito("Observación registrada en el documento");
+            if (editando is null)
+            {
+                Datos.ObservarDocumento(doc, formTipo, formDescripcion.Trim(), Datos.EvaluadorActualId, Datos.EvaluadorActual.Nombre);
+                Avisos.Exito("Observación registrada en el documento");
+            }
+            else
+            {
+                Datos.ModificarObservacion(editando, formTipo, formDescripcion.Trim(), formEstado, formComentarioSubsanacion);
+                Avisos.Exito("Observación actualizada");
+            }
+            abierto = false;
         }
-        else
+        catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException)
         {
-            Datos.ModificarObservacion(editando, formTipo, formDescripcion.Trim(), formEstado, formComentarioSubsanacion);
-            Avisos.Exito("Observación actualizada");
+            errorForm = "No se pudo guardar la observación. Comprueba tu asignación y recarga los datos antes de intentarlo nuevamente.";
         }
-        abierto = false;
     }
 
     private void Subsanar(Observacion o)
     {
-        Datos.SubsanarObservacion(o, "Observación verificada y subsanada por el evaluador");
-        Avisos.Exito("Observación marcada como subsanada");
+        try
+        {
+            Datos.SubsanarObservacion(o, "Observación verificada y subsanada por el evaluador");
+            Avisos.Exito("Observación marcada como subsanada");
+        }
+        catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException)
+        {
+            Avisos.Error("No se pudo subsanar la observación. Comprueba tu asignación y recarga los datos.");
+        }
     }
 
-    private void ConfirmarEliminar()
-    {
-        if (porEliminar is null) return;
-        Datos.EliminarObservacion(porEliminar);
-        Avisos.Exito("Observación eliminada");
-        porEliminar = null;
-    }
 }

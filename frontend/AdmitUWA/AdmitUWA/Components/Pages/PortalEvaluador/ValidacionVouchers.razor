@@ -6,6 +6,8 @@
 
 <PageHeader Titulo="Validar vouchers" Subtitulo="Comprueba que el voucher de transferencia coincida con el derecho de inscripción y valídalo o recházalo." Migas="@(["Vouchers"])" />
 
+<p class="inline-note"><Icon Name="info" Size="16" /><span>Puedes consultar los datos de todos los pagos. La revisión y los archivos están disponibles solo para los expedientes que te asignaron.</span></p>
+
 <div class="chips" role="group" aria-label="Filtrar por estado">
     @foreach (var e in Enum.GetValues<EstadoVoucher>())
     {
@@ -27,11 +29,11 @@
             <td><StatusBadge Texto="@v.Estado.Etiqueta()" Tono="@v.Estado.Tono()" />@if (v.MotivoRechazo is not null) { <span class="cell-sub">@v.MotivoRechazo</span> }</td>
             <td class="td-actions">
                 <span class="row-actions">
-                    <BotonAccion Tipo="BotonAccion.Accion.Ver" Texto="@($"Ver comprobante ({v.Archivo})")" Sobre="@v.CodigoOperacion" OnClick="() => viendo = v" />
+                    <BotonAccion Tipo="BotonAccion.Accion.Ver" Texto="@(Asignado(v) ? $"Ver comprobante ({v.Archivo})" : "Ver datos del pago")" Sobre="@v.CodigoOperacion" OnClick="() => viendo = v" />
                     @if (v.Estado == EstadoVoucher.Pendiente)
                     {
-                        <BotonAccion Tipo="BotonAccion.Accion.Aprobar" Sobre="@v.CodigoOperacion" OnClick="() => porAprobar = v" />
-                        <BotonAccion Tipo="BotonAccion.Accion.Rechazar" Sobre="@v.CodigoOperacion" OnClick="() => AbrirRechazo(v)" />
+                        <BotonAccion Tipo="BotonAccion.Accion.Aprobar" Sobre="@v.CodigoOperacion" Deshabilitado="@(!Asignado(v))" MotivoDeshabilitado="Solo puedes validar pagos de tus expedientes asignados" OnClick="() => AbrirAprobacion(v)" />
+                        <BotonAccion Tipo="BotonAccion.Accion.Rechazar" Sobre="@v.CodigoOperacion" Deshabilitado="@(!Asignado(v))" MotivoDeshabilitado="Solo puedes validar pagos de tus expedientes asignados" OnClick="() => AbrirRechazo(v)" />
                     }
                 </span>
             </td>
@@ -54,23 +56,30 @@
                 <div><span>N.° de operación</span><strong class="mono">@viendo.CodigoOperacion</strong></div>
                 <div><span>Importe transferido</span><strong>@Formato.Soles(viendo.Monto)</strong></div>
                 <div><span>Archivo comprobante</span><strong>@viendo.Archivo</strong></div>
-                <ArchivoAsociadoVista PostulanteId="@(post?.PostulanteId??0)" Tipo="VOUCHER" ReferenciaId="@(pago?.Id??0)" />
+                @if (Asignado(viendo))
+                {
+                    <ArchivoAsociadoVista PostulanteId="@(post?.PostulanteId??0)" Tipo="VOUCHER" ReferenciaId="@(pago?.Id??0)" />
+                }
+                else
+                {
+                    <p class="inline-note">El archivo y su validación están reservados al evaluador asignado.</p>
+                }
                 <div><span>Fecha de registro</span><strong>@Formato.Fecha(viendo.FechaRegistro)</strong></div>
                 <div><span>Estado</span><StatusBadge Texto="@viendo.Estado.Etiqueta()" Tono="@viendo.Estado.Tono()" /></div>
             </div>
         </div>
         <div class="drawer-foot">
             <button type="button" class="btn btn-ghost" @onclick="() => viendo = null">Cerrar</button>
-            @if (viendo.Estado == EstadoVoucher.Pendiente)
+            @if (viendo.Estado == EstadoVoucher.Pendiente && Asignado(viendo))
             {
                 <button type="button" class="btn btn-ghost" @onclick="() => { var v = viendo; viendo = null; AbrirRechazo(v); }"><Icon Name="x-circle" Size="16" />Rechazar</button>
-                <button type="button" class="btn btn-primary" @onclick="() => { var v = viendo; viendo = null; porAprobar = v; }"><Icon Name="check" Size="16" />Validar pago</button>
+                <button type="button" class="btn btn-primary" @onclick="() => { var v = viendo; viendo = null; AbrirAprobacion(v); }"><Icon Name="check" Size="16" />Validar pago</button>
             }
         </div>
     }
 </Drawer>
 
-<ConfirmDialog Abierto="porAprobar is not null" Tono="success" Titulo="Validar voucher" TextoConfirmar="Validar pago"
+<ConfirmDialog Abierto="porAprobar is not null" Tono="success" Titulo="Validar voucher" TextoConfirmar="Validar pago" Error="@errorAprobacion"
                Mensaje="@($"Se validará el pago de {Formato.Soles(porAprobar?.Monto ?? 0)} de {Datos.PersonaDePostulacion(porAprobar?.PostulacionId ?? 0)?.NombreCompleto}. Si su expediente ya es apto, se emitirá su carné.")"
                OnCancelar="() => porAprobar = null" OnConfirmar="Aprobar" />
 
@@ -84,19 +93,37 @@
     private EstadoVoucher estado = EstadoVoucher.Pendiente;
     private Voucher? viendo, porAprobar, porRechazar;
     private string motivo = "";
-    private string? error;
+    private string? error, errorAprobacion;
+
+    private bool Asignado(Voucher v) => Datos.Postulacion(v.PostulacionId)?.EvaluadorId == Datos.EvaluadorActualId;
+
+    private void AbrirAprobacion(Voucher v)
+    {
+        if (!Asignado(v)) { Avisos.Error("Solo puedes validar pagos de tus expedientes asignados."); return; }
+        errorAprobacion = null;
+        porAprobar = v;
+    }
 
     private void Aprobar()
     {
         if (porAprobar is null) return;
-        Datos.AprobarVoucher(porAprobar, Datos.EvaluadorActual.Nombre);
-        var carne = Datos.CarneVigenteDe(porAprobar.PostulacionId);
-        Avisos.Exito(carne is not null && carne.FechaEmision == Datos.Hoy ? $"Pago validado. Carné {carne.Codigo} emitido automáticamente." : "Pago validado");
-        porAprobar = null;
+        if (!Asignado(porAprobar)) { errorAprobacion = "La postulación ya no está asignada a tu cuenta."; return; }
+        try
+        {
+            Datos.AprobarVoucher(porAprobar, Datos.EvaluadorActual.Nombre);
+            var carne = Datos.CarneVigenteDe(porAprobar.PostulacionId);
+            Avisos.Exito(carne is not null && carne.FechaEmision == Datos.Hoy ? $"Pago validado. Carné {carne.Codigo} emitido automáticamente." : "Pago validado");
+            porAprobar = null;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException)
+        {
+            errorAprobacion = "No se pudo validar el pago. Recarga para comprobar el estado y la asignación vigentes.";
+        }
     }
 
     private void AbrirRechazo(Voucher v)
     {
+        if (!Asignado(v)) { Avisos.Error("Solo puedes validar pagos de tus expedientes asignados."); return; }
         porRechazar = v;
         motivo = "";
         error = null;
@@ -106,8 +133,16 @@
     {
         if (porRechazar is null) return;
         if (string.IsNullOrWhiteSpace(motivo)) { error = "Indica el motivo del rechazo."; return; }
-        Datos.RechazarVoucher(porRechazar, motivo);
-        Avisos.Exito("Voucher rechazado; se notificó al postulante");
-        porRechazar = null;
+        if (!Asignado(porRechazar)) { error = "La postulación ya no está asignada a tu cuenta."; return; }
+        try
+        {
+            Datos.RechazarVoucher(porRechazar, motivo);
+            Avisos.Exito("Voucher rechazado");
+            porRechazar = null;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException)
+        {
+            error = "No se pudo rechazar el pago. Recarga para comprobar el estado y la asignación vigentes.";
+        }
     }
 }

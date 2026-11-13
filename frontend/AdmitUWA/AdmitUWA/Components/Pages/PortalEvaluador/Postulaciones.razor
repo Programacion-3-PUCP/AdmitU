@@ -17,7 +17,7 @@
            TituloVacio="Nada pendiente en esta vista" MensajeVacio="Cuando te asignen postulaciones aparecerán aquí.">
     <Encabezado><th>Código</th><th>Postulante</th><th>Carrera · modalidad</th><th>Documentos</th><th>Esperando</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
     <Fila Context="p">
-        @{ var docs = Datos.DocumentosDe(p.Id); var dias = Datos.Hoy.DayNumber - (p.FechaEnvio ?? p.FechaRegistro).DayNumber; }
+        @{ var docs = Datos.DocumentosDe(p.Id); var dias = (p.FechaEnvio ?? p.FechaRegistro) is { } fecha ? Datos.Hoy.DayNumber - fecha.DayNumber : 0; }
         <tr class="@(p.Estado.EsPendiente() && dias > 2 ? "is-highlight" : "")">
             <td><a class="mono" href="/evaluador/postulaciones/@p.Id">@p.Codigo</a></td>
             <td><div class="cell-person"><Avatar Nombre="@(Datos.PersonaDe(p)?.NombreCompleto ?? "?")" Tamano="sm" /><span><strong>@Datos.PersonaDe(p)?.NombreCompleto</strong></span></div></td>

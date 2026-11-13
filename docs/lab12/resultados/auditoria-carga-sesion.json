@@ -1,7 +1,7 @@
 {
   "entorno": "Cloud; HttpMessageHandler simulado, sin SQL ni GlassFish; no acredita RNF04",
-  "constructor_ms": 229.098,
-  "carga_ms": 425,
+  "constructor_ms": 254.736,
+  "carga_ms": 472,
   "peticiones": 18,
   "maximo_en_vuelo": 6,
   "resultados": [
@@ -100,8 +100,50 @@
     {
       "caso": "H09: historial muestra fecha sin hora inventada",
       "resultado": "PASS"
+    },
+    {
+      "caso": "H09: fecha de nacimiento ausente no se sustituye por un cumpleaños ficticio",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: postulación histórica sin fechas conserva NULL",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: documento y observación sin fechas no aparecen cargados hoy",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: pago/voucher sin fecha o archivo conserva ausencia",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: pago vencido no se presenta como generado",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: carné sin metadatos no inventa emisión/vigencia/aula",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H01/H17: rechazo REST de edición conserva la observación en memoria",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H01: rechazo REST de aprobación conserva el documento en memoria",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H01: eliminación denegada conserva la observación visible",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H01: rechazo REST de validación conserva pago y voucher en memoria",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H01: rechazo REST no modifica el voucher ni su motivo en memoria",
+      "resultado": "PASS"
     }
-  ],
-  "total_casos": 24,
-  "fecha_utc": "2026-11-13"
+  ]
 }

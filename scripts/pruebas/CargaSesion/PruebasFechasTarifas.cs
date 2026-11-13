@@ -47,6 +47,8 @@ public static class PruebasFechasTarifas
             "H09: fecha histórica ausente se conserva y DATE no se convierte a 10:00");
         verificar(AdmitUWA.Data.Formato.Fecha(datos.Historial.Single(x => x.Id == 502).Fecha).Contains("2026") && !AdmitUWA.Data.Formato.Fecha(datos.Historial.Single(x => x.Id == 502).Fecha).Contains(':'),
             "H09: historial muestra fecha sin hora inventada");
+        verificar(datos.Postulantes.Single().FechaNacimiento is null,
+            "H09: fecha de nacimiento ausente no se sustituye por un cumpleaños ficticio");
         verificar(datos.Postulaciones.Single().FechaRegistro is null && datos.Postulaciones.Single().FechaEnvio is null,
             "H09: postulación histórica sin fechas conserva NULL");
         verificar(datos.Documentos.Single().FechaCarga is null && datos.Observaciones.Single().Fecha is null,
@@ -57,6 +59,32 @@ public static class PruebasFechasTarifas
             "H09: pago vencido no se presenta como generado");
         verificar(datos.Carnes.Single().FechaEmision is null && datos.Carnes.Single().InicioVigencia is null && datos.Carnes.Single().FinVigencia is null && datos.Carnes.Single().Aula == "No registrada",
             "H09: carné sin metadatos no inventa emisión/vigencia/aula");
+
+        // Una denegación REST no debe convertirse en cambios que solo existen en pantalla.
+        bool Rechazado(Action accion)
+        {
+            try { accion(); return false; }
+            catch (InvalidOperationException) { return true; }
+        }
+        var observacion = datos.Observaciones.Single();
+        var descripcionAntes = observacion.Descripcion;
+        var estadoAntes = observacion.Estado;
+        verificar(Rechazado(() => datos.ModificarObservacion(observacion, TipoObservacion.Vencido, "Texto rechazado", EstadoObservacion.Subsanada, "Rechazado"))
+            && observacion.Descripcion == descripcionAntes && observacion.Estado == estadoAntes && observacion.FechaSubsanacion is null,
+            "H01/H17: rechazo REST de edición conserva la observación en memoria");
+        var documento = datos.Documentos.Single();
+        var estadoDocumento = documento.Estado;
+        verificar(Rechazado(() => datos.AprobarDocumento(documento, "Evaluador")) && documento.Estado == estadoDocumento,
+            "H01: rechazo REST de aprobación conserva el documento en memoria");
+        verificar(Rechazado(() => datos.EliminarObservacion(observacion)) && datos.Observaciones.Count == 1,
+            "H01: eliminación denegada conserva la observación visible");
+        var voucher = datos.Vouchers.Single();
+        var pago = datos.Pagos.Single(x => x.PostulacionId == voucher.PostulacionId);
+        var estadoPago = pago.Estado;
+        verificar(Rechazado(() => datos.AprobarVoucher(voucher, "Evaluador")) && voucher.Estado == EstadoVoucher.Pendiente && pago.Estado == estadoPago && voucher.FechaRevision is null,
+            "H01: rechazo REST de validación conserva pago y voucher en memoria");
+        verificar(Rechazado(() => datos.RechazarVoucher(voucher, "Motivo rechazado")) && voucher.Estado == EstadoVoucher.Pendiente && pago.Estado == estadoPago && voucher.MotivoRechazo is null,
+            "H01: rechazo REST no modifica el voucher ni su motivo en memoria");
     }
 
     private sealed class IdentidadFechas : AuthenticationStateProvider
@@ -70,6 +98,8 @@ public static class PruebasFechasTarifas
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            if (request.Method != HttpMethod.Get)
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = new StringContent("Operación no autorizada") });
             var recurso = request.RequestUri!.AbsolutePath.Split('/')[1];
             var json = recurso switch
             {

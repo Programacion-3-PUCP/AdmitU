@@ -304,7 +304,7 @@ public sealed class DatosDemo
                 Observaciones.Add(new Observacion
                 {
                     Id = Observaciones.Count + 1, DocumentoId = doc.Id, EvaluadorId = p.EvaluadorId,
-                    Tipo = TipoObservacion.Ilegible, Descripcion = p.Observacion ?? "", Fecha = doc.FechaCarga.AddDays(4)
+                    Tipo = TipoObservacion.Ilegible, Descripcion = p.Observacion ?? "", Fecha = doc.FechaCarga!.Value.AddDays(4)
                 });
             }
         }
@@ -313,7 +313,7 @@ public sealed class DatosDemo
     private void CrearPago(Postulacion p, EstadoPago estado)
     {
         var monto = Modalidades.First(m => m.Id == p.ModalidadId).DerechoInscripcion;
-        var envio = p.FechaEnvio ?? p.FechaRegistro;
+        var envio = (p.FechaEnvio ?? p.FechaRegistro)!.Value;
         var pago = new Pago
         {
             Id = Pagos.Count + 1,
@@ -347,7 +347,7 @@ public sealed class DatosDemo
 
     private void CrearHistorial(Postulacion p)
     {
-        var envio = (p.FechaEnvio ?? p.FechaRegistro).ToDateTime(new TimeOnly(10, 15));
+        var envio = (p.FechaEnvio ?? p.FechaRegistro)!.Value.ToDateTime(new TimeOnly(10, 15));
         var postulante = Postulantes.First(x => x.Id == p.PostulanteId).NombreCompleto;
         var evaluador = Evaluadores.FirstOrDefault(e => e.Id == p.EvaluadorId)?.Nombre ?? "Sistema";
         Movimiento(p, EstadoPostulacion.Borrador, EstadoPostulacion.Enviada, "Postulación enviada", postulante, envio);
