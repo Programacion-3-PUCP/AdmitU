@@ -1,0 +1,13 @@
+{
+  "entorno": "Codex Cloud; Chromium y REST/MySQL reales; no WSL ni AWS",
+  "rf": "RF_02",
+  "status": "PASS",
+  "registro_interactivo": true,
+  "formulario_espera_interactividad": true,
+  "nacimiento_sin_prellenado": true,
+  "regreso_login_estatico": true,
+  "cookie_http_only": true,
+  "cookie_same_site": "Strict",
+  "perfil_persistido": true,
+  "documento_bloqueado": true
+}
