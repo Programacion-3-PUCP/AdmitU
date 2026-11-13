@@ -1,0 +1,107 @@
+{
+  "entorno": "Cloud; HttpMessageHandler simulado, sin SQL ni GlassFish; no acredita RNF04",
+  "constructor_ms": 229.098,
+  "carga_ms": 425,
+  "peticiones": 18,
+  "maximo_en_vuelo": 6,
+  "resultados": [
+    {
+      "caso": "Constructor sin peticiones HTTP",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "La carga devuelve el control mientras espera E/S",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Una única carga compartida en el scope",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Carga asíncrona completa y vinculada a la identidad autenticada",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Concurrencia acotada y evaluadores no consultados por el postulante",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Scopes con identidades y colecciones separadas",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Avisos temporales no se comparten entre scopes",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Error de red visible y sin datos demostrativos",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: inscripción antes del cierre",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: cierre inclusivo el día límite de Lima",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: inscripción rechazada después del cierre",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: inscripción rechazada antes de apertura",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: borrador sin inscripciones",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: último segundo del día de Lima aunque UTC sea mañana",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: medianoche de Lima termina inscripción",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H03/H09: carga de fixtures con fechas ausentes",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H03: misma modalidad y dos convocatorias conservan tarifas distintas",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H03: falta de tarifa no inventa S/350 ni costo de otra convocatoria",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H03: resumen presenta la tarifa del par seleccionado",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: ausencia de cronograma no produce fechas ni hitos ficticios",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02/H09: cierre procede de fecha_fin sin restar quince días ni inventar evaluación",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: antecedente sin archivo/años/fecha conserva ausencia",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: fecha histórica ausente se conserva y DATE no se convierte a 10:00",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: historial muestra fecha sin hora inventada",
+      "resultado": "PASS"
+    }
+  ],
+  "total_casos": 24,
+  "fecha_utc": "2026-11-13"
+}

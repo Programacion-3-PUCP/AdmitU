@@ -25,7 +25,6 @@ public sealed partial class DatosSesion
 
     public DatosSesion(AdmitURestClient api, Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider autenticacion)
     {
-        Hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTimeOffset.UtcNow, "America/Lima").DateTime);
         _api = api;
         _autenticacion = autenticacion;
         _demo = new DatosDemo(Hoy);
@@ -62,7 +61,7 @@ public sealed partial class DatosSesion
     /// <summary>Se dispara cuando cambia algo que afecta a contadores o menús.</summary>
     public event Action? Cambio;
 
-    public DateOnly Hoy { get; }
+    public DateOnly Hoy => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTimeOffset.UtcNow, "America/Lima").DateTime);
     public int PostulanteActualId { get; private set; }
     public int EvaluadorActualId { get; private set; }
     public string NombreAdministrador => "Admin Admisión";
@@ -317,8 +316,10 @@ public sealed partial class DatosSesion
                 PostulacionId = c.Postulacion?.Id ?? 1,
                 Codigo = c.CodigoCarne,
                 SedeId = c.Sede?.Id ?? (Sedes.FirstOrDefault()?.Id ?? 1),
-                Aula = c.AulaExamen ?? "A-101",
-                FechaEmision = c.FechaGeneracion ?? Hoy,
+                Aula = c.AulaExamen ?? "No registrada",
+                FechaEmision = c.FechaGeneracion,
+                InicioVigencia = c.FechaInicioVigencia,
+                FinVigencia = c.FechaFinVigencia,
                 Estado = esAnulado ? EstadoCarne.Anulado : EstadoCarne.Vigente,
                 Automatico = true
             });
@@ -346,7 +347,7 @@ public sealed partial class DatosSesion
                 Tipo = d.TipoArchivo == "IMAGEN" ? "JPG" : "PDF",
                 TamanioKb = (int)Math.Max(1, d.TamanioArchivo / 1024),
                 Version = d.NumeroVersion,
-                FechaCarga = d.FechaCarga ?? Hoy,
+                FechaCarga = d.FechaCarga,
                 Estado = MapEstadoDocumento(d.EstadoDocumento),
                 Comentario = d.ComentarioEvaluacion
             });
@@ -362,7 +363,7 @@ public sealed partial class DatosSesion
                 EvaluadorId = o.Evaluador?.Id ?? EvaluadorActualId,
                 Tipo = MapTipoObservacion(o.TipoObservacion),
                 Descripcion = o.Descripcion,
-                Fecha = o.FechaObservacion ?? Hoy,
+                Fecha = o.FechaObservacion,
                 Estado = o.EstadoObservacion == "SUBSANADA" ? EstadoObservacion.Subsanada : EstadoObservacion.Abierta,
                 FechaSubsanacion = o.FechaSubsanacion,
                 ComentarioSubsanacion = o.ComentarioSubsanacion
@@ -392,7 +393,7 @@ public sealed partial class DatosSesion
                 SedeId = p.SedeId ?? carnePost?.SedeId ?? 0,
                 EvaluadorId = p.EvaluadorId,
                 Estado = estadoPost,
-                FechaRegistro = p.FechaRegistro ?? Hoy,
+                FechaRegistro = p.FechaRegistro,
                 FechaEnvio = p.FechaEnvio,
                 Observacion = p.ObservacionGeneral
             });
@@ -431,7 +432,7 @@ public sealed partial class DatosSesion
                     : null,
                 Nuevo = MapEstadoPostulacion(h.EstadoActual?.Id ?? 1, h.EstadoActual?.Codigo),
                 Fecha = h.FechaCambio?.ToDateTime(TimeOnly.MinValue),
-                Responsable = string.IsNullOrWhiteSpace(h.ResponsableCambio) ? Sistema : h.ResponsableCambio,
+                Responsable = string.IsNullOrWhiteSpace(h.ResponsableCambio) ? "No registrado" : h.ResponsableCambio,
                 Motivo = h.MotivoCambio
             });
         }
@@ -455,9 +456,9 @@ public sealed partial class DatosSesion
                     Codigo = pg.CodigoPago,
                     PostulacionId = postId,
                     Monto = (decimal)pg.Monto,
-                    FechaGeneracion = pg.FechaGeneracion ?? Hoy,
+                    FechaGeneracion = pg.FechaGeneracion,
                     FechaAprobacion = pg.FechaPago,
-                    Estado = pg.EstadoPago == "VENCIDO" ? EstadoPago.Generado : estadoPago
+                    Estado = estadoPago
                 });
             }
             else if (pg.EstadoPago != "VENCIDO")
@@ -479,8 +480,8 @@ public sealed partial class DatosSesion
                     PostulacionId = postId,
                     CodigoOperacion = !string.IsNullOrWhiteSpace(pg.ReferenciaPasarela) ? pg.ReferenciaPasarela : pg.CodigoPago,
                     Monto = (decimal)pg.Monto,
-                    Archivo = !string.IsNullOrWhiteSpace(pg.RutaVoucher) ? Path.GetFileName(pg.RutaVoucher) : "voucher_transferencia.pdf",
-                    FechaRegistro = pg.FechaGeneracion ?? Hoy,
+                    Archivo = !string.IsNullOrWhiteSpace(pg.RutaVoucher) ? Path.GetFileName(pg.RutaVoucher) : "",
+                    FechaRegistro = pg.FechaGeneracion,
                     FechaRevision = pg.FechaPago,
                     Estado = pg.EstadoPago switch
                     {
@@ -666,7 +667,7 @@ public sealed partial class DatosSesion
     }
 
     public bool AptaSinCarne(Postulacion p) =>
-        p.Estado == EstadoPostulacion.Apta && PagoAprobado(p.Id) && CarneVigenteDe(p.Id) is null;
+        p.Estado == EstadoPostulacion.Apta && EsApta(p) && CarneVigenteDe(p.Id) is null;
 
     // =========================================================================
     // OPERACIONES PERSISTENTES EN BACKEND (RF_01 a RF_14)
@@ -1528,7 +1529,7 @@ public sealed partial class DatosSesion
             TipoArchivo = tipoDb,
             TamanioArchivo = Math.Max(1024, (long)doc.TamanioKb * 1024),
             RutaArchivo = string.IsNullOrWhiteSpace(doc.RutaArchivo) ? $"/docs/{doc.PostulacionId}/{doc.Archivo}" : doc.RutaArchivo,
-            FechaCarga = doc.FechaCarga <= Hoy ? doc.FechaCarga : Hoy,
+            FechaCarga = doc.FechaCarga,
             EstadoDocumento = estadoDb,
             FechaEvaluacion = Hoy,
             ComentarioEvaluacion = comentario
@@ -1784,6 +1785,8 @@ public sealed partial class DatosSesion
             SedeId = sedeFinal,
             Aula = aulaFinal,
             FechaEmision = Hoy,
+            InicioVigencia = Hoy,
+            FinVigencia = Hoy.AddMonths(3),
             Automatico = automatico,
             Motivo = motivo
         };
@@ -1806,8 +1809,8 @@ public sealed partial class DatosSesion
                 Sede = new SedeDto { Id = c.SedeId },
                 CodigoCarne = c.Codigo,
                 FechaGeneracion = c.FechaEmision,
-                FechaInicioVigencia = c.FechaEmision,
-                FechaFinVigencia = c.FechaEmision.AddMonths(1),
+                FechaInicioVigencia = c.InicioVigencia,
+                FechaFinVigencia = c.FinVigencia,
                 AulaExamen = "ANULADO"
             });
         }

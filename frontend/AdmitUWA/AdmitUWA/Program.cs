@@ -20,6 +20,9 @@ if(!string.IsNullOrWhiteSpace(claves)){
 }
 if(produccion){
  if(string.IsNullOrWhiteSpace(claves))throw new InvalidOperationException("Production exige DataProtection:KeysPath persistente fuera del sitio publicado.");
+ var relativa=Path.GetRelativePath(builder.Environment.ContentRootPath,claves);
+ if(relativa!=".."&&!relativa.StartsWith(".."+Path.DirectorySeparatorChar,StringComparison.Ordinal)&&!Path.IsPathRooted(relativa))
+  throw new InvalidOperationException("DataProtection:KeysPath debe estar fuera del contenido publicado.");
  var certificado=builder.Configuration["DataProtection:CertificateThumbprint"];
  if(!string.IsNullOrWhiteSpace(certificado))proteccion.ProtectKeysWithCertificate(certificado);
  else if(OperatingSystem.IsWindows())proteccion.ProtectKeysWithDpapi(protectToLocalMachine:true);

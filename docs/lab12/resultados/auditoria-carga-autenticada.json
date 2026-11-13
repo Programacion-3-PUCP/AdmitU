@@ -1,0 +1,93 @@
+{
+  "entorno": "Codex Cloud propio; GlassFish/MySQL locales; no WSL ni AWS",
+  "fecha_utc": "2026-11-13T07:18:14.471068+00:00",
+  "preparacion": "1 administrador, 2 evaluadores y 2 postulantes sintéticos; login y registro fuera de las latencias",
+  "modificaciones": "Solo creación de dos cuentas sintéticas y sesiones; sin escritura de expedientes/pagos/documentos",
+  "limite": "Lecturas privadas sobre datos de ensayo; dos postulantes nuevos sin expediente. Diez solicitudes pueden compartir cinco identidades. No prueba archivos, escrituras, navegador, 500 usuarios ni cumplimiento RNF04.",
+  "escenarios": [
+    {
+      "concurrencia_solicitudes": 1,
+      "identidades_distintas": 5,
+      "solicitudes": 100,
+      "segundos": 12.247178,
+      "http": {
+        "200": 100
+      },
+      "fallos": 0,
+      "solicitudes_por_perfil": {
+        "admin": 20,
+        "evaluador": 20,
+        "evaluador2": 20,
+        "postulante1": 20,
+        "postulante2": 20
+      },
+      "solicitudes_por_ruta": {
+        "PostulacionRS/listarTodasPostulaciones": 35,
+        "PagoRS/listarTodosPagos": 35,
+        "DocumentoPostulacionRS/listarTodosDocumentosPostulacion": 30
+      },
+      "latencia_segundos": {
+        "mediana": 0.114917,
+        "p95": 0.197516,
+        "p99": 0.237915,
+        "maximo": 0.262947
+      }
+    },
+    {
+      "concurrencia_solicitudes": 5,
+      "identidades_distintas": 5,
+      "solicitudes": 100,
+      "segundos": 9.712885,
+      "http": {
+        "200": 100
+      },
+      "fallos": 0,
+      "solicitudes_por_perfil": {
+        "admin": 20,
+        "evaluador": 20,
+        "evaluador2": 20,
+        "postulante1": 20,
+        "postulante2": 20
+      },
+      "solicitudes_por_ruta": {
+        "PostulacionRS/listarTodasPostulaciones": 35,
+        "PagoRS/listarTodosPagos": 35,
+        "DocumentoPostulacionRS/listarTodosDocumentosPostulacion": 30
+      },
+      "latencia_segundos": {
+        "mediana": 0.466623,
+        "p95": 0.71009,
+        "p99": 0.841913,
+        "maximo": 0.92052
+      }
+    },
+    {
+      "concurrencia_solicitudes": 10,
+      "identidades_distintas": 5,
+      "solicitudes": 100,
+      "segundos": 13.009603,
+      "http": {
+        "200": 100
+      },
+      "fallos": 0,
+      "solicitudes_por_perfil": {
+        "admin": 20,
+        "evaluador": 20,
+        "evaluador2": 20,
+        "postulante1": 20,
+        "postulante2": 20
+      },
+      "solicitudes_por_ruta": {
+        "PostulacionRS/listarTodasPostulaciones": 35,
+        "PagoRS/listarTodosPagos": 35,
+        "DocumentoPostulacionRS/listarTodosDocumentosPostulacion": 30
+      },
+      "latencia_segundos": {
+        "mediana": 1.252765,
+        "p95": 1.612049,
+        "p99": 1.764536,
+        "maximo": 1.830132
+      }
+    }
+  ]
+}

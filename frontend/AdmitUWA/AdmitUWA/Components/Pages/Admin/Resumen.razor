@@ -32,6 +32,11 @@ else
         <StatCard Etiqueta="Carnés emitidos" Valor="@carnes.ToString()" Detalle="@($"para {aptas} expedientes aptos")" Icono="id-card" Tono="violet" Href="/admin/carnes" />
     </section>
 
+    @if (aptasInconsistentes > 0)
+    {
+        <div class="inline-note" role="status">@aptasInconsistentes expedientes con estado favorable no tienen todos los requisitos obligatorios aprobados con archivo activo o el pago aprobado. Requieren revisión y no se cuentan como aptos.</div>
+    }
+
     <div class="grid-2" style="margin-top:0">
         <section class="card card-pad attention" aria-labelledby="atencion">
             <div class="card-head"><div><h2 id="atencion">Requiere atención</h2><p>Pendientes de esta convocatoria, de lo más urgente a lo menos urgente.</p></div></div>
@@ -112,7 +117,7 @@ else
             <div class="card-head"><div><h2>Carga de evaluadores</h2><p>Expedientes asignados en esta convocatoria.</p></div><a class="link-more" href="/admin/evaluadores">Evaluadores<Icon Name="arrow-up-right" Size="14" /></a></div>
             <div class="table-scroll">
                 <table class="table">
-                    <thead><tr><th>Evaluador</th><th class="num">Asig.</th><th class="num">Resueltos</th><th class="num">Pend.</th><th class="num" title="Pendientes con más de 48 horas">+48 h</th></tr></thead>
+                    <thead><tr><th>Evaluador</th><th class="num">Asig.</th><th class="num">Resueltos</th><th class="num">Pend.</th><th class="num" title="Pendientes desde hace dos días calendario o más">2+ días</th></tr></thead>
                     <tbody>
                         @foreach (var c in carga)
                         {
@@ -131,7 +136,7 @@ else
     </div>
 
     <section class="card card-pad" style="margin-top:18px">
-        <div class="card-head"><div><h2>Actividad reciente</h2><p>Lo último que ocurrió en el proceso.</p></div><a class="link-more" href="/admin/notificaciones">Ver todo<Icon Name="arrow-up-right" Size="14" /></a></div>
+        <div class="card-head"><div><h2>Avisos de esta sesión</h2><p>Acciones realizadas durante esta sesión.</p></div><a class="link-more" href="/admin/notificaciones">Ver todo<Icon Name="arrow-up-right" Size="14" /></a></div>
         <FeedNotificaciones Items="@Datos.NotificacionesDe(RolUsuario.Administrador)" Maximo="4" />
     </section>
 }
@@ -143,7 +148,7 @@ else
 
     private int convId;
     private Convocatoria? conv;
-    private int registradas, enviadas, aptas, carnes;
+    private int registradas, enviadas, aptas, carnes, aptasInconsistentes;
     private decimal recaudado, esperado;
     private List<Alerta> alertas = [];
     private List<Embudo.Etapa> embudo = [];
@@ -167,6 +172,7 @@ else
         registradas = todas.Count;
         enviadas = envio.Count;
         aptas = envio.Count(Datos.EsApta);
+        aptasInconsistentes = todas.Count(p => IndicadoresExpediente.EstadoApto(p.Estado) && !Datos.EsApta(p));
         carnes = envio.Count(p => Datos.CarneVigenteDe(p.Id) is not null);
         recaudado = envio.Select(p => Datos.PagoDe(p.Id)).Where(x => x?.Estado == EstadoPago.Aprobado).Sum(x => x!.Monto);
         esperado = envio.Select(p => Datos.PagoDe(p.Id)).Where(x => x is not null).Sum(x => x!.Monto);
@@ -180,7 +186,7 @@ else
         alertas =
         [
             new("Aptos sin carné", "La emisión automática no se completó: revisa y emite manualmente.", sinCarne, "/admin/carnes?vista=aptos", "Revisar"),
-            new("Documentos por revisar hace más de 48 h", "Expedientes esperando al evaluador.", docsAtrasados, $"/admin/documentos?conv={convId}&vista=pendientes", "Ver documentos"),
+            new("Documentos por revisar desde hace 2 días o más", "Días calendario desde la fecha de carga; no se registra una hora.", docsAtrasados, $"/admin/documentos?conv={convId}&vista=pendientes", "Ver documentos"),
             new("Vouchers por validar", "Pagos registrados por los postulantes que aún no se validan.", vouchers, "/admin/pagos?estado=Pendiente", "Ver pagos"),
             new("Expedientes observados sin subsanar", "El postulante debe cargar una nueva versión.", observadas, $"/admin/postulaciones?conv={convId}&estado=Observada", "Ver postulaciones"),
             new("Postulaciones sin evaluador", "Asigna un evaluador para iniciar la revisión.", sinEvaluador, $"/admin/postulaciones?conv={convId}&evaluador=0", "Asignar")
@@ -237,8 +243,7 @@ else
         if (c.Inicio is not { } apertura || c.Fin is not { } fin) return "Calendario no registrado";
         int total = fin.DayNumber - apertura.DayNumber + 1;
         int dia = Math.Clamp(Datos.Hoy.DayNumber - apertura.DayNumber + 1, 1, Math.Max(1, total));
-        var cierre = c.CierreInscripciones ?? c.Fin;
-        string etapa = Datos.Hoy <= cierre ? "Inscripciones" : Datos.Hoy <= (c.LimiteEvaluacion ?? c.Fin) ? "Evaluación de expedientes" : "Publicación de resultados";
+        string etapa = Datos.Hoy < apertura ? "Próxima apertura" : Datos.Hoy <= fin ? "Inscripciones" : "Fuera de plazo de inscripción";
         return $"Día {dia} de {total} · Etapa: {etapa}";
     }
 }
