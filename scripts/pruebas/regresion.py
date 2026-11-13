@@ -105,6 +105,15 @@ class Suite:
             self.doc=self.j('DocumentoPostulacionRS/listarTodosDocumentosPostulacion',token=self.user)[0]
             return {'HTTP':status,'postulacion':self.post['id'],'pagos':len(pagos)}
         assert self.check('O3_O7','dos POST concurrentes una postulación y un pago',simultaneo)
+        def otra_carrera():
+            career=next(x for x in self.j('CarreraRS/listarTodasCarreras') if x['id']!=self.ids['Carrera'] and x['activo'])
+            offer=self.insert('OfertaCarrera',dict(convocatoria={'id':self.conv['id']},carrera={'id':career['id']},cantidadVacantes=10))
+            other=copy.deepcopy(self.payload);other['postulacion']['carreraElegida']={'id':offer['id']};other['postulacion']['codigoInscripcion']='DIST-'+self.tag
+            result=self.negative('PostulacionRS/enviarPostulacion','POST',other,self.user)
+            assert len(self.j('PostulacionRS/listarTodasPostulaciones',token=self.user))==1
+            assert len(self.j('PagoRS/listarTodosPagos',token=self.user))==1
+            return dict(result,carrera_y_codigo_distintos=True,postulaciones=1,pagos=1)
+        self.check('O7','otra carrera y otro código en misma convocatoria rechazados',otra_carrera)
     def payments_observation(self):
         def voucher():
             a=dict(postulanteId=self.person,tipo='VOUCHER',referenciaId=self.pago['id'],nombre='voucher.png',mime='image/png',contenidoBase64=base64.b64encode(PNG).decode(),fechaRegistro=str(self.today),codigoOperacion='OP-'+self.tag,monto=100)
@@ -148,8 +157,30 @@ class Suite:
         self.check('RNF_03','perfil ajeno denegado',lambda:self.negative('PostulanteRS/buscarPostulantePorId/1','GET',None,self.user))
         self.check('RNF_03','postulante no autoaprueba pago',lambda:self.negative('PagoRS/modificarPago','PUT',{},self.user))
         self.check('RNF_03','postulante no modifica catálogo',lambda:self.negative('CarreraRS/modificarCarrera','PUT',{},self.user))
+    def allowed_boundaries(self):
+        def another_applicant():
+            cred=dict(correo=self.tag.lower()+'-otro@example.test',clave=secrets.token_urlsafe(24))
+            persona=dict(nombres='Otra prueba',apellidoPaterno='Automatica',correo=cred['correo'],tipoDocumento='DNI',numeroDocumento=str(20000000+secrets.randbelow(60000000)),fechaNacimiento='2005-01-01')
+            person=self.j('AutenticacionRS/registrar','POST',dict(postulante=persona,clave=cred['clave']),token='')
+            token=self.api.login(cred);payload=copy.deepcopy(self.payload);payload['postulacion']['postulante']={'id':person};payload['postulacion']['codigoInscripcion']='OTRO-'+self.tag
+            id=self.j('PostulacionRS/enviarPostulacion','POST',payload,token=token)
+            assert len(self.j('PostulacionRS/listarTodasPostulaciones',token=token))==1
+            assert len(self.j('PagoRS/listarTodosPagos',token=token))==1
+            return {'postulacion':id,'otro_postulante_misma_convocatoria':True}
+        self.check('O7','otro postulante sí puede usar la misma convocatoria',another_applicant)
+        def another_call():
+            call=dict(self.conv,id=0,codigoConvocatoria=self.tag+'D',nombre='Otra convocatoria '+self.tag)
+            self.insert('Convocatoria',call)
+            cm=self.insert('ConvocatoriaModalidad',dict(convocatoria={'id':call['id']},modalidad={'id':self.ids['Modalidad']},costoInscripcion=100))
+            offer=self.insert('OfertaCarrera',dict(convocatoria={'id':call['id']},carrera={'id':self.ids['Carrera']},cantidadVacantes=10))
+            payload=copy.deepcopy(self.payload);payload['postulacion'].update(convocatoria={'id':call['id']},modalidadElegida={'id':cm['id']},carreraElegida={'id':offer['id']},codigoInscripcion='CONV-'+self.tag);payload['documentos']=[]
+            id=self.j('PostulacionRS/enviarPostulacion','POST',payload,token=self.user)
+            assert len(self.j('PostulacionRS/listarTodasPostulaciones',token=self.user))==2
+            return {'postulacion':id,'mismo_postulante_otra_convocatoria':True}
+        self.check('O7','mismo postulante sí puede usar otra convocatoria',another_call)
+
     def run(self):
-        try:self.setup();self.files();self.submission();self.security();self.payments_observation();self.reports();self.history_carnet()
+        try:self.setup();self.files();self.submission();self.security();self.payments_observation();self.reports();self.history_carnet();self.allowed_boundaries()
         finally:
             self.a.output.parent.mkdir(parents=True,exist_ok=True);self.a.output.write_text(json.dumps(self.rows,indent=2,ensure_ascii=False)+'\n')
         return 1 if any(r['status']=='FAIL' for r in self.rows) else 0
