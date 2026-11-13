@@ -57,7 +57,7 @@ public class PostulacionHistorialImpl implements PostulacionHistorialDAO {
             }
             return historial;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR POSTULACION HISTORIAL: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR POSTULACION HISTORIAL: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -74,7 +74,7 @@ public class PostulacionHistorialImpl implements PostulacionHistorialDAO {
             }
             return historial;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR POSTULACIONES HISTORIAL: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR POSTULACIONES HISTORIAL: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

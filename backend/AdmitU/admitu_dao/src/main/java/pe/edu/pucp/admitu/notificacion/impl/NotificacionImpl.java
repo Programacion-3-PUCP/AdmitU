@@ -41,7 +41,7 @@ public class NotificacionImpl implements NotificacionDAO {
                 return notificacion.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR NOTIFICACION: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR NOTIFICACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -67,7 +67,7 @@ public class NotificacionImpl implements NotificacionDAO {
             cs.setDate("_fecha_lectura", notificacion.getFechaLectura() != null ? Date.valueOf(notificacion.getFechaLectura()) : null);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR NOTIFICACION: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR NOTIFICACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -80,7 +80,7 @@ public class NotificacionImpl implements NotificacionDAO {
             cs.setInt("_id", idNotificacion);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR NOTIFICACION: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR NOTIFICACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -119,7 +119,7 @@ public class NotificacionImpl implements NotificacionDAO {
             }
             return notificacion;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR NOTIFICACION: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR NOTIFICACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -136,7 +136,7 @@ public class NotificacionImpl implements NotificacionDAO {
             }
             return notificaciones;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR NOTIFICACIONES: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR NOTIFICACIONES: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

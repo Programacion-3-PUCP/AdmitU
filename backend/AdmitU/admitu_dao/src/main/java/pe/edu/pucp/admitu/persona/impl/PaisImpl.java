@@ -25,7 +25,7 @@ public class PaisImpl implements PaisDAO {
                 return pais.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR PAIS: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR PAIS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -40,7 +40,7 @@ public class PaisImpl implements PaisDAO {
             cs.setString("_nombre", pais.getNombre());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR PAIS: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR PAIS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -53,7 +53,7 @@ public class PaisImpl implements PaisDAO {
             cs.setInt("_id", idPais);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR PAIS: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR PAIS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -77,7 +77,7 @@ public class PaisImpl implements PaisDAO {
             }
             return pais;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR PAIS: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR PAIS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -94,7 +94,7 @@ public class PaisImpl implements PaisDAO {
             }
             return paises;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR PAISES: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR PAISES: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

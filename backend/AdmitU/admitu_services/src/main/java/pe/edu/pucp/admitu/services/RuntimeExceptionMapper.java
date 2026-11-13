@@ -17,7 +17,7 @@ public class RuntimeExceptionMapper implements ExceptionMapper<RuntimeException>
         }
         if(status==500 && error.getMessage()!=null && error.getMessage().contains("Duplicate entry")){status=409;mensaje="Ya existe un registro con esos datos.";}
         String referencia=UUID.randomUUID().toString();
-        LOG.log(status==500?Level.SEVERE:Level.WARNING,"Referencia "+referencia,error);
+        LOG.log(status==500?Level.SEVERE:Level.WARNING,"Referencia {0}; {1}",new Object[]{referencia,pe.edu.pucp.admitu.config.Diagnostico.resumen(error)});
         return Response.status(status).type(MediaType.APPLICATION_JSON).entity(Map.of("mensaje",mensaje==null?"Datos no válidos":mensaje,"referencia",referencia)).build();
     }
 }

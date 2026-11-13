@@ -31,7 +31,7 @@ public class ConvocatoriaImpl implements ConvocatoriaDAO {
                 return conv.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR CONVOCATORIA: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR CONVOCATORIA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -51,7 +51,7 @@ public class ConvocatoriaImpl implements ConvocatoriaDAO {
             cs.setString("_descripcion", conv.getDescripcion());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR CONVOCATORIA: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR CONVOCATORIA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -64,7 +64,7 @@ public class ConvocatoriaImpl implements ConvocatoriaDAO {
             cs.setInt("_id", idConv);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR CONVOCATORIA: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR CONVOCATORIA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -92,7 +92,7 @@ public class ConvocatoriaImpl implements ConvocatoriaDAO {
             }
             return conv;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR CONVOCATORIA: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR CONVOCATORIA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -119,7 +119,7 @@ public class ConvocatoriaImpl implements ConvocatoriaDAO {
             }
             return lista;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR CONVOCATORIAS: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR CONVOCATORIAS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

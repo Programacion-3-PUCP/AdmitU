@@ -29,7 +29,7 @@ public class ConvocatoriaModalidadImpl implements ConvocatoriaModalidadDAO {
                 return relacion.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR CONVOCATORIA MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR CONVOCATORIA MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -46,7 +46,7 @@ public class ConvocatoriaModalidadImpl implements ConvocatoriaModalidadDAO {
             cs.setString("_observacion", relacion.getObservacion());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR CONVOCATORIA MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR CONVOCATORIA MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -59,7 +59,7 @@ public class ConvocatoriaModalidadImpl implements ConvocatoriaModalidadDAO {
             cs.setInt("_id", idRelacion);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR CONVOCATORIA MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR CONVOCATORIA MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -88,7 +88,7 @@ public class ConvocatoriaModalidadImpl implements ConvocatoriaModalidadDAO {
             }
             return relacion;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR CONVOCATORIA MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR CONVOCATORIA MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -105,7 +105,7 @@ public class ConvocatoriaModalidadImpl implements ConvocatoriaModalidadDAO {
             }
             return relaciones;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR CONVOCATORIAS MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR CONVOCATORIAS MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

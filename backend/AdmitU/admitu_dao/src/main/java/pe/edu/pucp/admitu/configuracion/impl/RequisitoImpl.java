@@ -28,7 +28,7 @@ public class RequisitoImpl implements RequisitoDAO {
                 return requisito.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR REQUISITO: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR REQUISITO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -46,7 +46,7 @@ public class RequisitoImpl implements RequisitoDAO {
             cs.setInt("_tamanio_maximo", requisito.getTamanioMaximoBytes());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR REQUISITO: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR REQUISITO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -59,7 +59,7 @@ public class RequisitoImpl implements RequisitoDAO {
             cs.setInt("_id", idRequisito);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR REQUISITO: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR REQUISITO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -85,7 +85,7 @@ public class RequisitoImpl implements RequisitoDAO {
             }
             return requisito;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR REQUISITO: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR REQUISITO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -102,7 +102,7 @@ public class RequisitoImpl implements RequisitoDAO {
             }
             return requisitos;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR REQUISITOS: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR REQUISITOS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

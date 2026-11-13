@@ -31,7 +31,7 @@ public class RequisitoConvocatoriaModalidadImpl implements RequisitoConvocatoria
                 return relacion.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR REQUISITO CONVOCATORIA MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR REQUISITO CONVOCATORIA MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -49,7 +49,7 @@ public class RequisitoConvocatoriaModalidadImpl implements RequisitoConvocatoria
             else cs.setInt("_orden_presentacion", relacion.getOrdenPresentacion());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR REQUISITO CONVOCATORIA MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR REQUISITO CONVOCATORIA MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -62,7 +62,7 @@ public class RequisitoConvocatoriaModalidadImpl implements RequisitoConvocatoria
             cs.setInt("_id", idRelacion);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR REQUISITO CONVOCATORIA MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR REQUISITO CONVOCATORIA MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -93,7 +93,7 @@ public class RequisitoConvocatoriaModalidadImpl implements RequisitoConvocatoria
             }
             return relacion;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR REQUISITO CONVOCATORIA MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR REQUISITO CONVOCATORIA MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -110,7 +110,7 @@ public class RequisitoConvocatoriaModalidadImpl implements RequisitoConvocatoria
             }
             return relaciones;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR REQUISITOS CONVOCATORIA MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR REQUISITOS CONVOCATORIA MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

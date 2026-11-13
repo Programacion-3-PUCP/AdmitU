@@ -33,7 +33,7 @@ public class AntecedenteAcademicoImpl implements AntecedenteAcademicoDAO {
                 return antecedente.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR ANTECEDENTE ACADEMICO: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR ANTECEDENTE ACADEMICO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -51,7 +51,7 @@ public class AntecedenteAcademicoImpl implements AntecedenteAcademicoDAO {
             cs.setString("_descripcion", antecedente.getDescripcion());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR ANTECEDENTE ACADEMICO: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR ANTECEDENTE ACADEMICO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -64,7 +64,7 @@ public class AntecedenteAcademicoImpl implements AntecedenteAcademicoDAO {
             cs.setInt("_id", idAntecedente);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR ANTECEDENTE ACADEMICO: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR ANTECEDENTE ACADEMICO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -97,7 +97,7 @@ public class AntecedenteAcademicoImpl implements AntecedenteAcademicoDAO {
             }
             return antecedente;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR ANTECEDENTE ACADEMICO: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR ANTECEDENTE ACADEMICO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -114,7 +114,7 @@ public class AntecedenteAcademicoImpl implements AntecedenteAcademicoDAO {
             }
             return antecedentes;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR ANTECEDENTES ACADEMICOS: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR ANTECEDENTES ACADEMICOS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

@@ -29,7 +29,7 @@ public class ConvocatoriaEtapaImpl implements ConvocatoriaEtapaDAO {
                 return relacion.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR CONVOCATORIA ETAPA: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR CONVOCATORIA ETAPA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -46,7 +46,7 @@ public class ConvocatoriaEtapaImpl implements ConvocatoriaEtapaDAO {
             cs.setDate("_fecha_fin", relacion.getFechaFin() != null ? Date.valueOf(relacion.getFechaFin()) : null);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR CONVOCATORIA ETAPA: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR CONVOCATORIA ETAPA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -59,7 +59,7 @@ public class ConvocatoriaEtapaImpl implements ConvocatoriaEtapaDAO {
             cs.setInt("_id", idRelacion);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR CONVOCATORIA ETAPA: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR CONVOCATORIA ETAPA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -91,7 +91,7 @@ public class ConvocatoriaEtapaImpl implements ConvocatoriaEtapaDAO {
             }
             return relacion;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR CONVOCATORIA ETAPA: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR CONVOCATORIA ETAPA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -108,7 +108,7 @@ public class ConvocatoriaEtapaImpl implements ConvocatoriaEtapaDAO {
             }
             return relaciones;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR CONVOCATORIAS ETAPA: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR CONVOCATORIAS ETAPA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

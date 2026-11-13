@@ -39,7 +39,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
                 return documento.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR DOCUMENTO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR DOCUMENTO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -65,7 +65,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             return cs.executeUpdate();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR DOCUMENTO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR DOCUMENTO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -78,7 +78,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             cs.setInt("_id", idDocumento);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR DOCUMENTO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR DOCUMENTO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -117,7 +117,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             }
             return documento;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR DOCUMENTO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR DOCUMENTO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -134,7 +134,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             }
             return documentos;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR DOCUMENTOS POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR DOCUMENTOS POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

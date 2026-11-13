@@ -36,7 +36,7 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
                 return observacion.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR DOCUMENTO OBSERVACION: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR DOCUMENTO OBSERVACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -59,7 +59,7 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
             return cs.executeUpdate();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR DOCUMENTO OBSERVACION: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR DOCUMENTO OBSERVACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -74,7 +74,7 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
             return cs.executeUpdate();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR DOCUMENTO OBSERVACION: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR DOCUMENTO OBSERVACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -113,7 +113,7 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
             }
             return observacion;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR DOCUMENTO OBSERVACION: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR DOCUMENTO OBSERVACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -130,7 +130,7 @@ public class DocumentoObservacionImpl implements DocumentoObservacionDAO {
             }
             return observaciones;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR DOCUMENTOS OBSERVACION: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR DOCUMENTOS OBSERVACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

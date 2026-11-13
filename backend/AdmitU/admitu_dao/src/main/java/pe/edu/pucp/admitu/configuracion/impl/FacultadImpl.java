@@ -25,7 +25,7 @@ public class FacultadImpl implements FacultadDAO {
                 return facultad.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR FACULTAD: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR FACULTAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -40,7 +40,7 @@ public class FacultadImpl implements FacultadDAO {
             cs.setString("_nombre", facultad.getNombre());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR FACULTAD: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR FACULTAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -53,7 +53,7 @@ public class FacultadImpl implements FacultadDAO {
             cs.setInt("_id", idFacultad);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR FACULTAD: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR FACULTAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -74,7 +74,7 @@ public class FacultadImpl implements FacultadDAO {
             }
             return facultad;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR FACULTAD: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR FACULTAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -94,7 +94,7 @@ public class FacultadImpl implements FacultadDAO {
             }
             return facultades;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR FACULTADES: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR FACULTADES: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
