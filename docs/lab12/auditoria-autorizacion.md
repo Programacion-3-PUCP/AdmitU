@@ -46,3 +46,26 @@ python3 scripts/pruebas/seguridad-ui.py \
 ```
 
 La suite REST crea dos postulantes nuevos, usa dos evaluadores diferentes y un administrador, asigna/reasigna expedientes y compara una huella SHA-256 de todas las columnas de las tablas de negocio antes y después de cada rechazo. El SQL devuelve huellas por fila, nunca bytes o datos personales. No ejecutar otras mutaciones sobre esas tablas durante los negativos para que el contraste sea atribuible. Los fixtures se conservan para inspección local. Ninguna ejecución aquí acredita WSL del usuario ni AWS.
+
+## Ejecución comprobada en Cloud
+
+El 13/11/2026, la suite REST ejecutó **77/77 comprobaciones PASS**, de las cuales
+**64 son negativos con HTTP 401/403 exacto y huellas SQL idénticas antes/después**.
+Las otras comprobaciones preparan fixtures o verifican operaciones legítimas.
+Se contrastaron las **28 tablas de negocio**, incluidos catálogos, personas,
+expedientes, archivos, pagos, carnés e historial. Se excluyen `cuenta_usuario` y
+`sesion_usuario`: sus contadores, bloqueos y revocaciones cambian precisamente
+como resultado esperado de los negativos de autenticación.
+
+La evidencia [auditoria-seguridad.json](resultados/auditoria-seguridad.json)
+registra cada caso y ambas huellas sin publicar filas, claves, tokens o cookies.
+Se verificó el bloqueo de escritura y descarga tras reasignar un expediente,
+la autoría del token al crear observaciones, el rechazo de autor suplantado,
+las fechas y estado inicial del servidor frente a JSON arbitrario, y la
+subsanación legítima por un nuevo evaluador asignado sin sustituir al autor
+original ni la fecha original. También pasaron expiración, bloqueo de cuenta,
+revocación de acceso con token previo y logout.
+
+Esta ejecución se hizo contra GlassFish 8 y MySQL 8.4 de ensayo propios en Cloud.
+La comprobación CSRF/cookies y las rutas de Blazor se documentan por separado
+en la suite de navegador; las 77 comprobaciones REST no las sustituyen.
