@@ -62,6 +62,12 @@ else:sys.stdin.read()
         self.assertNotEqual(r.returncode, 0)
         self.assertEqual(self.calls(), [])
 
+    def test_backup_con_blob_binario_no_requiere_utf8(self):
+        self.dump.write_bytes(b"USE admitu_db;\nINSERT INTO archivo VALUES ('\x89PNG\x00\xff');\n")
+        r = self.run_script()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.calls(), [])
+
     def test_host_configurado_distinto_no_abre_mysql(self):
         r = self.run_script(*self.apply_args(), '--expected-host', 'otro')
         self.assertNotEqual(r.returncode, 0)
@@ -85,6 +91,7 @@ else:sys.stdin.read()
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual([x[0] for x in self.calls()], ['mysql', 'mysqldump', 'mysql'])
         self.assertEqual(len(list((self.base/'backups').glob('*.sql'))), 1)
+        self.assertEqual(len(list((self.base/'backups').glob('*.sql.sha256'))), 1)
         self.assertFalse(list((self.base/'backups').glob('*.partial')))
 
 if __name__ == '__main__':

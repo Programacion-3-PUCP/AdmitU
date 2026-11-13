@@ -30,9 +30,9 @@ python scripts/despliegue/migrar.py
 python scripts/despliegue/migrar.py --apply --defaults-file /ruta/privada/my.cnf --expected-host HOST_AUTORIZADO --expected-server HOSTNAME_MYSQL_CONFIRMADO
 ```
 
-Orden: perfil, archivos, reglas, seguridad y reportes. Se especifica UTF8MB4 para preservar tildes. Por defecto no se recrea la BD; `--recreate-test-db` añade el SQL de LAB11 y requiere `--apply`, destino verificado y backup previo. Este modo borra solo admitu_db de ensayo. DDL y procedimientos no se revierten con rollback: conservar el dump y detenerse si una migración falla. El script no elimina duplicados históricos silenciosamente.
+Orden: perfil, archivos, reglas, seguridad, reportes, integridad PRE-AWS y métricas PRE-AWS. Las dos últimas migraciones deben preceder al WAR correctivo. Se especifica UTF8MB4 para preservar tildes. Por defecto no se recrea la BD; `--recreate-test-db` añade el SQL de LAB11 y requiere `--apply`, destino verificado y backup previo. Este modo borra solo admitu_db de ensayo. DDL y procedimientos no se revierten con rollback: conservar el dump y detenerse si una migración falla. El script no elimina duplicados históricos silenciosamente.
 
-El dump solo recibe extensión `.sql` si `mysqldump` terminó correctamente y produjo contenido; un fallo conserva `.sql.partial` y detiene las migraciones. El migrador genera un manifiesto `.sql.sha256` junto al backup completo. Conservar ambos en almacenamiento privado y copiar una segunda copia fuera de la instancia.
+El dump solo recibe extensión `.sql` si `mysqldump` terminó correctamente y produjo contenido; un fallo conserva `.sql.partial` y detiene las migraciones. Los backups nuevos usan `--hex-blob` para conservar documentos binarios sin depender de la codificación del terminal. El migrador y el restaurador generan un manifiesto `.sql.sha256` junto a cada backup completo. Conservar ambos en almacenamiento privado y copiar una segunda copia fuera de la instancia.
 
 Para ensayar una recuperación en **la base de ensayo propia**, detener antes Blazor/GlassFish o ponerlos en mantenimiento, conservar el hash original del manifiesto y ejecutar:
 
@@ -43,7 +43,7 @@ python scripts/despliegue/restaurar.py --backup-file /ruta/privada/admitu_db-FEC
 python scripts/despliegue/restaurar.py --backup-file /ruta/privada/admitu_db-FECHA.sql --sha256 SHA256_DEL_MANIFIESTO --apply --defaults-file /ruta/privada/my.cnf --expected-host HOST_AUTORIZADO --expected-server HOSTNAME_MYSQL_CONFIRMADO
 ```
 
-La restauración no es atómica: si falla SQL, mantener la aplicación cerrada y recuperar desde el respaldo previo. Comparar conteos de tablas/SP, estados, hashes de documentos y tres reportes antes de reabrirla. Las siete pruebas automáticas de `scripts/pruebas/test_operaciones.py` simulan clientes MySQL para verificar los bloqueos de destino/hash y el respaldo previo; no sustituyen el ensayo real de recuperación.
+La restauración no es atómica: si falla SQL, mantener la aplicación cerrada y recuperar desde el respaldo previo. Comparar conteos de tablas/SP, estados, hashes de documentos y tres reportes antes de reabrirla. Las ocho pruebas automáticas de `scripts/pruebas/test_operaciones.py` simulan clientes MySQL para verificar los bloqueos de destino/hash y el respaldo previo. Además, `scripts/pruebas/restauracion.py` ensaya la recuperación en un **clon independiente propio**, con dry-run por defecto: restaura un dump propio, crea una convocatoria sintética, vuelve a restaurar y compara checksums de todas las tablas, cantidades de filas, definiciones de SP y SHA256 de los bytes. Nunca dirigir este ensayo al esquema que atiende la aplicación. Su ejecución real en Cloud pasó con 30 tablas, 153 SP y seis archivos; ver [evidencia PRE-AWS](../lab12/resultados/auditoria-operaciones.json).
 
 Los valores de host/schema no prueban por sí mismos la propiedad del servidor: el operador debe haber confirmado previamente que el destino pertenece a su laboratorio autorizado. No proporcionar contraseñas en argumentos de línea de comandos ni subir archivos de configuración/dumps a Git.
 

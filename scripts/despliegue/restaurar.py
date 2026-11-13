@@ -29,8 +29,8 @@ def main():
     digest = hashlib.sha256(contenido).hexdigest()
     if not contenido or not re.fullmatch('[0-9a-fA-F]{64}', a.sha256) or digest != a.sha256.lower():
         p.error('El dump está vacío o su SHA256 no coincide; no se abrió MySQL.')
-    for m in re.finditer(r'\b(?:USE|CREATE\s+DATABASE(?:\s+IF\s+NOT\s+EXISTS)?|DROP\s+DATABASE(?:\s+IF\s+EXISTS)?)\s+`?([\w]+)', contenido.decode('utf-8-sig'), re.I):
-        if m.group(1).lower() != 'admitu_db':
+    for m in re.finditer(rb'\b(?:USE|CREATE\s+DATABASE(?:\s+IF\s+NOT\s+EXISTS)?|DROP\s+DATABASE(?:\s+IF\s+EXISTS)?)\s+`?([\w]+)', contenido, re.I):
+        if m.group(1).lower() != b'admitu_db':
             p.error('El dump menciona otro esquema; no se abrió MySQL.')
     print('PLAN: verificar destino admitu_db, respaldar su estado actual y restaurar dump SHA256='+digest)
     if not a.apply:
@@ -54,10 +54,14 @@ def main():
         parcial = respaldo.with_suffix('.sql.partial')
         with parcial.open('xb') as out:
             os.chmod(parcial, 0o600)
-            subprocess.run(['mysqldump', *flags, '--single-transaction', '--routines', '--triggers', '--no-tablespaces', '--set-gtid-purged=OFF', 'admitu_db'], stdout=out, stderr=subprocess.PIPE, check=True)
+            subprocess.run(['mysqldump', *flags, '--single-transaction', '--hex-blob', '--routines', '--triggers', '--no-tablespaces', '--set-gtid-purged=OFF', 'admitu_db'], stdout=out, stderr=subprocess.PIPE, check=True)
         if not parcial.stat().st_size:
             sys.exit('ERROR: respaldo previo vacío; no se restauró.')
         parcial.rename(respaldo)
+        manifiesto = respaldo.with_suffix('.sql.sha256')
+        with manifiesto.open('x', encoding='utf-8') as out:
+            os.chmod(manifiesto, 0o600)
+            out.write(hashlib.sha256(respaldo.read_bytes()).hexdigest()+'  '+respaldo.name+'\n')
         with a.backup_file.open('rb') as src:
             subprocess.run(['mysql', *flags, 'admitu_db'], stdin=src, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
         print('OK: dump restaurado en admitu_db; comprobar conteos, bytes, SP y flujos antes de reabrir la aplicación.')
