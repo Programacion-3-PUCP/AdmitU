@@ -24,12 +24,12 @@ La rama `codex/lab12-completo` conserva el stack y las rutas del curso: seis mó
 | O3 Doble envío | Busy en Blazor, operación compuesta y restricciones en MySQL | Dos POST: un HTTP200 y un HTTP409; una postulación/un pago |
 | O4 Fecha futura | Campo date limitado y validación BO/SP | Fecha futura rechazada en API y BO/MySQL |
 | O5 Campos bloqueados | Estilo común de readonly/disabled y metadatos protegidos | PASS: perfil y documento bloqueado comprobados en navegador |
-| O6 Alcance de Observaciones | Etiqueta Mostrar y opciones Mis expedientes/Todos | Navegador RF10 aprobó selección y filtrado |
+| O6 Alcance de Observaciones | Etiqueta Mostrar y opciones Mis expedientes/Todos | Se confirmó que bind bool dejaba la selección vacía; valores de texto mios/todos corregidos en fuente, pendientes de repetir el filtrado |
 | O7 Varias carreras en una convocatoria | UNIQUE(postulante_id,convocatoria_id), validación BO y transacción | Unicidad SQL/BO comprobada; no depende de la carrera |
 | O8 Borradores acumulados | Eliminar con confirmación y baja lógica; servidor restringe borradores | API y navegador RF01 aprobados |
 
-Se detectó y corrigió en fuente una discrepancia entre los IDs de estado SQL y los estados Blazor: APTA y FINALIZADA podían interpretarse como estados distintos e impedir emitir el carné. La compilación pasó; la pantalla y las transiciones requieren su nueva comprobación visual antes del cierre.
+Se detectó y corrigió en fuente una discrepancia entre los IDs de estado SQL y los estados Blazor: APTA y FINALIZADA podían interpretarse como estados distintos e impedir emitir el carné. La pantalla ya pasó la repetición: emisión de carné y estado FINALIZADA observados tanto en SQL como en Blazor.
 
-Los tres flujos visuales aún pendientes se detallan en la matriz; se actualizará el cierre con la repetición final. No se computa un requisito como aprobado solo porque tiene una pantalla o compila. No se promete una calificación.
+El flujo visual aún pendiente, RF10, se detalla en la matriz; se actualizará el cierre con la repetición final. No se computa un requisito como aprobado solo porque tiene una pantalla o compila. No se promete una calificación.
 
 El trabajo con IA y las responsabilidades por RF se describen en [sustentación](sustentacion.md). El material privado del profesor se usó para contrastar el método por capas y Jasper; no se incorpora su ZIP, fuentes ni configuraciones al repositorio.

@@ -15,7 +15,7 @@ Las comprobaciones siguientes corresponden al código reconstruido y a ejecucion
 | Caída del API | HTTP200 en login, aviso y formulario disponibles; sin datos demo | `work/seguridad-offline.json`; [seguridad](seguridad.md) |
 | Jasper/SQL | Tres PDF auténticos; totales, filtros, vacío y negativos contrastados | `scripts/pruebas/reportes.sh`; [detalle](reportes.md) |
 | Roles de reportes | 9/9 combinaciones con HTTP esperado | [JSON sanitizado](resultados/reportes-roles.json) |
-| Navegación funcional | 12/15 en la última ejecución disponible; repetición de RF05/07/14 pendiente | `scripts/pruebas/ui.py`; `work/evidencias/ui.json` y capturas privadas |
+| Navegación funcional | 14/15 en la última ejecución disponible; repetición de RF10 pendiente | `scripts/pruebas/ui.py`; `work/evidencias/ui.json` y capturas privadas |
 | Catálogo/carga | 1 y 20 conexiones <3s; 500/500 HTTP200 con p95 8.308s | [1](resultados/catalogo1.json), [20](resultados/catalogo20.json), [500](resultados/carga500.json) |
 
 ## Qué se observó en las operaciones críticas
