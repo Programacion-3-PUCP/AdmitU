@@ -55,7 +55,7 @@ public final class PruebasReglasLab12 {
                 String condition=table.equals("documento_observacion")?"documento_id IN(SELECT id FROM documento_postulacion WHERE postulacion_id IN(SELECT id FROM postulacion WHERE postulante_id="+persona+"))":"postulacion_id IN(SELECT id FROM postulacion WHERE postulante_id="+persona+")";
                 s.executeUpdate("DELETE FROM "+table+" WHERE "+condition);
             }
-            s.executeUpdate("DELETE FROM postulacion WHERE postulante_id="+persona);s.executeUpdate("DELETE FROM antecedente_academico WHERE postulante_id="+persona);s.executeUpdate("DELETE FROM postulante WHERE persona_id="+persona);s.executeUpdate("DELETE FROM persona WHERE id="+persona);c.commit();
+            s.executeUpdate("DELETE FROM postulacion WHERE postulante_id="+persona);s.executeUpdate("DELETE FROM antecedente_academico WHERE postulante_id="+persona);s.executeUpdate("DELETE FROM institucion_educativa WHERE nombre='LAB12-UNIV-"+persona+"'");s.executeUpdate("DELETE FROM postulante WHERE persona_id="+persona);s.executeUpdate("DELETE FROM persona WHERE id="+persona);c.commit();
         }
     }
     public static void main(String[] args)throws Exception {
@@ -108,6 +108,14 @@ public final class PruebasReglasLab12 {
             carneBo.eliminar(carneId);
             check(carneBo.buscarPorId(carneId)!=null&&"ANULADO".equals(carneBo.buscarPorId(carneId).getAulaExamen()),"anular carné conserva fila, código y titular");
             check(scalar("SELECT COUNT(*) FROM postulacion_historial WHERE postulacion_id="+post)>=4,"la anulación conserva historial del expediente");
+            ArchivoDigital certificado=new ArchivoDigital();certificado.setPostulanteId(persona);certificado.setTipo("CERTIFICADO");certificado.setNombre("universidad.pdf");certificado.setMime("application/pdf");certificado.setContenidoBase64(Base64.getEncoder().encodeToString(PDF));certificado.setInstitucion("LAB12-UNIV-"+persona);certificado.setTipoInstitucion("UNIVERSIDAD");certificado.setAnioInicio(2018);certificado.setAnioFin(2024);archivos.guardarCertificado(certificado);
+            check(scalar("SELECT COUNT(*) FROM institucion_educativa WHERE nombre='LAB12-UNIV-"+persona+"' AND tipo_institucion='UNIVERSIDAD'")==1,"certificado de universidad nueva conserva tipo universitario");
+            check("UNIVERSIDAD".equals(archivos.buscarPorId(certificado.getId()).getTipoInstitucion())&&archivos.listarPorPostulante(persona).stream().anyMatch(f->f.getId()==certificado.getId()&&"UNIVERSIDAD".equals(f.getTipoInstitucion())),"tipo universitario recuperable en consulta y listado de archivos");
+            try(Connection compat=DBManager.getInstance().getConnection();CallableStatement legacy=compat.prepareCall("{call GUARDAR_CERTIFICADO_METADATA(?,?,?,?,?,?,?)}")){
+                legacy.registerOutParameter(1,Types.INTEGER);legacy.setInt(2,certificado.getReferenciaId());legacy.setInt(3,persona);legacy.setString(4,certificado.getInstitucion());legacy.setInt(5,2018);legacy.setInt(6,2024);legacy.setString(7,certificado.getNombre());legacy.execute();
+                check(legacy.getInt(1)==certificado.getReferenciaId()&&"UNIVERSIDAD".equals(archivos.buscarPorId(certificado.getId()).getTipoInstitucion()),"contrato JDBC anterior de siete parámetros conserva universidad existente");
+            }
+            certificado.setTipoInstitucion("COLEGIO");fallo=false;try{archivos.guardarCertificado(certificado);}catch(RuntimeException expected){fallo=true;}check(fallo,"no se reasigna silenciosamente el tipo de institución compartida");
             System.out.println("RESULTADO: "+checks+" comprobaciones aprobadas; fixtures se eliminan en finally.");
         }finally{cleanup();}
     }

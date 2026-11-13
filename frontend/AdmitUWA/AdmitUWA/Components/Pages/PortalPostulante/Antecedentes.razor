@@ -4,9 +4,10 @@
 @inject DatosSesion Datos
 @inject ToastService Avisos
 <PageTitle>Antecedentes académicos · AdmitU</PageTitle>
-<PageHeader Titulo="Antecedentes académicos" Subtitulo="Certificados PDF con bytes durables y fecha de registro válida." Migas="@(["Antecedentes académicos"])" />
+<PageHeader Titulo="Antecedentes académicos" Subtitulo="Carga y actualiza tus certificados académicos en PDF." Migas="@(["Antecedentes académicos"])" />
 @if(error is not null){<p class="validation-message" role="alert">@error</p>}
 <section class="card card-pad"><h2>@(editando==0?"Agregar certificado":"Modificar certificado")</h2>
+<div class="field"><label for="cert-tipo">Tipo de institución</label><select id="cert-tipo" @bind="tipoInstitucion" disabled="@ocupado"><option value="COLEGIO">Colegio</option><option value="UNIVERSIDAD">Universidad</option></select></div>
 <div class="field"><label for="cert-inst">Institución</label><input id="cert-inst" @bind="institucion" maxlength="150" disabled="@ocupado" /></div>
 <div class="field"><label for="cert-inicio">Año de inicio</label><input id="cert-inicio" type="number" @bind="inicio" min="1900" max="@Datos.Hoy.Year" disabled="@ocupado" /></div>
 <div class="field"><label for="cert-fin">Año de finalización</label><input id="cert-fin" type="number" @bind="fin" min="1900" max="@Datos.Hoy.Year" disabled="@ocupado" /></div>
@@ -23,11 +24,11 @@
 }
 <ConfirmDialog Abierto="@(porEliminar is not null)" Titulo="Eliminar certificado" Mensaje="Se dará de baja el certificado y su archivo." TextoConfirmar="Eliminar" OnCancelar="()=>porEliminar=null" OnConfirmar="Eliminar" />
 @code {
- private List<ArchivoDigitalDto> archivos=[];private ArchivoSeleccionado? seleccion;private ArchivoDigitalDto? porEliminar;private int editando;private string institucion="";private int inicio=2020,fin=2025;private DateOnly fecha;private bool ocupado;private string? error;
+ private List<ArchivoDigitalDto> archivos=[];private ArchivoSeleccionado? seleccion;private ArchivoDigitalDto? porEliminar;private int editando;private string institucion="";private string tipoInstitucion="COLEGIO";private int inicio=2020,fin=2025;private DateOnly fecha;private bool ocupado;private string? error;
  protected override async Task OnInitializedAsync(){fecha=Datos.Hoy;await Cargar();}
  private async Task Cargar(){try{archivos=await Api.ListarArchivosAsync(Datos.PostulanteActualId);}catch(Exception){error="No se pudieron cargar tus certificados.";}}
- private void Editar(ArchivoDigitalDto a){editando=a.ReferenciaId;institucion=a.Institucion;inicio=a.AnioInicio;fin=a.AnioFin;fecha=a.FechaRegistro??Datos.Hoy;seleccion=null;}
- private void Cancelar(){editando=0;institucion="";seleccion=null;fecha=Datos.Hoy;}
- private async Task Guardar(){if(ocupado||seleccion is null)return;ocupado=true;error=null;try{var f=seleccion;await Api.GuardarArchivoAsync(new(){PostulanteId=Datos.PostulanteActualId,Tipo="CERTIFICADO",ReferenciaId=editando,Nombre=f.Nombre,Mime=f.Mime,ContenidoBase64=f.ContenidoBase64,FechaRegistro=fecha,Institucion=institucion,AnioInicio=inicio,AnioFin=fin},"guardarCertificado");Datos.CargarDesdeBackend();await Cargar();Cancelar();Avisos.Exito("Certificado y archivo guardados");}catch(Exception ex){error=ex.Message;}finally{ocupado=false;}}
+ private void Editar(ArchivoDigitalDto a){editando=a.ReferenciaId;institucion=a.Institucion;tipoInstitucion=a.TipoInstitucion;inicio=a.AnioInicio;fin=a.AnioFin;fecha=a.FechaRegistro??Datos.Hoy;seleccion=null;}
+ private void Cancelar(){editando=0;institucion="";tipoInstitucion="COLEGIO";seleccion=null;fecha=Datos.Hoy;}
+ private async Task Guardar(){if(ocupado||seleccion is null)return;ocupado=true;error=null;try{var f=seleccion;await Api.GuardarArchivoAsync(new(){PostulanteId=Datos.PostulanteActualId,Tipo="CERTIFICADO",ReferenciaId=editando,Nombre=f.Nombre,Mime=f.Mime,ContenidoBase64=f.ContenidoBase64,FechaRegistro=fecha,Institucion=institucion,TipoInstitucion=tipoInstitucion,AnioInicio=inicio,AnioFin=fin},"guardarCertificado");Datos.CargarDesdeBackend();await Cargar();Cancelar();Avisos.Exito("Certificado y archivo guardados");}catch(Exception ex){error=ex.Message;}finally{ocupado=false;}}
  private async Task Eliminar(){if(porEliminar is null||ocupado)return;ocupado=true;try{await Api.EliminarArchivoAsync(porEliminar.Id);Datos.CargarDesdeBackend();await Cargar();porEliminar=null;}catch(Exception ex){error=ex.Message;}finally{ocupado=false;}}
 }

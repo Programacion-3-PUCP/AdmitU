@@ -15,17 +15,19 @@ CREATE TABLE IF NOT EXISTS archivo_digital (
  CONSTRAINT fk_archivo_postulante FOREIGN KEY(postulante_id) REFERENCES postulante(persona_id)
 ) ENGINE=InnoDB;
 DELIMITER $$
-DROP PROCEDURE IF EXISTS GUARDAR_CERTIFICADO_METADATA$$
-CREATE PROCEDURE GUARDAR_CERTIFICADO_METADATA(OUT _id INT,IN _anterior INT,IN _postulante INT,IN _institucion VARCHAR(150),IN _inicio INT,IN _fin INT,IN _nombre VARCHAR(150))
+DROP PROCEDURE IF EXISTS GUARDAR_CERTIFICADO_METADATA_TIPADA$$
+CREATE PROCEDURE GUARDAR_CERTIFICADO_METADATA_TIPADA(OUT _id INT,IN _anterior INT,IN _postulante INT,IN _institucion VARCHAR(150),IN _inicio INT,IN _fin INT,IN _nombre VARCHAR(150),IN _tipo_institucion VARCHAR(20))
 BEGIN
  DECLARE _institucion_id INT DEFAULT NULL;
  DECLARE _persona INT;
  SELECT persona_id INTO _persona FROM postulante WHERE persona_id=_postulante FOR UPDATE;
- IF _persona IS NULL OR _institucion IS NULL OR CHAR_LENGTH(TRIM(_institucion))=0 OR _inicio<1900 OR _fin<_inicio OR _fin>YEAR(CURDATE()) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Datos de certificado inválidos';END IF;
+ IF _persona IS NULL OR _institucion IS NULL OR _tipo_institucion IS NULL OR _tipo_institucion NOT IN('COLEGIO','UNIVERSIDAD') OR CHAR_LENGTH(TRIM(_institucion))=0 OR _inicio<1900 OR _fin<_inicio OR _fin>YEAR(CURDATE()) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Datos de certificado inválidos';END IF;
  SELECT MIN(id) INTO _institucion_id FROM institucion_educativa WHERE nombre=TRIM(_institucion) AND activo=1;
  IF _institucion_id IS NULL THEN
-  INSERT INTO institucion_educativa(pais_id,codigo_externo,nombre,tipo_institucion,activo) VALUES(1,NULL,TRIM(_institucion),'COLEGIO',1);
+  INSERT INTO institucion_educativa(pais_id,codigo_externo,nombre,tipo_institucion,activo) VALUES(1,NULL,TRIM(_institucion),_tipo_institucion,1);
   SET _institucion_id=LAST_INSERT_ID();
+ ELSEIF EXISTS(SELECT 1 FROM institucion_educativa WHERE id=_institucion_id AND tipo_institucion<>_tipo_institucion) THEN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='La institución ya existe con otro tipo; no se modificó su clasificación compartida';
  END IF;
  IF _anterior>0 THEN
   IF NOT EXISTS(SELECT 1 FROM antecedente_academico WHERE id=_anterior AND postulante_id=_postulante AND activo=1) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Certificado no autorizado';END IF;
@@ -35,6 +37,14 @@ BEGIN
   INSERT INTO antecedente_academico(postulante_id,institucion_id,anio_inicio,anio_fin,descripcion,activo) VALUES(_postulante,_institucion_id,_inicio,_fin,_nombre,1);
   SET _id=LAST_INSERT_ID();
  END IF;
+END$$
+-- Compatibilidad del contrato JDBC anterior durante una actualización gradual.
+DROP PROCEDURE IF EXISTS GUARDAR_CERTIFICADO_METADATA$$
+CREATE PROCEDURE GUARDAR_CERTIFICADO_METADATA(OUT _id INT,IN _anterior INT,IN _postulante INT,IN _institucion VARCHAR(150),IN _inicio INT,IN _fin INT,IN _nombre VARCHAR(150))
+BEGIN
+ DECLARE _tipo VARCHAR(20) DEFAULT 'COLEGIO';
+ SELECT COALESCE(MAX(tipo_institucion),'COLEGIO') INTO _tipo FROM institucion_educativa WHERE nombre=TRIM(_institucion) AND activo=1;
+ CALL GUARDAR_CERTIFICADO_METADATA_TIPADA(_id,_anterior,_postulante,_institucion,_inicio,_fin,_nombre,_tipo);
 END$$
 DROP PROCEDURE IF EXISTS GUARDAR_VOUCHER_METADATA$$
 CREATE PROCEDURE GUARDAR_VOUCHER_METADATA(IN _pago INT,IN _postulante INT,IN _operacion VARCHAR(30),IN _monto DECIMAL(10,2))
@@ -81,10 +91,10 @@ BEGIN
 END$$
 DROP PROCEDURE IF EXISTS LISTAR_ARCHIVOS_POSTULANTE$$
 CREATE PROCEDURE LISTAR_ARCHIVOS_POSTULANTE(IN _postulante INT)
-BEGIN SELECT a.id,a.postulante_id,a.tipo,a.referencia_id,a.nombre,a.mime,a.sha256,a.fecha_registro,OCTET_LENGTH(a.contenido) AS tamanio,i.nombre AS institucion,aa.anio_inicio,aa.anio_fin FROM archivo_digital a LEFT JOIN antecedente_academico aa ON a.tipo='CERTIFICADO' AND aa.id=a.referencia_id LEFT JOIN institucion_educativa i ON i.id=aa.institucion_id WHERE a.postulante_id=_postulante AND a.activo=1 ORDER BY a.id;END$$
+BEGIN SELECT a.id,a.postulante_id,a.tipo,a.referencia_id,a.nombre,a.mime,a.sha256,a.fecha_registro,OCTET_LENGTH(a.contenido) AS tamanio,i.nombre AS institucion,i.tipo_institucion,aa.anio_inicio,aa.anio_fin FROM archivo_digital a LEFT JOIN antecedente_academico aa ON a.tipo='CERTIFICADO' AND aa.id=a.referencia_id LEFT JOIN institucion_educativa i ON i.id=aa.institucion_id WHERE a.postulante_id=_postulante AND a.activo=1 ORDER BY a.id;END$$
 DROP PROCEDURE IF EXISTS BUSCAR_ARCHIVO_DIGITAL$$
 CREATE PROCEDURE BUSCAR_ARCHIVO_DIGITAL(IN _id INT)
-BEGIN SELECT a.*,OCTET_LENGTH(a.contenido) AS tamanio,i.nombre AS institucion,aa.anio_inicio,aa.anio_fin FROM archivo_digital a LEFT JOIN antecedente_academico aa ON a.tipo='CERTIFICADO' AND aa.id=a.referencia_id LEFT JOIN institucion_educativa i ON i.id=aa.institucion_id WHERE a.id=_id AND a.activo=1;END$$
+BEGIN SELECT a.*,OCTET_LENGTH(a.contenido) AS tamanio,i.nombre AS institucion,i.tipo_institucion,aa.anio_inicio,aa.anio_fin FROM archivo_digital a LEFT JOIN antecedente_academico aa ON a.tipo='CERTIFICADO' AND aa.id=a.referencia_id LEFT JOIN institucion_educativa i ON i.id=aa.institucion_id WHERE a.id=_id AND a.activo=1;END$$
 DROP PROCEDURE IF EXISTS ELIMINAR_ARCHIVO_DIGITAL$$
 CREATE PROCEDURE ELIMINAR_ARCHIVO_DIGITAL(IN _id INT)
 BEGIN

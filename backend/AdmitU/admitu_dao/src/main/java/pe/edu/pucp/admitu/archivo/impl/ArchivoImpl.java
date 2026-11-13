@@ -15,8 +15,8 @@ public class ArchivoImpl implements ArchivoDAO {
   }catch(SQLException e){throw new IllegalStateException("No se pudo guardar el archivo",e);}
  }
  public void guardarCertificado(ArchivoDigital a) {
-  try(CallableStatement s=TransactionContext.getConnection().prepareCall("{call GUARDAR_CERTIFICADO_METADATA(?,?,?,?,?,?,?)}")) {
-   s.registerOutParameter(1,Types.INTEGER);s.setInt(2,a.getReferenciaId());s.setInt(3,a.getPostulanteId());s.setString(4,a.getInstitucion());s.setInt(5,a.getAnioInicio());s.setInt(6,a.getAnioFin());s.setString(7,a.getNombre());s.execute();a.setReferenciaId(s.getInt(1));
+  try(CallableStatement s=TransactionContext.getConnection().prepareCall("{call GUARDAR_CERTIFICADO_METADATA_TIPADA(?,?,?,?,?,?,?,?)}")) {
+   s.registerOutParameter(1,Types.INTEGER);s.setInt(2,a.getReferenciaId());s.setInt(3,a.getPostulanteId());s.setString(4,a.getInstitucion());s.setInt(5,a.getAnioInicio());s.setInt(6,a.getAnioFin());s.setString(7,a.getNombre());s.setString(8,a.getTipoInstitucion());s.execute();a.setReferenciaId(s.getInt(1));
   }catch(SQLException e){throw new IllegalStateException("No se pudo guardar el certificado",e);}
  }
  public void guardarVoucher(ArchivoDigital a) {
@@ -26,7 +26,7 @@ public class ArchivoImpl implements ArchivoDAO {
  }
  private ArchivoDigital map(ResultSet r,boolean contenido)throws SQLException {
   ArchivoDigital a=new ArchivoDigital();a.setId(r.getInt("id"));a.setPostulanteId(r.getInt("postulante_id"));a.setTipo(r.getString("tipo"));a.setReferenciaId(r.getInt("referencia_id"));a.setNombre(r.getString("nombre"));a.setMime(r.getString("mime"));a.setSha256(r.getString("sha256"));a.setTamanio(r.getLong("tamanio"));a.setFechaRegistro(r.getDate("fecha_registro").toLocalDate());
-  a.setInstitucion(r.getString("institucion"));a.setAnioInicio(r.getInt("anio_inicio"));a.setAnioFin(r.getInt("anio_fin"));
+  a.setInstitucion(r.getString("institucion"));a.setTipoInstitucion(r.getString("tipo_institucion"));a.setAnioInicio(r.getInt("anio_inicio"));a.setAnioFin(r.getInt("anio_fin"));
   if(contenido)a.setContenidoBase64(Base64.getEncoder().encodeToString(r.getBytes("contenido")));return a;
  }
  public List<ArchivoDigital> listarPorPostulante(int id) {

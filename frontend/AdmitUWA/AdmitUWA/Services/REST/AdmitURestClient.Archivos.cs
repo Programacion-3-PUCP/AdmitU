@@ -4,7 +4,7 @@ public sealed class ArchivoDigitalDto {
  public int Id {get;set;} public int PostulanteId {get;set;} public int ReferenciaId {get;set;} public int RequisitoAplicableId {get;set;}
  public string Tipo {get;set;}=""; public string Nombre {get;set;}=""; public string Mime {get;set;}=""; public string? ContenidoBase64 {get;set;}
  public string Sha256 {get;set;}="";public long Tamanio {get;set;}public DateOnly? FechaRegistro {get;set;}
- public string Institucion {get;set;}="";public int AnioInicio {get;set;}public int AnioFin {get;set;}public string CodigoOperacion {get;set;}="";public decimal Monto {get;set;}
+ public string TipoInstitucion {get;set;}="COLEGIO"; public string Institucion {get;set;}="";public int AnioInicio {get;set;}public int AnioFin {get;set;}public string CodigoOperacion {get;set;}="";public decimal Monto {get;set;}
 }
 public partial class AdmitURestClient {
  public async Task<List<ArchivoDigitalDto>> ListarArchivosAsync(int postulanteId){using var r=await _httpClient.GetAsync($"ArchivoDigitalRS/listarArchivosPorPostulante/{postulanteId}");r.EnsureSuccessStatusCode();return await r.Content.ReadFromJsonAsync<List<ArchivoDigitalDto>>(_jsonOptions)??[];}

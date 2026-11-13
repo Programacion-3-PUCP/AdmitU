@@ -1,6 +1,10 @@
 package pe.edu.pucp.admitu.archivo;
 import java.time.LocalDate;
 public class ArchivoDigital {
+ private String tipoInstitucion="COLEGIO";
+ public String getTipoInstitucion(){return tipoInstitucion;}
+ public void setTipoInstitucion(String tipo){tipoInstitucion=tipo;}
+
  private int id;
  public int getId() {return id;}
  public void setId(int value) {id=value;}
