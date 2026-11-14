@@ -85,6 +85,8 @@ public sealed partial class DatosSesion
     public List<Antecedente> Antecedentes => _demo.Antecedentes;
     public List<DocumentoPersonal> DocumentosPersonales => _demo.DocumentosPersonales;
     public List<Notificacion> Notificaciones => _demo.Notificaciones;
+    // La vista global jamás rellena Postulantes/Documentos/Pagos con datos ficticios.
+    public List<ExpedienteResumenDto> ResumenesGlobales { get; } = [];
 
     // =========================================================================
     // SINCRONIZACIÓN CON BACKEND JAVA REST (GlassFish 8 + MySQL RDS)
@@ -118,8 +120,14 @@ public sealed partial class DatosSesion
         var tPos = _api.ListarTodosAsync<PostulacionDto>("PostulacionRS");
         var tHis = _api.ListarTodosAsync<PostulacionHistorialDto>("PostulacionHistorialRS");
         var tPag = _api.ListarTodosAsync<PagoDto>("PagoRS");
+        var tResumenes = _api.Rol == "evaluador"
+            ? _api.ListarResumenesGlobalesAsync()
+            : Task.FromResult(new List<ExpedienteResumenDto>());
 
-        await Task.WhenAll(tFac, tCar, tSed, tConv, tOfe, tCm, tMod, tReq, tRcm, tPost, tEval, tInst, tAnt, tCarne, tDoc, tObs, tPos, tHis, tPag).ConfigureAwait(false);
+        await Task.WhenAll(tFac, tCar, tSed, tConv, tOfe, tCm, tMod, tReq, tRcm, tPost, tEval, tInst, tAnt, tCarne, tDoc, tObs, tPos, tHis, tPag, tResumenes).ConfigureAwait(false);
+
+        ResumenesGlobales.Clear();
+        ResumenesGlobales.AddRange(await tResumenes);
 
         var facDtos = await tFac;
         Facultades.Clear();

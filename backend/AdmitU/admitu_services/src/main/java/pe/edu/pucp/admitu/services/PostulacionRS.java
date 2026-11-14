@@ -24,6 +24,15 @@ public class PostulacionRS {
         return boPostulacion.listarTodos();
     }
 
+    @GET
+    @Path("listarResumenesGlobales")
+    public List<pe.edu.pucp.admitu.postulacion.ExpedienteResumen> listarResumenesGlobales() {
+        pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRoles(seguridad,"admin","evaluador");
+        pe.edu.pucp.admitu.postulacion.boi.IResumenExpedienteBO resumenes =
+            new pe.edu.pucp.admitu.postulacion.bo.ResumenExpedienteBOImpl();
+        return resumenes.listarGlobales();
+    }
+
     @POST
     @Path("insertarPostulacion")
     public int insertarPostulacion(Postulacion postulacion) {

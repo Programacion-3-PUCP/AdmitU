@@ -1,6 +1,7 @@
 @page "/evaluador/observaciones"
 @inject DatosSesion Datos
 @inject ToastService Avisos
+@using AdmitUWA.Services.REST
 
 <PageTitle>Observaciones · AdmitU</PageTitle>
 
@@ -11,18 +12,15 @@
 </PageHeader>
 
 <div class="chips" role="group" aria-label="Filtrar por estado">
-    <button type="button" class="chip @(estado is null ? "is-active" : "")" @onclick="() => estado = null">Todas<em>@base_.Count</em></button>
+    <button type="button" class="chip @(estado is null ? "is-active" : "")" @onclick="() => estado = null">Todas<em>@Conteo()</em></button>
     @foreach (var e in Enum.GetValues<EstadoObservacion>())
     {
         var actual = e;
-        <button type="button" class="chip @(estado == actual ? "is-active" : "")" @onclick="() => estado = actual">@actual.Etiqueta()<em>@base_.Count(o => o.Estado == actual)</em></button>
+        <button type="button" class="chip @(estado == actual ? "is-active" : "")" @onclick="() => estado = actual">@actual.Etiqueta()<em>@Conteo(actual)</em></button>
     }
 </div>
 
-<DataTable TItem="Observacion" Items="@base_.Where(o => (estado is null || o.Estado == estado) && (tipo == "" || o.Tipo.ToString() == tipo))"
-           TextoBusqueda="@(o => $"{Postulacion(o)?.Codigo} {Datos.PersonaDe(Postulacion(o))?.NombreCompleto} {Datos.Documento(o.DocumentoId)?.Requisito} {o.Descripcion} {o.ComentarioSubsanacion}")"
-           Marcador="Buscar por postulación, postulante, documento o descripción" TituloVacio="Sin observaciones" MensajeVacio="No hay observaciones con estos filtros.">
-    <Filtros>
+<div class="toolbar-filters" style="margin-bottom:14px">
         <label class="filter-label" for="alcance-observaciones">Mostrar</label><select id="alcance-observaciones" class="select" aria-label="Alcance" @bind="alcance">
             <option value="mios">Mis expedientes</option>
             <option value="todos">Todos los expedientes</option>
@@ -31,7 +29,42 @@
             <option value="">Cualquier tipo</option>
             @foreach (var t in Enum.GetValues<TipoObservacion>()) { <option value="@t">@t.Etiqueta()</option> }
         </select>
-    </Filtros>
+</div>
+
+@if (alcance == "todos")
+{
+    <p class="inline-note" role="status">La vista global muestra código de expediente, convocatoria, carrera y estado de las observaciones. Los datos personales y el detalle de revisión solo están disponibles en tus expedientes asignados.</p>
+    <div data-privacy-scope="global-summary">
+    <DataTable TItem="FilaResumen" Items="@global_.Where(o => (estado is null || o.Estado == estado) && (tipo == "" || o.Tipo.ToString() == tipo))"
+               TextoBusqueda="@(o => $"{o.Expediente.CodigoInscripcion} {Datos.Convocatoria(o.Expediente.ConvocatoriaId)?.Nombre} {CarreraGlobal(o)} {RequisitoGlobal(o)} {o.Tipo.Etiqueta()}")"
+               Marcador="Buscar por código, convocatoria, carrera o requisito" TituloVacio="Sin observaciones" MensajeVacio="No hay observaciones con estos filtros.">
+        <Encabezado><th>Fecha</th><th>Postulación</th><th>Convocatoria</th><th>Carrera</th><th>Requisito</th><th>Tipo</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
+        <Fila Context="o">
+            <tr>
+                <td>@Formato.Fecha(o.Observacion.FechaObservacion)</td>
+                <td><span class="mono">@o.Expediente.CodigoInscripcion</span><span class="cell-sub">@EstadoGlobal(o.Expediente.EstadoActualId)</span></td>
+                <td>@Datos.Convocatoria(o.Expediente.ConvocatoriaId)?.Nombre</td>
+                <td>@CarreraGlobal(o)</td>
+                <td>@RequisitoGlobal(o)</td>
+                <td>@o.Tipo.Etiqueta()</td>
+                <td><StatusBadge Texto="@o.Estado.Etiqueta()" Tono="@o.Estado.Tono()" /></td>
+                <td class="td-actions">
+                    @if (o.Expediente.EvaluadorId == Datos.EvaluadorActualId && Datos.Postulacion(o.Expediente.Id)?.EvaluadorId == Datos.EvaluadorActualId)
+                    {
+                        <BotonAccion Tipo="BotonAccion.Accion.Ver" Texto="Abrir revisión" Sobre="@o.Expediente.CodigoInscripcion" Href="@($"/evaluador/postulaciones/{o.Expediente.Id}")" />
+                    }
+                </td>
+            </tr>
+        </Fila>
+    </DataTable>
+    </div>
+}
+else
+{
+    <div data-privacy-scope="assigned-detail">
+<DataTable TItem="Observacion" Items="@base_.Where(o => (estado is null || o.Estado == estado) && (tipo == "" || o.Tipo.ToString() == tipo))"
+           TextoBusqueda="@(o => $"{Postulacion(o)?.Codigo} {Datos.PersonaDe(Postulacion(o))?.NombreCompleto} {Datos.Documento(o.DocumentoId)?.Requisito} {o.Descripcion} {o.ComentarioSubsanacion}")"
+           Marcador="Buscar por postulación, postulante, documento o descripción" TituloVacio="Sin observaciones" MensajeVacio="No hay observaciones con estos filtros.">
     <Encabezado><th>Fecha</th><th>Postulación</th><th>Documento</th><th>Tipo</th><th>Qué debe corregir</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
     <Fila Context="o">
         @{ var p = Postulacion(o); var doc = Datos.Documento(o.DocumentoId); }
@@ -67,6 +100,8 @@
         </tr>
     </Fila>
 </DataTable>
+    </div>
+}
 
 <Drawer Abierto="abierto" Titulo="@(editando is null ? "Nueva observación" : "Editar observación")"
         Descripcion="@(editando is null ? "Filtra por convocatoria, expediente y documento para registrar la observación." : "Modifica el detalle o el estado de la observación.")"
@@ -177,8 +212,54 @@
     private string? errorForm;
 
     private List<Observacion> base_ => Datos.Observaciones
-        .Where(o => alcance == "todos" || Postulacion(o)?.EvaluadorId == Datos.EvaluadorActualId || o.EvaluadorId == Datos.EvaluadorActualId)
+        .Where(o => Postulacion(o)?.EvaluadorId == Datos.EvaluadorActualId)
         .OrderByDescending(o => o.Fecha).ThenByDescending(o => o.Id).ToList();
+
+    private sealed record FilaResumen(ExpedienteResumenDto Expediente, ObservacionResumenDto Observacion)
+    {
+        public TipoObservacion Tipo => Observacion.TipoObservacion switch
+        {
+            "FALTANTE" => TipoObservacion.Faltante,
+            "VENCIDO" => TipoObservacion.Vencido,
+            "OTRO" => TipoObservacion.Otro,
+            _ => TipoObservacion.Ilegible
+        };
+        public EstadoObservacion Estado => Observacion.EstadoObservacion == "SUBSANADA" ? EstadoObservacion.Subsanada : EstadoObservacion.Abierta;
+    }
+
+    private List<FilaResumen> global_
+    {
+        get
+        {
+            var filas = Datos.ResumenesGlobales.SelectMany(p => p.Observaciones.Select(o => new FilaResumen(p, o))).ToDictionary(o => o.Observacion.Id);
+            // Reflejar cambios propios confirmados por REST sin incorporar texto o personas al resumen.
+            foreach (var o in base_)
+            {
+                var d = Datos.Documento(o.DocumentoId);
+                var p = Datos.ResumenesGlobales.FirstOrDefault(p => p.Id == d?.PostulacionId);
+                if (p is null || d is null) continue;
+                filas[o.Id] = new FilaResumen(p, new ObservacionResumenDto
+                {
+                    Id = o.Id, PostulacionId = p.Id, RequisitoAplicableId = d.RequisitoAplicableId,
+                    EvaluadorId = o.EvaluadorId, TipoObservacion = DatosSesion.MapTipoObservacionToDb(o.Tipo),
+                    EstadoObservacion = o.Estado == EstadoObservacion.Subsanada ? "SUBSANADA" : "PENDIENTE",
+                    FechaObservacion = o.Fecha, FechaSubsanacion = o.FechaSubsanacion
+                });
+            }
+            return filas.Values.OrderByDescending(o => o.Observacion.FechaObservacion).ThenByDescending(o => o.Observacion.Id).ToList();
+        }
+    }
+
+    private int Conteo(EstadoObservacion? filtro = null) => alcance == "todos"
+        ? global_.Count(o => filtro is null || o.Estado == filtro)
+        : base_.Count(o => filtro is null || o.Estado == filtro);
+
+    private string CarreraGlobal(FilaResumen o) => Datos.Carrera(Datos.Ofertas.FirstOrDefault(x => x.Id == o.Expediente.CarreraElegidaId)?.CarreraId ?? 0)?.Nombre ?? "No registrada";
+    private string RequisitoGlobal(FilaResumen o) => Datos.Requisitos.FirstOrDefault(r => r.Id == o.Observacion.RequisitoAplicableId)?.Nombre ?? "No registrado";
+    private static string EstadoGlobal(int id) => id switch
+    {
+        1 => "Borrador", 2 => "Enviada", 3 => "En revisión", 4 => "Observada", 5 => "Apta", 6 => "Finalizada", 7 => "No apta", 8 => "Anulada", _ => "No registrado"
+    };
 
     private Postulacion? Postulacion(Observacion o) => Datos.Postulacion(Datos.Documento(o.DocumentoId)?.PostulacionId ?? 0);
 

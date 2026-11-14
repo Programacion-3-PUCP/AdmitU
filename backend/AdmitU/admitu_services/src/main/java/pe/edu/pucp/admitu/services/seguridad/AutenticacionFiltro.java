@@ -15,11 +15,17 @@ public class AutenticacionFiltro implements ContainerRequestFilter,ContainerResp
   if(recurso.equals("PostulacionHistorialRS")&&!get)throw new ForbiddenException("El historial se genera exclusivamente en transiciones del servidor");
   if(recurso.equals("ReporteRS")){if(path.contains("Observados"))Seguridad.exigirRoles(req.getSecurityContext(),"admin","evaluador");else Seguridad.exigirRoles(req.getSecurityContext(),"admin");return;}
   if(recurso.equals("ArchivoDigitalRS"))return;
+  if(get&&path.equals("PostulacionRS/listarResumenesGlobales")){Seguridad.exigirRoles(req.getSecurityContext(),"admin","evaluador");return;}
   if(u.getRol().equals("admin"))return;
   if(CATALOGOS.contains(recurso))throw new ForbiddenException("Solo administración modifica catálogos");
   if(u.getRol().equals("evaluador")){
-   // «Todos los expedientes» permite consulta de metadatos; jamás concede escritura.
-   if(get&&(PERSONALES.contains(recurso)||recurso.equals("EvaluadorRS")))return;
+   // La vista «Todos» tiene un DTO aparte. Las entidades completas requieren asignación.
+   if(get&&(PERSONALES.contains(recurso)||recurso.equals("EvaluadorRS"))){
+    Set<Integer> ids=AlcanceEvaluador.idsAutorizados(recurso,u.getPersonaId());req.setProperty("admitu.ids",ids);
+    String ultimo=path.substring(path.lastIndexOf('/')+1);
+    if(ultimo.matches("[0-9]+")&&!ids.contains(Integer.parseInt(ultimo)))throw new ForbiddenException("El recurso no pertenece a un expediente asignado");
+    return;
+   }
    if(operacionEvaluador(req.getMethod(),path))return;
    throw new ForbiddenException("Operación reservada");
   }

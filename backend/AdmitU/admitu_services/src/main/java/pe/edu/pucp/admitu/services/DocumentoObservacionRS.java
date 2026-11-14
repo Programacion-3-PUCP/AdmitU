@@ -21,8 +21,11 @@ public class DocumentoObservacionRS {
 
     @GET
     @Path("listarTodasDocumentoObservaciones")
-    public List<DocumentoObservacion> listarTodasDocumentoObservaciones() {
-        return boObservacion.listarTodos();
+    public List<?> listarTodasDocumentoObservaciones() {
+        var filas = boObservacion.listarTodos();
+        if(!pe.edu.pucp.admitu.services.seguridad.Seguridad.rol(seguridad).equals("admin"))
+            return filas.stream().map(pe.edu.pucp.admitu.services.dto.DocumentoObservacionLectura::new).toList();
+        return filas;
     }
 
     @POST
@@ -46,8 +49,11 @@ public class DocumentoObservacionRS {
 
     @GET
     @Path("buscarDocumentoObservacionPorId/{id}")
-    public DocumentoObservacion buscarDocumentoObservacionPorId(@PathParam("id") int idObservacion) {
-        return boObservacion.buscarPorId(idObservacion);
+    public Object buscarDocumentoObservacionPorId(@PathParam("id") int idObservacion) {
+        var observacion = boObservacion.buscarPorId(idObservacion);
+        if(observacion != null && !pe.edu.pucp.admitu.services.seguridad.Seguridad.rol(seguridad).equals("admin"))
+            return new pe.edu.pucp.admitu.services.dto.DocumentoObservacionLectura(observacion);
+        return observacion;
     }
 
     @PUT

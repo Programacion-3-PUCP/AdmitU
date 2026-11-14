@@ -27,7 +27,9 @@
     {
         var yo = Datos.EvaluadorActual;
         decisiones = Datos.Historial
-            .Where(m => m.Responsable == yo.Nombre && m.Nuevo is EstadoPostulacion.Apta or EstadoPostulacion.NoApta or EstadoPostulacion.Observada)
+            .Where(m => (m.Responsable == yo.Nombre
+                || m.Responsable.StartsWith($"evaluador:{yo.Id} cuenta:", StringComparison.Ordinal))
+                && m.Nuevo is EstadoPostulacion.Apta or EstadoPostulacion.NoApta or EstadoPostulacion.Observada)
             .OrderByDescending(m => m.Fecha).ToList();
     }
 }

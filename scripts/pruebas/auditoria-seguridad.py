@@ -61,7 +61,7 @@ class Auditoria:
         self.payload=suite.payload
         self.json(f'PostulacionRS/asignarEvaluador/{self.post["id"]}/{self.ev1}','PUT')
         credential=dict(correo='audit-'+secrets.token_hex(6)+'@example.test',clave=secrets.token_urlsafe(24))
-        person=dict(nombres='Auditoria',apellidoPaterno='Segundo',apellidoMaterno='Sintetico',correo=credential['correo'],tipoDocumento='DNI',numeroDocumento=str(20000000+secrets.randbelow(60000000)),fechaNacimiento='2000-01-01')
+        person=dict(nombres='Auditoria',apellidoPaterno='Segundo',apellidoMaterno='Sintetico'+secrets.token_hex(4),correo=credential['correo'],tipoDocumento='DNI',numeroDocumento=str(20000000+secrets.randbelow(60000000)),fechaNacimiento='2000-01-01')
         self.person2=self.json('AutenticacionRS/registrar','POST',dict(postulante=person,clave=credential['clave']),token='')
         self.user2cred=credential;self.user2=self.api.login(credential)
         payload=copy.deepcopy(self.payload);payload['postulacion']['postulante']={'id':self.person2}
