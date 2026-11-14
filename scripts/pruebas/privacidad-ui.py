@@ -94,6 +94,7 @@ with sync_playwright() as pw:
                     expect(row).to_have_count(1)
                     expect(row).to_contain_text('Otro')
                     expect(row).to_contain_text('Por subsanar')
+                    expect(row.locator('a[href^="/evaluador/postulaciones/"]')).to_have_count(1 if fixture is own else 0)
                 return dict(global_fixture_rows=2, code_type_state_preserved=True)
             check(role, 'Todos conserva los dos expedientes como resumen', global_metadata)
 
@@ -108,7 +109,7 @@ with sync_playwright() as pw:
             def no_foreign_action():
                 search(other['codigo'])
                 row = page.locator('tbody tr').filter(has_text=other['codigo'])
-                expect(row.get_by_role('link', name='Abrir revisión', exact=True)).to_have_count(0)
+                expect(row.get_by_role('link', name=re.compile(r'^Abrir revisión(?:$|:)'))).to_have_count(0)
                 expect(row.get_by_role('button')).to_have_count(0)
                 return dict(foreign_detail_or_write_actions=0)
             check(role, 'Resumen ajeno no ofrece acciones privadas', no_foreign_action)

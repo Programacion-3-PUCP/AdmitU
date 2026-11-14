@@ -12,6 +12,7 @@ import json
 import secrets
 import subprocess
 import sys
+from datetime import date as fecha_dia, timedelta
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -37,7 +38,7 @@ RESOURCES = {
     'Postulante': ('PostulanteRS/listarTodosPostulantes', 'PostulanteRS/buscarPostulantePorId/',
                    'SELECT DISTINCT p.postulante_id FROM postulacion p WHERE p.evaluador_id={ev}'),
     'AntecedenteAcademico': ('AntecedenteAcademicoRS/listarTodosAntecedentesAcademicos', 'AntecedenteAcademicoRS/buscarAntecedenteAcademicoPorId/',
-                            'SELECT DISTINCT a.id FROM antecedente_academico a JOIN postulacion p ON p.postulante_id=a.postulante_id WHERE p.evaluador_id={ev}'),
+                            'SELECT DISTINCT a.id FROM antecedente_academico a JOIN postulacion p ON p.postulante_id=a.postulante_id WHERE a.activo=1 AND p.evaluador_id={ev}'),
     'Postulacion': ('PostulacionRS/listarTodasPostulaciones', 'PostulacionRS/buscarPostulacionPorId/',
                     'SELECT id FROM postulacion WHERE evaluador_id={ev}'),
     'Pago': ('PagoRS/listarTodosPagos', 'PagoRS/buscarPagoPorId/',
@@ -70,10 +71,24 @@ class Privacidad(audit.Auditoria):
 
     def prepare(self):
         super().prepare()
-        person2 = self.json('PostulanteRS/buscarPostulantePorId/'+str(self.person2))
-        person2.update(telefono='977000002', tieneDiscapacidad=True,
-                       numeroCarnetConadis='PRIV'+secrets.token_hex(4))
-        self.json('PostulanteRS/modificarPostulante', 'PUT', person2)
+        # Los listados pueden contener otros titulares legítimamente asignados.
+        # Usar valores únicos evita confundir un cumpleaños/teléfono compartido
+        # con una filtración del fixture ajeno.
+        used_dates = set(self.sql('SELECT fecha_nacimiento FROM postulante WHERE fecha_nacimiento IS NOT NULL;').splitlines())
+        used_phones = set(self.sql('SELECT telefono FROM persona WHERE telefono IS NOT NULL;').splitlines())
+        candidate = fecha_dia(1980, 1, 1)
+        for identifier in (self.person, self.person2):
+            while candidate.isoformat() in used_dates:
+                candidate += timedelta(days=1)
+            birth = candidate.isoformat();used_dates.add(birth)
+            phone = '9'+str(secrets.randbelow(100000000)).zfill(8)
+            while phone in used_phones:
+                phone = '9'+str(secrets.randbelow(100000000)).zfill(8)
+            used_phones.add(phone)
+            person = self.json('PostulanteRS/buscarPostulantePorId/'+str(identifier))
+            person.update(telefono=phone, fechaNacimiento=birth, tieneDiscapacidad=True,
+                          numeroCarnetConadis='PRIV'+secrets.token_hex(8))
+            self.json('PostulanteRS/modificarPostulante', 'PUT', person)
         self.people = [self.json('PostulanteRS/buscarPostulantePorId/'+str(i))
                        for i in (self.person, self.person2)]
         post2 = self.json('PostulacionRS/buscarPostulacionPorId/'+str(self.post2id))
@@ -178,7 +193,10 @@ class Privacidad(audit.Auditoria):
         assert status==200, 'Resumen global autorizado debe responder200'
         rows=json.loads(body);assert isinstance(rows,list)
         assert all(any(row['id']==f['post'] for row in rows) for f in self.fixtures), 'Todos debe conservar expedientes de ambos evaluadores'
-        required={'id','codigoInscripcion','convocatoriaId','modalidadElegidaId','carreraElegidaId','estadoActualId','observaciones'}
+        required={'id','convocatoriaId','modalidadElegidaId','carreraElegidaId','estadoActualId','observaciones'}
+        for fixture in self.fixtures:
+            own=next(row for row in rows if row['id']==fixture['post'])
+            assert own.get('codigoInscripcion')==fixture['code'], 'Resumen pierde codigo persistido del fixture'
         found_observations=set()
         for row in rows:
             assert required<=set(row)<=EXPEDIENTE_KEYS, 'Contrato global expone campos no autorizados o pierde metadatos'
