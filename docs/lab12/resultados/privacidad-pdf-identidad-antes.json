@@ -1,0 +1,37 @@
+{
+  "environment": "Codex Cloud; clon MySQL propio; no base original/WSL/AWS",
+  "cases": [
+    {
+      "case": "PDF con códigos NULL evaluador",
+      "status": "FAIL",
+      "http": 200,
+      "pdf_real": true,
+      "expected_private_rows": 1,
+      "actual_private_rows": 2,
+      "foreign_text_absent": false
+    },
+    {
+      "case": "PDF con códigos NULL evaluador2",
+      "status": "FAIL",
+      "http": 200,
+      "pdf_real": true,
+      "expected_private_rows": 1,
+      "actual_private_rows": 2,
+      "foreign_text_absent": false
+    },
+    {
+      "case": "PDF con códigos NULL admin",
+      "status": "PASS",
+      "http": 200,
+      "pdf_real": true,
+      "expected_private_rows": 2,
+      "actual_private_rows": 2,
+      "foreign_text_absent": true
+    }
+  ],
+  "codes_restored": true,
+  "codes_before_sha256": "1bd823225b585481d4ad20b1ab97c292b1e97d0b6b4c8c42609c2b964d8db4d2",
+  "codes_after_sha256": "1bd823225b585481d4ad20b1ab97c292b1e97d0b6b4c8c42609c2b964d8db4d2",
+  "passed": 1,
+  "failed": 2
+}

@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 ROOT=Path(__file__).resolve().parents[2]
-MIGRATIONS=['lab12-perfil.sql','lab12-archivos.sql','lab12-reglas.sql','lab12-seguridad.sql','lab12-reportes.sql','auditoria-preaws-integridad.sql','lab12-auditoria-metricas.sql']
+MIGRATIONS=['lab12-perfil.sql','lab12-archivos.sql','lab12-reglas.sql','lab12-seguridad.sql','lab12-reportes.sql','auditoria-preaws-integridad.sql','lab12-auditoria-metricas.sql','lab12-privacidad-reportes.sql']
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--defaults-file',type=Path);p.add_argument('--expected-host');p.add_argument('--expected-server');p.add_argument('--schema',choices=['admitu_db'],default='admitu_db');p.add_argument('--apply',action='store_true');p.add_argument('--recreate-test-db',action='store_true');p.add_argument('--backup-dir',type=Path,default=ROOT/'work/backups');a=p.parse_args()
