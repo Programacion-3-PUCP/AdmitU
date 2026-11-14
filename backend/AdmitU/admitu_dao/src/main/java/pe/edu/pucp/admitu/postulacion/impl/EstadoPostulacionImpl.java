@@ -26,7 +26,7 @@ public class EstadoPostulacionImpl implements EstadoPostulacionDAO {
                 return estado.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR ESTADO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR ESTADO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -42,7 +42,7 @@ public class EstadoPostulacionImpl implements EstadoPostulacionDAO {
             cs.setString("_descripcion", estado.getDescripcion());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR ESTADO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR ESTADO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -55,7 +55,7 @@ public class EstadoPostulacionImpl implements EstadoPostulacionDAO {
             cs.setInt("_id", idEstado);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR ESTADO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR ESTADO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -79,7 +79,7 @@ public class EstadoPostulacionImpl implements EstadoPostulacionDAO {
             }
             return estado;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR ESTADO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR ESTADO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -96,7 +96,7 @@ public class EstadoPostulacionImpl implements EstadoPostulacionDAO {
             }
             return estados;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR ESTADOS POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR ESTADOS POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

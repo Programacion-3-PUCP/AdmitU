@@ -18,7 +18,7 @@ public class ReporteImpl implements ReporteDAO {
      for(int i=1;i<=meta.getColumnCount();i++){
       String key=meta.getColumnLabel(i).toLowerCase(Locale.ROOT);
       Object value=switch(key){
-       case "cantidad","completadas","cupo_carrera","convocatoria_id","modalidad_id","carrera_id" -> rs.getLong(i);
+       case "postulacion_id","observacion_id","cantidad","completadas","cupo_carrera","convocatoria_id","modalidad_id","carrera_id" -> rs.getLong(i);
        case "total" -> rs.getBigDecimal(i);
        default -> rs.getString(i);
       };fila.put(key,value);

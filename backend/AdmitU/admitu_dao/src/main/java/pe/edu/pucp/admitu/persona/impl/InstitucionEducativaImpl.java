@@ -29,7 +29,7 @@ public class InstitucionEducativaImpl implements InstitucionEducativaDAO {
                 return institucion.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR INSTITUCION EDUCATIVA: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR INSTITUCION EDUCATIVA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -46,7 +46,7 @@ public class InstitucionEducativaImpl implements InstitucionEducativaDAO {
             cs.setString("_tipo_institucion", institucion.getTipoInstitucion() != null ? institucion.getTipoInstitucion().name() : null);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR INSTITUCION EDUCATIVA: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR INSTITUCION EDUCATIVA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -59,7 +59,7 @@ public class InstitucionEducativaImpl implements InstitucionEducativaDAO {
             cs.setInt("_id", idInstitucion);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR INSTITUCION EDUCATIVA: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR INSTITUCION EDUCATIVA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -86,7 +86,7 @@ public class InstitucionEducativaImpl implements InstitucionEducativaDAO {
             }
             return institucion;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR INSTITUCION EDUCATIVA: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR INSTITUCION EDUCATIVA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -103,7 +103,7 @@ public class InstitucionEducativaImpl implements InstitucionEducativaDAO {
             }
             return instituciones;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR INSTITUCIONES EDUCATIVAS: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR INSTITUCIONES EDUCATIVAS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

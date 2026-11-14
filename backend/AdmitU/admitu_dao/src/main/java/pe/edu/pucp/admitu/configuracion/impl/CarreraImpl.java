@@ -27,7 +27,7 @@ public class CarreraImpl implements CarreraDAO {
                 return carrera.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR CARRERA: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR CARRERA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -43,7 +43,7 @@ public class CarreraImpl implements CarreraDAO {
             cs.setString("_nombre", carrera.getNombre());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR CARRERA: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR CARRERA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -56,7 +56,7 @@ public class CarreraImpl implements CarreraDAO {
             cs.setInt("_id", idCarrera);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR CARRERA: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR CARRERA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -79,7 +79,7 @@ public class CarreraImpl implements CarreraDAO {
             }
             return carrera;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR CARRERA: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR CARRERA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -101,7 +101,7 @@ public class CarreraImpl implements CarreraDAO {
             }
             return carreras;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR CARRERAS: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR CARRERAS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

@@ -1,0 +1,61 @@
+{
+  "entorno": "Codex Cloud propio; no WSL ni AWS",
+  "rama": "codex/auditoria-preaws",
+  "base": "codex/lab12-completo",
+  "base_commit": "2ad401985177e8b26e16db4840c2e9c262cdb2b5",
+  "hallazgos": {
+    "CORREGIDO": [
+      "H01",
+      "H02",
+      "H03",
+      "H04",
+      "H05",
+      "H07",
+      "H09",
+      "H14",
+      "H15",
+      "H16",
+      "H17"
+    ],
+    "REFUTADO_CON_EVIDENCIA": [
+      "H08",
+      "H13"
+    ],
+    "PARCIAL": [
+      "H06",
+      "H12"
+    ],
+    "PENDIENTE": [
+      "H10",
+      "H11"
+    ]
+  },
+  "ejecuciones": {
+    "java_maven": "PASS",
+    "dotnet_build": "PASS 0 errores/advertencias",
+    "bo_mysql_lab12": "32/32 PASS",
+    "mysql_auditoria": "44/44 PASS",
+    "rest_15rf": "24/24 PASS",
+    "rest_seguridad": "77/77 PASS; 64 negativos con 28 tablas intactas",
+    "chromium_tres_perfiles": "15/15 PASS tras cambio SSR",
+    "chromium_cookies_csrf": "6/6 PASS",
+    "login_ssr_ab": "2/2 PASS",
+    "registro_ui": "PASS tras proteger formulario hasta interactividad",
+    "jasper_rest_sql": "33/33 PASS",
+    "kpi_sql_api_ui": "31/31 PASS",
+    "csharp_carga_fechas": "35/35 PASS transporte simulado",
+    "csharp_metricas": "14/14 PASS",
+    "diagnostico_sanitizado": "6/6 PASS",
+    "operaciones_unit": "8/8 PASS",
+    "restore_mysql_clon": "PASS 30 tablas,153 SP,6 archivos con hashes iguales",
+    "carga_autenticada": "300/300 GET; cinco identidades; no 500 trámites"
+  },
+  "limites": [
+    "H06: paginación, CRUD async restantes y 500 trámites no acreditados",
+    "H10: decisión de retención de originales por versión",
+    "H11: originales y revalidación individual de 254 documentos/72 vouchers históricos sin bytes",
+    "H12: Windows/IIS/DPAPI/PowerShell/TLS público no probados; AWS no desplegado",
+    "Visor iframe data: bloqueado por política Chromium Cloud; render local del propietario pendiente"
+  ],
+  "historia": "Conserva los doce commits iniciales publicados; no reescribe la base ni modifica master/lab11-diego ni fusiona PR1"
+}

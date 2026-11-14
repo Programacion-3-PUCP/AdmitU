@@ -8,7 +8,7 @@
     <div>
         <span class="eyebrow"><i class="dot"></i>@(conv?.Nombre ?? "Sin convocatoria en curso")</span>
         <h1 id="saludo" class="hero-title">Hola, @yo.Nombre</h1>
-        <p>Tienes <strong>@pendientes.Count expedientes por evaluar</strong>@(atrasados > 0 ? $", {atrasados} de ellos esperan hace más de 48 horas" : "").@(limite is { } l ? $" La revisión termina el {Formato.Fecha(l)}." : "")</p>
+        <p>Tienes <strong>@pendientes.Count expedientes por evaluar</strong>@(atrasados > 0 ? $", {atrasados} de ellos acumulan al menos dos días calendario" : "").@(limite is { } l ? $" La revisión termina el {Formato.Fecha(l)}." : "")</p>
         <div class="hero-actions">
             <a class="btn btn-light" href="/evaluador/postulaciones">Ir a mi bandeja<Icon Name="arrow-right" Size="16" /></a>
             <a class="btn btn-outline-light" href="/evaluador/vouchers">Validar vouchers</a>
@@ -22,10 +22,10 @@
 </section>
 
 <section class="kpis" aria-label="Mi trabajo">
-    <StatCard Etiqueta="Por evaluar" Valor="@pendientes.Count.ToString()" Detalle="@($"{atrasados} con más de 48 h")" Icono="inbox" Tono="warning" Href="/evaluador/postulaciones" />
+    <StatCard Etiqueta="Por evaluar" Valor="@pendientes.Count.ToString()" Detalle="@($"{atrasados} con al menos 2 días calendario")" Icono="inbox" Tono="warning" Href="/evaluador/postulaciones" />
     <StatCard Etiqueta="Esperando subsanación" Valor="@observadas.ToString()" Detalle="Observados, a la espera del postulante" Icono="flag" Tono="violet" />
-    <StatCard Etiqueta="Resueltos esta semana" Valor="@semana.ToString()" Detalle="Decisiones registradas en 7 días" Icono="check-circle" Tono="success" Href="/evaluador/historial" />
-    <StatCard Etiqueta="Vouchers por validar" Valor="@vouchers.ToString()" Detalle="De todos los postulantes" Icono="credit-card" Tono="brand" Href="/evaluador/vouchers" />
+    <StatCard Etiqueta="Decisiones esta semana" Valor="@semana.ToString()" Detalle="Decisiones registradas en 7 días" Icono="check-circle" Tono="success" Href="/evaluador/historial" />
+    <StatCard Etiqueta="Vouchers por validar" Valor="@vouchers.ToString()" Detalle="De mis expedientes asignados" Icono="credit-card" Tono="brand" Href="/evaluador/vouchers" />
 </section>
 
 <div class="grid-2" style="margin-top:0">
@@ -52,7 +52,7 @@
     </section>
 
     <section class="card card-pad">
-        <div class="card-head"><div><h2>Avisos</h2><p>Novedades para tu trabajo.</p></div><a class="link-more" href="/evaluador/notificaciones">Ver todo<Icon Name="arrow-up-right" Size="14" /></a></div>
+        <div class="card-head"><div><h2>Avisos de esta sesión</h2><p>Acciones realizadas durante esta sesión.</p></div><a class="link-more" href="/evaluador/notificaciones">Ver todo<Icon Name="arrow-up-right" Size="14" /></a></div>
         <FeedNotificaciones Items="@Datos.NotificacionesDe(RolUsuario.Evaluador)" Maximo="4" />
     </section>
 </div>
@@ -76,9 +76,11 @@
         observadas = mias.Count(p => p.Estado == EstadoPostulacion.Observada);
         atrasados = pendientes.Count(p => (p.FechaEnvio ?? p.FechaRegistro) <= Datos.Hoy.AddDays(-2));
         avance = asignadas == 0 ? 0 : (int)Math.Round(resueltas * 100.0 / asignadas);
-        var desde = DateTime.Now.AddDays(-7);
-        semana = Datos.Historial.Count(m => m.Responsable == yo.Nombre && m.Fecha >= desde
-            && m.Nuevo is EstadoPostulacion.Apta or EstadoPostulacion.NoApta or EstadoPostulacion.Observada);
-        vouchers = Datos.Vouchers.Count(v => v.Estado == EstadoVoucher.Pendiente);
+        var desde = Datos.Hoy.AddDays(-6).ToDateTime(TimeOnly.MinValue);
+        semana = Datos.Historial.Count(m => (m.Responsable == yo.Nombre
+            || m.Responsable.StartsWith($"evaluador:{yo.Id} cuenta:", StringComparison.Ordinal))
+            && m.Fecha >= desde && m.Nuevo is EstadoPostulacion.Apta or EstadoPostulacion.NoApta or EstadoPostulacion.Observada);
+        vouchers = Datos.Vouchers.Count(v => v.Estado == EstadoVoucher.Pendiente
+            && Datos.Postulacion(v.PostulacionId)?.EvaluadorId == yo.Id);
     }
 }

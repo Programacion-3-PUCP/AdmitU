@@ -26,7 +26,7 @@ public class SedeImpl implements SedeDAO {
                 return sede.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR SEDE: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR SEDE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -42,7 +42,7 @@ public class SedeImpl implements SedeDAO {
             cs.setString("_direccion", sede.getDireccion());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR SEDE: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR SEDE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -55,7 +55,7 @@ public class SedeImpl implements SedeDAO {
             cs.setInt("_id", idSede);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR SEDE: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR SEDE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -79,7 +79,7 @@ public class SedeImpl implements SedeDAO {
             }
             return sede;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR SEDE: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR SEDE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -96,7 +96,7 @@ public class SedeImpl implements SedeDAO {
             }
             return sedes;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR SEDES: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR SEDES: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

@@ -1,0 +1,817 @@
+{
+  "environment": "Codex Cloud propio; no WSL/AWS",
+  "identities": {
+    "admin": 1,
+    "evaluadores": 2,
+    "postulantes": 2
+  },
+  "snapshot_tables": [
+    "antecedente_academico",
+    "apoderado",
+    "archivo_digital",
+    "carne_postulante",
+    "carrera",
+    "convocatoria",
+    "convocatoria_etapa",
+    "convocatoria_modalidad",
+    "convocatoria_postulante",
+    "documento_observacion",
+    "documento_postulacion",
+    "estado_postulacion",
+    "etapa",
+    "evaluador",
+    "facultad",
+    "institucion_educativa",
+    "modalidad",
+    "notificacion",
+    "oferta_carrera",
+    "pago",
+    "pais",
+    "persona",
+    "postulacion",
+    "postulacion_historial",
+    "postulante",
+    "requisito",
+    "requisito_convocatoria_modalidad",
+    "sede"
+  ],
+  "snapshot_exclusions": [
+    "cuenta_usuario",
+    "sesion_usuario"
+  ],
+  "cases": [
+    {
+      "rf": "RF_04",
+      "case": "CRUD modalidad y reactivación persistente",
+      "status": "PASS",
+      "detail": {
+        "id": 9,
+        "CRUD_reactivacion": true
+      },
+      "seconds": 1.029
+    },
+    {
+      "rf": "RF_06",
+      "case": "CRUD carrera y reactivación persistente",
+      "status": "PASS",
+      "detail": {
+        "id": 19,
+        "CRUD_reactivacion": true
+      },
+      "seconds": 0.937
+    },
+    {
+      "rf": "RF_01",
+      "case": "CRUD convocatoria y baja borrador",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 24,
+        "borrador_baja": 25
+      },
+      "seconds": 0.932
+    },
+    {
+      "rf": "RF_07",
+      "case": "configurar requisito obligatorio y oferta",
+      "status": "PASS",
+      "detail": {
+        "asociacion": 39
+      },
+      "seconds": 0.97
+    },
+    {
+      "rf": "RF_02",
+      "case": "registro con contraseña y perfil durable",
+      "status": "PASS",
+      "detail": {
+        "persona": 133,
+        "perfil_durable": true
+      },
+      "seconds": 2.158
+    },
+    {
+      "rf": "RNF_05",
+      "case": "rollback envío sin documento obligatorio",
+      "status": "PASS",
+      "detail": {
+        "postulaciones": 0,
+        "pagos": 0
+      },
+      "seconds": 0.732
+    },
+    {
+      "rf": "O3_O7",
+      "case": "dos POST concurrentes una postulación y un pago",
+      "status": "PASS",
+      "detail": {
+        "HTTP": [
+          200,
+          409
+        ],
+        "postulacion": 109,
+        "pagos": 1
+      },
+      "seconds": 1.593
+    },
+    {
+      "rf": "O7",
+      "case": "otra carrera y otro código en misma convocatoria rechazados",
+      "status": "PASS",
+      "detail": {
+        "http": 409,
+        "carrera_y_codigo_distintos": true,
+        "postulaciones": 1,
+        "pagos": 1
+      },
+      "seconds": 0.935
+    },
+    {
+      "case": "H16 historial inmutable anonimo POST",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable anonimo PUT",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable anonimo DELETE",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable postulante1 POST",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable postulante1 PUT",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable postulante1 DELETE",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable postulante2 POST",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable postulante2 PUT",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable postulante2 DELETE",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable evaluador1 POST",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable evaluador1 PUT",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable evaluador1 DELETE",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable evaluador2 POST",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable evaluador2 PUT",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable evaluador2 DELETE",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable admin POST",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable admin PUT",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H16 historial inmutable admin DELETE",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H01 evaluador1 no crea postulación",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H01 evaluador1 no envía por tercero",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H01 evaluador1 no crea pago",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H01 evaluador1 no asigna evaluadores",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "evaluador1 no modifica catálogo",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "evaluador1 no emite carné",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "evaluador1 no abre ingresos",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "evaluador1 no abre vacantes",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H01 evaluador2 no crea postulación",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H01 evaluador2 no envía por tercero",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H01 evaluador2 no crea pago",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H01 evaluador2 no asigna evaluadores",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "evaluador2 no modifica catálogo",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "evaluador2 no emite carné",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "evaluador2 no abre ingresos",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "evaluador2 no abre vacantes",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H01 evaluador ajeno no modifica estado",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H01 evaluador ajeno no valida pago",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H01 evaluador ajeno no valida documento",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H07 archivo privado anonimo",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H07 archivo privado postulante2",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H07 archivo privado evaluador2",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H07 bytes documento expediente ajeno",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Propietario cruzado postulación",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Propietario cruzado pago",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Propietario cruzado documento",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Archivo owner propio no permite referencia documento ajeno",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Voucher owner propio no permite referencia pago ajeno",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H07 archivos propietario no asignado",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Perfil ajeno no consultable",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Postulante no modifica estados",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Postulante no aprueba pago",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Postulante no envía identidad ajena",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H17 suplantación autor observación",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H17 no observa documento fuera ámbito",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H17 admin no firma como evaluador",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "sql_after": "925da962809b0363e47a818d6dba900ac716f3ec0653fdc6f4f717c62348cd7d",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H17 observación legítima autor de token",
+      "status": "PASS",
+      "detail": {
+        "observacion": 43,
+        "author_bound_to_token": true,
+        "initial_state_date_from_server": true
+      }
+    },
+    {
+      "case": "H17 autor original no puede alterarse",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "922978531fa04f91aeb71a638a4df22cac533af4f7c5a38915268a93fb53ff16",
+        "sql_after": "922978531fa04f91aeb71a638a4df22cac533af4f7c5a38915268a93fb53ff16",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H17 nuevo asignado no reescribe texto ajeno",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "23a28c0f0391b5a35ced2dcbd4f6043dd1faa9d34205f3c309d11331c7be6ef5",
+        "sql_after": "23a28c0f0391b5a35ced2dcbd4f6043dd1faa9d34205f3c309d11331c7be6ef5",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "RF10 subsanación por reasignado conserva autor y fecha servidor",
+      "status": "PASS",
+      "detail": {
+        "author_preserved": true,
+        "date_from_server": true,
+        "reviewer_assigned": true
+      }
+    },
+    {
+      "case": "RF10 no reabrir subsanación histórica",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "a198dbd518ef99c747ab9e85222d7a3600d1368e3c9d59111fc19d92e69685c9",
+        "sql_after": "a198dbd518ef99c747ab9e85222d7a3600d1368e3c9d59111fc19d92e69685c9",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H07 evaluador asignado descarga bytes reales",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "bytes": 68
+      }
+    },
+    {
+      "case": "H08 asignación persistida y reasignación",
+      "status": "PASS",
+      "detail": {
+        "assignment_reloaded": true,
+        "reassigned": true
+      }
+    },
+    {
+      "case": "H01 revocación asignación impide escribir",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "a198dbd518ef99c747ab9e85222d7a3600d1368e3c9d59111fc19d92e69685c9",
+        "sql_after": "a198dbd518ef99c747ab9e85222d7a3600d1368e3c9d59111fc19d92e69685c9",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "H07 revocación asignación impide descargar",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "a198dbd518ef99c747ab9e85222d7a3600d1368e3c9d59111fc19d92e69685c9",
+        "sql_after": "a198dbd518ef99c747ab9e85222d7a3600d1368e3c9d59111fc19d92e69685c9",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Sesión expirada retorna 401",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "847ecb356534ac1f65e3ed57bdc71d09848369b31a6344380deca24f2928f47a",
+        "sql_after": "847ecb356534ac1f65e3ed57bdc71d09848369b31a6344380deca24f2928f47a",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Cuenta bloqueada rechaza contraseña válida",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "847ecb356534ac1f65e3ed57bdc71d09848369b31a6344380deca24f2928f47a",
+        "sql_after": "847ecb356534ac1f65e3ed57bdc71d09848369b31a6344380deca24f2928f47a",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Cuenta bloqueada revoca acceso token previo",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "847ecb356534ac1f65e3ed57bdc71d09848369b31a6344380deca24f2928f47a",
+        "sql_after": "847ecb356534ac1f65e3ed57bdc71d09848369b31a6344380deca24f2928f47a",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Logout revoca sesión",
+      "status": "PASS",
+      "detail": {
+        "http": 204
+      }
+    },
+    {
+      "case": "Logout token revocado retorna 401",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "847ecb356534ac1f65e3ed57bdc71d09848369b31a6344380deca24f2928f47a",
+        "sql_after": "847ecb356534ac1f65e3ed57bdc71d09848369b31a6344380deca24f2928f47a",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Token malformado retorna 401",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "847ecb356534ac1f65e3ed57bdc71d09848369b31a6344380deca24f2928f47a",
+        "sql_after": "847ecb356534ac1f65e3ed57bdc71d09848369b31a6344380deca24f2928f47a",
+        "unchanged": true
+      }
+    }
+  ],
+  "summary": {
+    "cases": 77,
+    "passed": 77,
+    "failed": 0,
+    "negative_http_sql": 64,
+    "business_tables": 28
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "date_utc": "2026-11-13T13:27:50.047113+00:00",
+  "branch": "codex/auditoria-preaws",
+  "scope": "MySQL y comprobaciones de configuración en Cloud; no WSL/Windows/IIS/AWS",
+  "operations_unit": {
+    "passed": 8,
+    "total": 8,
+    "command": "python3 -m unittest discover -s scripts/pruebas -p test_operaciones.py -v",
+    "mysql_clients": "simulados"
+  },
+  "production_startup_negatives": [
+    {
+      "case": "keyring_missing",
+      "passed": true,
+      "exit_nonzero": true
+    },
+    {
+      "case": "keyring_in_site",
+      "passed": true,
+      "exit_nonzero": true
+    },
+    {
+      "case": "linux_keyring_unprotected",
+      "passed": true,
+      "exit_nonzero": true
+    }
+  ],
+  "restore_real": {
+    "environment": "Codex Cloud propio, contenedor de ensayo MySQL 8.4.13 separado, puerto externo3307, TLS VERIFY_CA",
+    "passed": true,
+    "target_verified": true,
+    "synthetic_mutation_verified": true,
+    "restored_fingerprint_identical": true,
+    "source_dump_sha256": "91d0e7bc6b5a69245163842e7980cbe85f2a2df51ac73ec1d8764eb5358ca0bc",
+    "tables": 30,
+    "routines": 153,
+    "row_counts": {
+      "antecedente_academico": 94,
+      "apoderado": 23,
+      "archivo_digital": 6,
+      "carne_postulante": 37,
+      "carrera": 18,
+      "convocatoria": 11,
+      "convocatoria_etapa": 16,
+      "convocatoria_modalidad": 16,
+      "convocatoria_postulante": 90,
+      "cuenta_usuario": 9,
+      "documento_observacion": 39,
+      "documento_postulacion": 366,
+      "estado_postulacion": 8,
+      "etapa": 7,
+      "evaluador": 8,
+      "facultad": 8,
+      "institucion_educativa": 31,
+      "modalidad": 8,
+      "notificacion": 308,
+      "oferta_carrera": 34,
+      "pago": 105,
+      "pais": 5,
+      "persona": 115,
+      "postulacion": 96,
+      "postulacion_historial": 413,
+      "postulante": 84,
+      "requisito": 9,
+      "requisito_convocatoria_modalidad": 35,
+      "sede": 4,
+      "sesion_usuario": 12
+    },
+    "table_checksums_sha256": "6891701f8cdbcf9af88da0eb2d7fcc2e97972aa2b7b563ed7f10e7ec6b6dc5ac",
+    "routine_definitions_sha256": "7d99e3f59e78c6ea232bd932f410e9390b4d0ba96903a93458799a3c04681087",
+    "blobs": {
+      "count": 6,
+      "valid_sha256": 6,
+      "bytes": 1446
+    },
+    "principal_db_written_by_test": false,
+    "synthetic_fixture_removed_by_restore": true
+  },
+  "commands": {
+    "preflight": "python3 scripts/despliegue/migrar.py",
+    "compile_python": "python3 -m py_compile scripts/despliegue/migrar.py scripts/despliegue/restaurar.py scripts/pruebas/restauracion.py scripts/pruebas/test_operaciones.py",
+    "restore_test": "python3 scripts/pruebas/restauracion.py --backup-file DUMP_PRIVADO --sha256 SHA256 --apply --defaults-file CLIENTE_PRIVADO_DEL_CLON --expected-host HOST_CLON --expected-server HOSTNAME_CLON"
+  },
+  "limits": [
+    "No se ejecutó Windows/IIS ni DPAPI ni PowerShell.",
+    "No se configuró certificado HTTPS público ni se desplegó AWS.",
+    "El dump, las credenciales y las claves no se versionan; solo estadísticas y hashes sanitizados."
+  ]
+}

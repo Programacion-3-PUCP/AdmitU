@@ -1,0 +1,167 @@
+{
+  "environment": "Codex Cloud; portal del clon; no WSL/AWS/base original",
+  "identities": {
+    "evaluadores": 2
+  },
+  "summary": {
+    "cases": 18,
+    "passed": 18,
+    "failed": 0
+  },
+  "cases": [
+    {
+      "role": "evaluador",
+      "case": "Mis conserva detalles autorizados",
+      "status": "PASS",
+      "detail": {
+        "assigned_description": true,
+        "assigned_name": true
+      }
+    },
+    {
+      "role": "evaluador",
+      "case": "Mis excluye expediente ajeno",
+      "status": "PASS",
+      "detail": {
+        "foreign_rows": 0,
+        "foreign_pii_absent": true
+      }
+    },
+    {
+      "role": "evaluador",
+      "case": "Todos conserva los dos expedientes como resumen",
+      "status": "PASS",
+      "detail": {
+        "global_fixture_rows": 2,
+        "code_type_state_preserved": true
+      }
+    },
+    {
+      "role": "evaluador",
+      "case": "Todos no presenta PII ni texto privado",
+      "status": "PASS",
+      "detail": {
+        "names_contacts_birth_disability_text_absent": true,
+        "selected_scope_preserved": true
+      }
+    },
+    {
+      "role": "evaluador",
+      "case": "Resumen ajeno no ofrece acciones privadas",
+      "status": "PASS",
+      "detail": {
+        "foreign_detail_or_write_actions": 0
+      }
+    },
+    {
+      "role": "evaluador",
+      "case": "Revisión asignada sigue disponible",
+      "status": "PASS",
+      "detail": {
+        "assigned_review": true
+      }
+    },
+    {
+      "role": "evaluador",
+      "case": "URL directa ajena no revela detalles",
+      "status": "PASS",
+      "detail": {
+        "foreign_route_without_private_data": true
+      }
+    },
+    {
+      "role": "evaluador",
+      "case": "Voucher asignado sigue visible",
+      "status": "PASS",
+      "detail": {
+        "assigned_voucher_visible": true
+      }
+    },
+    {
+      "role": "evaluador",
+      "case": "Vouchers ajenos no se presentan",
+      "status": "PASS",
+      "detail": {
+        "foreign_voucher_rows": 0,
+        "foreign_pii_absent": true
+      }
+    },
+    {
+      "role": "evaluador2",
+      "case": "Mis conserva detalles autorizados",
+      "status": "PASS",
+      "detail": {
+        "assigned_description": true,
+        "assigned_name": true
+      }
+    },
+    {
+      "role": "evaluador2",
+      "case": "Mis excluye expediente ajeno",
+      "status": "PASS",
+      "detail": {
+        "foreign_rows": 0,
+        "foreign_pii_absent": true
+      }
+    },
+    {
+      "role": "evaluador2",
+      "case": "Todos conserva los dos expedientes como resumen",
+      "status": "PASS",
+      "detail": {
+        "global_fixture_rows": 2,
+        "code_type_state_preserved": true
+      }
+    },
+    {
+      "role": "evaluador2",
+      "case": "Todos no presenta PII ni texto privado",
+      "status": "PASS",
+      "detail": {
+        "names_contacts_birth_disability_text_absent": true,
+        "selected_scope_preserved": true
+      }
+    },
+    {
+      "role": "evaluador2",
+      "case": "Resumen ajeno no ofrece acciones privadas",
+      "status": "PASS",
+      "detail": {
+        "foreign_detail_or_write_actions": 0
+      }
+    },
+    {
+      "role": "evaluador2",
+      "case": "Revisión asignada sigue disponible",
+      "status": "PASS",
+      "detail": {
+        "assigned_review": true
+      }
+    },
+    {
+      "role": "evaluador2",
+      "case": "URL directa ajena no revela detalles",
+      "status": "PASS",
+      "detail": {
+        "foreign_route_without_private_data": true
+      }
+    },
+    {
+      "role": "evaluador2",
+      "case": "Voucher asignado sigue visible",
+      "status": "PASS",
+      "detail": {
+        "assigned_voucher_visible": true
+      }
+    },
+    {
+      "role": "evaluador2",
+      "case": "Vouchers ajenos no se presentan",
+      "status": "PASS",
+      "detail": {
+        "foreign_voucher_rows": 0,
+        "foreign_pii_absent": true
+      }
+    }
+  ]
+}

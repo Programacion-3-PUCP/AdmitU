@@ -39,7 +39,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
                 return documento.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR DOCUMENTO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR DOCUMENTO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -47,8 +47,9 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
     @Override
     public int modificar(DocumentoPostulacion documento) {
         String sql = "{call MODIFICAR_DOCUMENTO_POSTULACION(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
-        try (Connection con = DBManager.getInstance().getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        try {
+            Connection con = TransactionContext.getConnection();
+            try (CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt("_id", documento.getId());
             cs.setInt("_postulacion_id", documento.getPostulacion().getId());
             cs.setInt("_requisito_id", documento.getRequisitoAplicable().getId());
@@ -62,8 +63,9 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             cs.setDate("_fecha_evaluacion", documento.getFechaEvaluacion() != null ? Date.valueOf(documento.getFechaEvaluacion()) : null);
             cs.setString("_comentario_evaluacion", documento.getComentarioEvaluacion());
             return cs.executeUpdate();
+            }
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR DOCUMENTO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR DOCUMENTO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -76,7 +78,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             cs.setInt("_id", idDocumento);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR DOCUMENTO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR DOCUMENTO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -99,6 +101,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             rs.getDate("fecha_evaluacion") != null ? rs.getDate("fecha_evaluacion").toLocalDate() : null,
             rs.getString("comentario_evaluacion"), null);
         documento.setId(rs.getInt("id"));
+        documento.setArchivoActivo(rs.getBoolean("archivo_activo"));
         return documento;
     }
 
@@ -114,7 +117,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             }
             return documento;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR DOCUMENTO POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR DOCUMENTO POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -131,7 +134,7 @@ public class DocumentoPostulacionImpl implements DocumentoPostulacionDAO {
             }
             return documentos;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR DOCUMENTOS POSTULACION: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR DOCUMENTOS POSTULACION: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

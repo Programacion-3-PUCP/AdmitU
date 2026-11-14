@@ -1,0 +1,30 @@
+using System.Diagnostics;
+using System.Net;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
+using AdmitUWA.Services;
+using AdmitUWA.Services.REST;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Http;
+var resultados = new List<object>();
+for (var vuelta=0;vuelta<6;vuelta++) {
+ var handler=new Respuestas();
+ var user=new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier,"111"),new Claim(ClaimTypes.Role,"postulante"),new Claim("admitu_token","sintetico-mock")],"prueba"));
+ var api=new AdmitURestClient(new HttpClient(handler){BaseAddress=new Uri("http://prueba.invalid/")},new HttpContextAccessor());
+ var reloj=Stopwatch.StartNew();
+ var sesion=new DatosSesion(api,new Auth(user));
+ var ctor=reloj.Elapsed.TotalMilliseconds;
+ if(typeof(DatosSesion).GetMethod("InicializarAsync")?.Invoke(sesion,null) is Task carga) await carga;
+ var total=reloj.Elapsed.TotalMilliseconds;
+ if(vuelta>0)resultados.Add(new {constructor_ms=Math.Round(ctor,3),carga_total_ms=Math.Round(total,3),peticiones=handler.Cuenta,maximo_en_vuelo=handler.Maximo});
+}
+Console.WriteLine(JsonSerializer.Serialize(new {entorno="Cloud, HTTP simulado con 30ms por respuesta; primera vuelta excluida; no prueba SQL/REST real ni RNF04",resultados},new JsonSerializerOptions{WriteIndented=true}));
+sealed class Auth(ClaimsPrincipal user):AuthenticationStateProvider{public override Task<AuthenticationState> GetAuthenticationStateAsync()=>Task.FromResult(new AuthenticationState(user));}
+sealed class Respuestas:HttpMessageHandler {
+ int activas,maximo,cuenta;public int Maximo=>maximo;public int Cuenta=>cuenta;
+ protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken ct){
+ Interlocked.Increment(ref cuenta);int actual=Interlocked.Increment(ref activas),old;
+ do{old=maximo;}while(actual>old&&Interlocked.CompareExchange(ref maximo,actual,old)!=old);
+ try{await Task.Delay(30,ct);return new(HttpStatusCode.OK){Content=new StringContent(request.RequestUri!.AbsolutePath.StartsWith("/PostulanteRS/")?"[{\"id\":111}]":"[]",Encoding.UTF8,"application/json")};}finally{Interlocked.Decrement(ref activas);}}
+}

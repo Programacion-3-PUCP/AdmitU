@@ -1,0 +1,213 @@
+{
+  "environment": "Codex Cloud local propio; MySQL 8.4.13; Java25; no WSL/AWS",
+  "executed_at_utc": "2026-11-13T13:26:00.904275+00:00",
+  "suite": "PruebasAuditoriaPreaws",
+  "status": "PASS",
+  "checks": 44,
+  "fixtures": "Dos postulantes y dos evaluadores sintéticos; transacción con rollback total. Admin sin persona; cuenta del contexto de servidor. No filas históricas borradas.",
+  "business_tables_hashed": 12,
+  "before_sha256": "1b2ef73cd5a748d1732c4725f015d69bd940c94f8a6c50edccfdc0398cee4425",
+  "after_sha256": "1b2ef73cd5a748d1732c4725f015d69bd940c94f8a6c50edccfdc0398cee4425",
+  "unchanged_after_rollback": true,
+  "cases": [
+    {
+      "case": "historial BO/DAO inmutable antes de acceder a MySQL",
+      "status": "PASS"
+    },
+    {
+      "case": "historial BO/DAO inmutable antes de acceder a MySQL",
+      "status": "PASS"
+    },
+    {
+      "case": "historial BO/DAO inmutable antes de acceder a MySQL",
+      "status": "PASS"
+    },
+    {
+      "case": "historial BO/DAO inmutable antes de acceder a MySQL",
+      "status": "PASS"
+    },
+    {
+      "case": "historial BO/DAO inmutable antes de acceder a MySQL",
+      "status": "PASS"
+    },
+    {
+      "case": "historial BO/DAO inmutable antes de acceder a MySQL",
+      "status": "PASS"
+    },
+    {
+      "case": "JDBC toma actor del contexto del servidor",
+      "status": "PASS"
+    },
+    {
+      "case": "JDBC fija identidad para ámbito SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "limpiar contexto evita heredar identidad",
+      "status": "PASS"
+    },
+    {
+      "case": "administrador sin persona conserva su cuenta autenticada",
+      "status": "PASS"
+    },
+    {
+      "case": "inscripción antes del cierre aceptada",
+      "status": "PASS"
+    },
+    {
+      "case": "día límite de Lima inclusivo aceptado",
+      "status": "PASS"
+    },
+    {
+      "case": "inscripción después del cierre rechazada",
+      "status": "PASS"
+    },
+    {
+      "case": "inscripción después del cierre rechazada conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "misma modalidad dos convocatorias conserva tarifas SQL distintas",
+      "status": "PASS"
+    },
+    {
+      "case": "historial inicial registra actor del servidor",
+      "status": "PASS"
+    },
+    {
+      "case": "postulante no crea expediente de tercero",
+      "status": "PASS"
+    },
+    {
+      "case": "postulante no crea expediente de tercero conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "evaluador no crea postulaciones",
+      "status": "PASS"
+    },
+    {
+      "case": "evaluador no crea postulaciones conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "evaluador no asignado no cambia estado",
+      "status": "PASS"
+    },
+    {
+      "case": "evaluador no asignado no cambia estado conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "evaluador asignado realiza transición permitida",
+      "status": "PASS"
+    },
+    {
+      "case": "transición legítima conserva autor autenticado",
+      "status": "PASS"
+    },
+    {
+      "case": "segundo evaluador no modifica expediente del primero",
+      "status": "PASS"
+    },
+    {
+      "case": "segundo evaluador no modifica expediente del primero conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "historial SQL no admite inserciones administrativas",
+      "status": "PASS"
+    },
+    {
+      "case": "historial SQL no admite inserciones administrativas conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "historial SQL no admite modificaciones administrativas",
+      "status": "PASS"
+    },
+    {
+      "case": "historial SQL no admite modificaciones administrativas conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "historial SQL no admite borrado administrativo",
+      "status": "PASS"
+    },
+    {
+      "case": "historial SQL no admite borrado administrativo conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "observación rechaza suplantar segundo evaluador",
+      "status": "PASS"
+    },
+    {
+      "case": "observación rechaza suplantar segundo evaluador conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "observación legítima usa autor y fecha del servidor",
+      "status": "PASS"
+    },
+    {
+      "case": "observación no permite sustituir autor existente",
+      "status": "PASS"
+    },
+    {
+      "case": "observación no permite sustituir autor existente conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "editar observación conserva fecha original",
+      "status": "PASS"
+    },
+    {
+      "case": "subsanación autorizada toma fecha del servidor",
+      "status": "PASS"
+    },
+    {
+      "case": "subsanación no permite borrar su traza",
+      "status": "PASS"
+    },
+    {
+      "case": "subsanación no permite borrar su traza conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "segundo evaluador no observa expediente no asignado",
+      "status": "PASS"
+    },
+    {
+      "case": "segundo evaluador no observa expediente no asignado conserva estado SQL",
+      "status": "PASS"
+    },
+    {
+      "case": "rollback conserva SHA-256 de todas las filas de las 12 tablas de negocio verificadas",
+      "status": "PASS"
+    }
+  ],
+  "diagnostico_solo_lectura": {
+    "counts": {
+      "documentos_aprobados_sin_bytes_propietario": 254,
+      "pagos_aprobados_sin_voucher_propietario": 72,
+      "documentos_con_version_mayor_uno": 22,
+      "postulaciones_sin_evaluador": 95,
+      "postulaciones_con_evaluador": 3,
+      "postulaciones_duplicadas": 0,
+      "pagos_vigentes_duplicados": 0,
+      "archivos_con_referencia_propietario_incorrecto": 0
+    },
+    "queries": {
+      "documentos_aprobados_sin_bytes_propietario": "SELECT COUNT(*) FROM documento_postulacion d JOIN postulacion p ON p.id=d.postulacion_id WHERE d.estado_documento='APROBADO' AND NOT EXISTS(SELECT 1 FROM archivo_digital a WHERE a.tipo='DOCUMENTO' AND a.referencia_id=d.id AND a.postulante_id=p.postulante_id AND a.activo=1 AND OCTET_LENGTH(a.contenido)>0)",
+      "pagos_aprobados_sin_voucher_propietario": "SELECT COUNT(*) FROM pago g JOIN postulacion p ON p.id=g.postulacion_id WHERE g.estado_pago='APROBADO' AND NOT EXISTS(SELECT 1 FROM archivo_digital a WHERE a.tipo='VOUCHER' AND a.referencia_id=g.id AND a.postulante_id=p.postulante_id AND a.activo=1 AND OCTET_LENGTH(a.contenido)>0)",
+      "documentos_con_version_mayor_uno": "SELECT COUNT(*) FROM documento_postulacion WHERE numero_version>1",
+      "postulaciones_sin_evaluador": "SELECT COUNT(*) FROM postulacion WHERE evaluador_id IS NULL",
+      "postulaciones_con_evaluador": "SELECT COUNT(*) FROM postulacion WHERE evaluador_id IS NOT NULL",
+      "postulaciones_duplicadas": "SELECT COUNT(*) FROM (SELECT postulante_id,convocatoria_id FROM postulacion GROUP BY postulante_id,convocatoria_id HAVING COUNT(*)>1) q",
+      "pagos_vigentes_duplicados": "SELECT COUNT(*) FROM (SELECT postulacion_id FROM pago WHERE estado_pago IN ('GENERADO','PENDIENTE','APROBADO') GROUP BY postulacion_id HAVING COUNT(*)>1) q",
+      "archivos_con_referencia_propietario_incorrecto": "SELECT COUNT(*) FROM archivo_digital a WHERE (a.tipo='DOCUMENTO' AND NOT EXISTS(SELECT 1 FROM documento_postulacion d JOIN postulacion p ON p.id=d.postulacion_id WHERE d.id=a.referencia_id AND p.postulante_id=a.postulante_id)) OR (a.tipo='VOUCHER' AND NOT EXISTS(SELECT 1 FROM pago g JOIN postulacion p ON p.id=g.postulacion_id WHERE g.id=a.referencia_id AND p.postulante_id=a.postulante_id)) OR (a.tipo='CERTIFICADO' AND NOT EXISTS(SELECT 1 FROM antecedente_academico h WHERE h.id=a.referencia_id AND h.postulante_id=a.postulante_id))"
+    },
+    "limit": "Reproducción de datos LAB11 y fixtures Cloud; no identifica cantidades WSL ni AWS. Consulta posterior a rollback y anterior a nuevas pruebas UI."
+  }
+}

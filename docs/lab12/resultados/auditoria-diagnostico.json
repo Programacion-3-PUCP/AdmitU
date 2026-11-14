@@ -1,0 +1,15 @@
+{
+  "entorno": "Codex Cloud; Java25; sin WSL/AWS",
+  "resultado": "PASS",
+  "casos": 6,
+  "cobertura": [
+    "mensajes privados sintéticos ausentes",
+    "SQLState y código preservados",
+    "causa SQL anidada",
+    "SQLState no confiable redactado",
+    "error nulo",
+    "cadena de causas cíclica"
+  ],
+  "reproduccion": "scripts/pruebas/PruebaDiagnostico.java",
+  "mensajes_dao_sanitizados": 122
+}

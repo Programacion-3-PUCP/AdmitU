@@ -56,7 +56,17 @@ public class DocumentoPostulacionBOImpl implements IDocumentoPostulacionBO {
     public int modificar(DocumentoPostulacion d) {
         validar(d);
         if (d.getId() <= 0) throw new RuntimeException("Id de documento no valido");
-        return daoDocumento.modificar(d);
+        // La comprobación de asignación y la actualización comparten los locks del SP.
+        try {
+            int resultado = daoDocumento.modificar(d);
+            TransactionContext.commit();
+            return resultado;
+        } catch (Exception ex) {
+            TransactionContext.rollback();
+            throw new IllegalStateException("No se pudo modificar el documento", ex);
+        } finally {
+            TransactionContext.close();
+        }
     }
 
     @Override

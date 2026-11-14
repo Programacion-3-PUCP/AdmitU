@@ -33,7 +33,7 @@ public class ApoderadoImpl implements ApoderadoDAO {
                 return apoderado.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR APODERADO: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR APODERADO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -53,7 +53,7 @@ public class ApoderadoImpl implements ApoderadoDAO {
             cs.setString("_parentesco", apoderado.getParentesco() != null ? apoderado.getParentesco().name() : null);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR APODERADO: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR APODERADO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -66,7 +66,7 @@ public class ApoderadoImpl implements ApoderadoDAO {
             cs.setInt("_id", idApoderado);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR APODERADO: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR APODERADO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -93,7 +93,7 @@ public class ApoderadoImpl implements ApoderadoDAO {
             }
             return apoderado;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR APODERADO: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR APODERADO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -110,7 +110,7 @@ public class ApoderadoImpl implements ApoderadoDAO {
             }
             return apoderados;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR APODERADOS: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR APODERADOS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

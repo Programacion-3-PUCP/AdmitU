@@ -15,7 +15,9 @@ public class ReporteRS {
   FiltroReporte f=new FiltroReporte();f.setConvocatoriaId(convocatoria);f.setModalidadId(modalidad);
   try{f.setDesde(desde==null||desde.isBlank()?null:LocalDate.parse(desde));f.setHasta(hasta==null||hasta.isBlank()?null:LocalDate.parse(hasta));}
   catch(java.time.format.DateTimeParseException e){throw new BadRequestException("Fecha no válida; use AAAA-MM-DD");}
-  return Response.ok(bo.generar(tipo,f),"application/pdf").header("Content-Disposition","inline; filename=\""+tipo.getPlantilla()+".pdf\"")
+  byte[] pdf=tipo==TipoReporte.OBSERVADOS&&Seguridad.rol(seguridad).equals("evaluador")
+   ?bo.generarObservadosAsignados(f,Seguridad.id(seguridad)):bo.generar(tipo,f);
+  return Response.ok(pdf,"application/pdf").header("Content-Disposition","inline; filename=\""+tipo.getPlantilla()+".pdf\"")
    .header("Cache-Control","no-store").header("X-Content-Type-Options","nosniff").build();
  }
  @GET @Path("generarIngresos") public Response ingresos(@QueryParam("convocatoriaId")int c,@QueryParam("modalidadId")int m,@QueryParam("desde")String d,@QueryParam("hasta")String h){return generar(TipoReporte.INGRESOS,c,m,d,h);}

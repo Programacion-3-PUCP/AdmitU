@@ -23,7 +23,6 @@
             <p>@c.Descripcion</p>
             <div class="summary-rows">
                 <div><span>Inscripciones</span><strong>@Formato.Fecha(c.Inicio) – @Formato.Fecha(c.CierreInscripciones)</strong></div>
-                <div><span>Resultados</span><strong>@Formato.Fecha(c.Fin)</strong></div>
                 <div><span>Oferta</span><strong>@(vacantes == 0 ? "Sin vacantes configuradas" : $"{vacantes} vacantes")</strong></div>
             </div>
             <div>
@@ -64,9 +63,7 @@
             <div class="field"><label for="v-periodo">Periodo <span class="req">*</span></label><InputText id="v-periodo" @bind-Value="modelo.Periodo" placeholder="Ej. 2027-I" /><ValidationMessage For="() => modelo.Periodo" /></div>
             <div class="form-grid">
                 <div class="field"><label for="v-ini">Apertura de inscripciones</label><InputDate id="v-ini" @bind-Value="modelo.Inicio" /></div>
-                <div class="field"><label for="v-cierre">Cierre de inscripciones</label><InputDate id="v-cierre" @bind-Value="modelo.CierreInscripciones" /><ValidationMessage For="() => modelo.CierreInscripciones" /></div>
-                <div class="field"><label for="v-lim">Fin de evaluación</label><InputDate id="v-lim" @bind-Value="modelo.LimiteEvaluacion" /><ValidationMessage For="() => modelo.LimiteEvaluacion" /></div>
-                <div class="field"><label for="v-fin">Publicación de resultados</label><InputDate id="v-fin" @bind-Value="modelo.Fin" /><ValidationMessage For="() => modelo.Fin" /></div>
+                <div class="field"><label for="v-fin">Cierre de inscripciones (inclusive, hora de Lima)</label><InputDate id="v-fin" @bind-Value="modelo.Fin" /><ValidationMessage For="() => modelo.Fin" /></div>
             </div>
             <div class="field"><label for="v-desc">Descripción</label><InputTextArea id="v-desc" @bind-Value="modelo.Descripcion" /><ValidationMessage For="() => modelo.Descripcion" /></div>
         </div>
@@ -131,14 +128,15 @@
 
     private int Avance(Convocatoria c)
     {
-        if (Datos.Hoy >= c.Fin) return 100;
-        if (Datos.Hoy <= c.Inicio) return 0;
-        return (int)Math.Round((Datos.Hoy.DayNumber - c.Inicio.DayNumber) * 100.0 / (c.Fin.DayNumber - c.Inicio.DayNumber));
+        if (c.Inicio is not { } inicio || c.Fin is not { } fin) return 0;
+        if (Datos.Hoy >= fin) return 100;
+        if (Datos.Hoy <= inicio) return 0;
+        return (int)Math.Round((Datos.Hoy.DayNumber - inicio.DayNumber) * 100.0 / (fin.DayNumber - inicio.DayNumber));
     }
 
     private void Nueva()
     {
-        modelo = new() { CierreInscripciones = Datos.Hoy.AddMonths(1), LimiteEvaluacion = Datos.Hoy.AddMonths(1).AddDays(5) };
+        modelo = new() { Inicio = Datos.Hoy, Fin = Datos.Hoy.AddMonths(1) };
         errorCodigo = null;
         abierto = true;
     }

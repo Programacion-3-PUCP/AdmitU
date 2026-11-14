@@ -1,4 +1,33 @@
-# Evidencias de ejecución LAB12
+# Evidencias PRE-AWS — ejecución actual
+
+Corte Cloud13/11/2026, rama `codex/auditoria-preaws`, base `2ad4019`.
+Los resultados actuales y los17 hallazgos están en [auditoría](auditoria-preaws.md).
+No se accedió a WSL del propietario ni se desplegó AWS.
+
+| Grupo | Resultado actual | Evidencia |
+|---|---|---|
+| Compilación | Maven Java 25 PASS, Blazor .NET 10 PASS sin errores/advertencias | Comandos y alcance en informe PRE-AWS |
+| REST15 RF | 24/24PASS | [JSON](resultados/preaws-regresion-api.json) |
+| BO/MySQL | 32 LAB12+44auditoríaPASS | [Integridad](resultados/auditoria-integridad.json), rollback y actor servidor |
+| SeguridadREST | 77/77PASS;64 rechazos sin cambios en28 tablas | [JSON](resultados/auditoria-seguridad.json) |
+| MétricasKPI | 31/31SQL/API/ChromiumPASS | [JSON](resultados/auditoria-kpi-sql.json) |
+| JasperREST | 33/33 PDF/SQL/roles/filtrosPASS | [JSON](resultados/auditoria-reportes.json) |
+| Fechas/tarifas | 3fronterasREST/SQLPASS y35pruebas C# | [Fechas](resultados/preaws-fechas-tarifas.json), [C#](resultados/auditoria-carga-sesion.json) |
+| Modelo indicadores | 14/14PASS | [JSON](resultados/auditoria-metricas-modelos.json) |
+| Backups | 8 tests+restauraciónREAL en clonPASS | [JSON](resultados/auditoria-operaciones.json) |
+| Logging | 6/6PASSsin secretos | [JSON](resultados/auditoria-diagnostico.json) |
+| Carga autenticada | 300/300 GET,5 identidades; no500 trámites | [JSON](resultados/auditoria-carga-autenticada.json) |
+| Catálogo carreras | 1/20 conexiones todas≤3 s | [1](resultados/preaws-catalogo1.json), [20](resultados/preaws-catalogo20.json) |
+| Registro real | PASS formulario protegido, cuenta y perfil persistidos | [JSON](resultados/preaws-registro-ui.json) |
+| Chromium | 15/15flujos principales; login/CSRF final aún en verificación | [Flujos](resultados/preaws-ui.json), [cookies](resultados/preaws-seguridad-ui.json), [SSR](resultados/preaws-login-hidratacion.json); visor integrado sujeto al límite Cloud |
+
+Los JSON antiguos siguientes son evidencia histórica de LAB12, conservada para
+trazabilidad. No sustituyen las ejecuciones PRE-AWS ni invalidan los defectos que
+se detectaron posteriormente. PDFs con datos, capturas, claves, cookies, tokens,
+configuración y dumps siguen privados en work/, fuera de Git.
+
+## Historial LAB12 anterior
+
 
 Las comprobaciones siguientes corresponden al código reconstruido y a ejecuciones locales reales. Las credenciales, tokens, cookies, dumps, PDFs con datos y capturas permanecen en `work/`, fuera de Git. Solo se versionan resúmenes sanitizados sin datos personales ni secretos.
 
@@ -19,7 +48,7 @@ Las comprobaciones siguientes corresponden al código reconstruido y a ejecucion
 | Reinicio y bytes | Mismo DNI, 68 bytes y SHA-256 idéntico tras reiniciar GlassFish/frontend | [JSON](resultados/reinicio-archivos.json) |
 | O2 y O6 visual | Alineación escritorio/móvil y selección Mis/Todos con dataset distinto | [JSON](resultados/observaciones-alineacion.json) |
 | Publicación Windows | dotnet publish Release win-x64 framework-dependent PASS; web.config generado | Log privado work/publish-windows.log; ejecución IIS pendiente |
-| Catálogo/carga | 1 y 20 conexiones <3s; 500/500 HTTP200 con p95 8.308s | [1](resultados/catalogo1.json), [20](resultados/catalogo20.json), [500](resultados/carga500.json) |
+| Catálogo/carga | 1 y 20 conexiones <3 s; 500/500 HTTP200 con p95 8.308 s | [1](resultados/catalogo1.json), [20](resultados/catalogo20.json), [500](resultados/carga500.json) |
 
 ## Qué se observó en las operaciones críticas
 

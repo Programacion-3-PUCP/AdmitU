@@ -1,0 +1,127 @@
+[
+  {
+    "rf": "RF_04",
+    "case": "crear desactivar y confirmar reactivación",
+    "status": "PASS",
+    "detail": {
+      "confirmar_cancelar_recarga": true
+    }
+  },
+  {
+    "rf": "RF_06",
+    "case": "crear carrera y recuperar al recargar",
+    "status": "PASS",
+    "detail": {
+      "recarga": true
+    }
+  },
+  {
+    "rf": "RF_01",
+    "case": "crear y eliminar borrador con confirmación",
+    "status": "PASS",
+    "detail": {
+      "baja_borrador": true
+    }
+  },
+  {
+    "rf": "RF_07",
+    "case": "crear requisito en convocatoria y modalidad",
+    "status": "PASS",
+    "detail": {
+      "requisito": 13
+    }
+  },
+  {
+    "rf": "RF_02",
+    "case": "editar perfil y recargar datos persistidos",
+    "status": "PASS",
+    "detail": {
+      "documento_bloqueado": true,
+      "perfil_durable": true
+    }
+  },
+  {
+    "rf": "RF_08",
+    "case": "subir DNI foto y recuperar bytes en pantalla",
+    "status": "PASS",
+    "detail": {
+      "dos_archivos_durables_y_preview": true
+    }
+  },
+  {
+    "rf": "RF_05",
+    "case": "certificado PDF carga descarga y recarga",
+    "status": "PASS",
+    "detail": {
+      "certificado_durable_y_preview": true
+    }
+  },
+  {
+    "rf": "RF_11",
+    "case": "wizard enviar documentos y registrar voucher",
+    "status": "PASS",
+    "detail": {
+      "postulacion": 118,
+      "un_solo_pago": 127
+    }
+  },
+  {
+    "rf": "RF_12",
+    "case": "evaluador aprueba voucher desde pantalla",
+    "status": "PASS",
+    "detail": {
+      "aprobado": true
+    }
+  },
+  {
+    "rf": "RF_10",
+    "case": "observar documento y usar alcance visible",
+    "status": "PASS",
+    "detail": {
+      "filtro_visible_funcional": true,
+      "mis_expedientes": 5,
+      "todos": 43
+    }
+  },
+  {
+    "rf": "RF_03",
+    "case": "Jasper ingresos previsualizar y descargar",
+    "status": "PASS",
+    "detail": {
+      "pdf_bytes": 19708
+    }
+  },
+  {
+    "rf": "RF_09",
+    "case": "Jasper observados previsualizar y descargar",
+    "status": "PASS",
+    "detail": {
+      "pdf_bytes": 20834
+    }
+  },
+  {
+    "rf": "RF_15",
+    "case": "Jasper vacantes previsualizar y descargar",
+    "status": "PASS",
+    "detail": {
+      "pdf_bytes": 20482
+    }
+  },
+  {
+    "rf": "RF_13",
+    "case": "consultar historial real del trámite UI",
+    "status": "PASS",
+    "detail": {
+      "historial_visible": true
+    }
+  },
+  {
+    "rf": "RF_14",
+    "case": "emitir carné apto desde administración",
+    "status": "PASS",
+    "detail": {
+      "carne_emitido": 42,
+      "estado_SQL_y_Blazor_finalizada": true
+    }
+  }
+]

@@ -1,0 +1,339 @@
+{
+  "environment": "Codex Cloud propio; no WSL/AWS",
+  "business_writes": false,
+  "cases": [
+    {
+      "case": "Permiso admin/Ingresos",
+      "status": "PASS",
+      "detail": {
+        "role": "admin",
+        "report": "Ingresos",
+        "http": 200
+      }
+    },
+    {
+      "case": "Permiso admin/Observados",
+      "status": "PASS",
+      "detail": {
+        "role": "admin",
+        "report": "Observados",
+        "http": 200
+      }
+    },
+    {
+      "case": "Permiso admin/Vacantes",
+      "status": "PASS",
+      "detail": {
+        "role": "admin",
+        "report": "Vacantes",
+        "http": 200
+      }
+    },
+    {
+      "case": "Permiso evaluador/Ingresos",
+      "status": "PASS",
+      "detail": {
+        "role": "evaluador",
+        "report": "Ingresos",
+        "http": 403
+      }
+    },
+    {
+      "case": "Permiso evaluador/Observados",
+      "status": "PASS",
+      "detail": {
+        "role": "evaluador",
+        "report": "Observados",
+        "http": 200
+      }
+    },
+    {
+      "case": "Permiso evaluador/Vacantes",
+      "status": "PASS",
+      "detail": {
+        "role": "evaluador",
+        "report": "Vacantes",
+        "http": 403
+      }
+    },
+    {
+      "case": "Permiso postulante/Ingresos",
+      "status": "PASS",
+      "detail": {
+        "role": "postulante",
+        "report": "Ingresos",
+        "http": 403
+      }
+    },
+    {
+      "case": "Permiso postulante/Observados",
+      "status": "PASS",
+      "detail": {
+        "role": "postulante",
+        "report": "Observados",
+        "http": 403
+      }
+    },
+    {
+      "case": "Permiso postulante/Vacantes",
+      "status": "PASS",
+      "detail": {
+        "role": "postulante",
+        "report": "Vacantes",
+        "http": 403
+      }
+    },
+    {
+      "case": "PDF/SQL Ingresos {}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 22052,
+        "filters": {},
+        "sql_count": 75,
+        "sql_sum": "37680.00",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "PDF/SQL Ingresos {'convocatoriaId': 1, 'modalidadId': 1}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 19756,
+        "filters": {
+          "convocatoriaId": 1,
+          "modalidadId": 1
+        },
+        "sql_count": 3,
+        "sql_sum": "1350.00",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "PDF/SQL Ingresos {'convocatoriaId': 999999}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 19524,
+        "filters": {
+          "convocatoriaId": 999999
+        },
+        "sql_count": 0,
+        "sql_sum": "0.00",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "PDF/SQL Ingresos {'desde': '2026-01-01', 'hasta': '2026-12-31'}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 22144,
+        "filters": {
+          "desde": "2026-01-01",
+          "hasta": "2026-12-31"
+        },
+        "sql_count": 75,
+        "sql_sum": "37680.00",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "Filtro inválido Ingresos convocatoriaId=-1",
+      "status": "PASS",
+      "detail": {
+        "http": 400
+      }
+    },
+    {
+      "case": "Filtro inválido Ingresos desde=2026-12-31&hasta=2026-01-01",
+      "status": "PASS",
+      "detail": {
+        "http": 400
+      }
+    },
+    {
+      "case": "Filtro inválido Ingresos desde=fecha-invalida",
+      "status": "PASS",
+      "detail": {
+        "http": 400
+      }
+    },
+    {
+      "case": "Sin sesión Ingresos",
+      "status": "PASS",
+      "detail": {
+        "http": 401
+      }
+    },
+    {
+      "case": "PDF/SQL Observados {}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 25458,
+        "filters": {},
+        "sql_count": 19,
+        "sql_sum": "0",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "PDF/SQL Observados {'convocatoriaId': 1, 'modalidadId': 1}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 19395,
+        "filters": {
+          "convocatoriaId": 1,
+          "modalidadId": 1
+        },
+        "sql_count": 0,
+        "sql_sum": "0",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "PDF/SQL Observados {'convocatoriaId': 999999}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 19571,
+        "filters": {
+          "convocatoriaId": 999999
+        },
+        "sql_count": 0,
+        "sql_sum": "0",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "PDF/SQL Observados {'desde': '2026-01-01', 'hasta': '2026-12-31'}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 25482,
+        "filters": {
+          "desde": "2026-01-01",
+          "hasta": "2026-12-31"
+        },
+        "sql_count": 19,
+        "sql_sum": "0",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "Filtro inválido Observados convocatoriaId=-1",
+      "status": "PASS",
+      "detail": {
+        "http": 400
+      }
+    },
+    {
+      "case": "Filtro inválido Observados desde=2026-12-31&hasta=2026-01-01",
+      "status": "PASS",
+      "detail": {
+        "http": 400
+      }
+    },
+    {
+      "case": "Filtro inválido Observados desde=fecha-invalida",
+      "status": "PASS",
+      "detail": {
+        "http": 400
+      }
+    },
+    {
+      "case": "Sin sesión Observados",
+      "status": "PASS",
+      "detail": {
+        "http": 401
+      }
+    },
+    {
+      "case": "PDF/SQL Vacantes {}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 32053,
+        "filters": {},
+        "sql_count": 39,
+        "sql_sum": "0",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "PDF/SQL Vacantes {'convocatoriaId': 1, 'modalidadId': 1}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 20960,
+        "filters": {
+          "convocatoriaId": 1,
+          "modalidadId": 1
+        },
+        "sql_count": 3,
+        "sql_sum": "0",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "PDF/SQL Vacantes {'convocatoriaId': 999999}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 20146,
+        "filters": {
+          "convocatoriaId": 999999
+        },
+        "sql_count": 0,
+        "sql_sum": "0",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "PDF/SQL Vacantes {'desde': '2026-01-01', 'hasta': '2026-12-31'}",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "pdf_bytes": 32141,
+        "filters": {
+          "desde": "2026-01-01",
+          "hasta": "2026-12-31"
+        },
+        "sql_count": 39,
+        "sql_sum": "0",
+        "pdf_sql_match": true
+      }
+    },
+    {
+      "case": "Filtro inválido Vacantes convocatoriaId=-1",
+      "status": "PASS",
+      "detail": {
+        "http": 400
+      }
+    },
+    {
+      "case": "Filtro inválido Vacantes desde=2026-12-31&hasta=2026-01-01",
+      "status": "PASS",
+      "detail": {
+        "http": 400
+      }
+    },
+    {
+      "case": "Filtro inválido Vacantes desde=fecha-invalida",
+      "status": "PASS",
+      "detail": {
+        "http": 400
+      }
+    },
+    {
+      "case": "Sin sesión Vacantes",
+      "status": "PASS",
+      "detail": {
+        "http": 401
+      }
+    }
+  ]
+}

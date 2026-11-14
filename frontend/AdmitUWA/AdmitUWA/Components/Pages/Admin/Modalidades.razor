@@ -4,9 +4,16 @@
 
 <PageTitle>Modalidades · AdmitU</PageTitle>
 
-<PageHeader Titulo="Modalidades" Subtitulo="Vías de ingreso y su derecho de inscripción." Migas="@(["Modalidades"])">
+<PageHeader Titulo="Modalidades" Subtitulo="Vías de ingreso y tarifas para la convocatoria seleccionada." Migas="@(["Modalidades"])">
     <Acciones><button type="button" class="btn btn-primary" @onclick="Nueva"><Icon Name="plus" Size="16" />Nueva modalidad</button></Acciones>
 </PageHeader>
+
+<div class="field" style="max-width:420px;margin-bottom:20px">
+    <label for="m-convocatoria">Convocatoria de la tarifa</label>
+    <select id="m-convocatoria" @bind="convocatoriaId">
+        @foreach (var c in Datos.Convocatorias.OrderByDescending(c => c.Inicio)) { <option value="@c.Id">@c.Nombre</option> }
+    </select>
+</div>
 
 <DataTable TItem="Modalidad" Items="Datos.Modalidades" TextoBusqueda="@(m => $"{m.Codigo} {m.Nombre} {m.Descripcion}")" Marcador="Buscar por código o nombre">
     <Encabezado><th>Código</th><th>Modalidad</th><th>Descripción</th><th class="num">Derecho de inscripción</th><th>Estado</th><th class="th-actions">Acciones</th></Encabezado>
@@ -15,7 +22,7 @@
             <td><span class="mono">@m.Codigo</span></td>
             <td><span class="cell-title">@m.Nombre</span></td>
             <td class="wrap">@m.Descripcion</td>
-            <td class="num">@Formato.Soles(m.DerechoInscripcion)</td>
+            <td class="num">@Datos.TarifaInscripcionTexto(convocatoriaId, m.Id)</td>
             <td><EstadoActivo Activo="m.Activo" /></td>
             <td class="td-actions">
                 <span class="row-actions">
@@ -46,7 +53,7 @@
             </div>
             <div class="field"><label for="m-nombre">Nombre <span class="req">*</span></label><InputText id="m-nombre" @bind-Value="modelo.Nombre" placeholder="Ej. Evaluación ordinaria" /><ValidationMessage For="() => modelo.Nombre" /></div>
             <div class="field"><label for="m-desc">Descripción</label><InputTextArea id="m-desc" @bind-Value="modelo.Descripcion" placeholder="Quiénes pueden postular por esta vía" /><ValidationMessage For="() => modelo.Descripcion" /></div>
-            <div class="field"><label for="m-monto">Derecho de inscripción (S/) <span class="req">*</span></label><InputNumber id="m-monto" @bind-Value="modelo.DerechoInscripcion" step="0.01" /><ValidationMessage For="() => modelo.DerechoInscripcion" /></div>
+            <div class="field"><label for="m-monto">Derecho de inscripción para @Datos.Convocatoria(convocatoriaId)?.Nombre (S/) <span class="req">*</span></label><InputNumber id="m-monto" @bind-Value="modelo.DerechoInscripcion" step="0.01" /><ValidationMessage For="() => modelo.DerechoInscripcion" /></div>
         </div>
         <div class="drawer-foot">
             <button type="button" class="btn btn-ghost" @onclick="Cerrar">Cancelar</button>
@@ -59,13 +66,15 @@
                OnCancelar="() => pendiente = null" OnConfirmar="Desactivar" />
 
 @code {
+    private int convocatoriaId;
+    protected override void OnInitialized() => convocatoriaId = Datos.ConvocatoriaPorDefecto;
     private bool abierto;
     private Modalidad modelo = new();
     private Modalidad? pendiente;
     private string? errorCodigo;
 
     private void Nueva() { modelo = new(); errorCodigo = null; abierto = true; }
-    private void Editar(Modalidad m) { modelo = new() { Id = m.Id, Codigo = m.Codigo, Nombre = m.Nombre, Descripcion = m.Descripcion, DerechoInscripcion = m.DerechoInscripcion, Activo = m.Activo }; errorCodigo = null; abierto = true; }
+    private void Editar(Modalidad m) { modelo = new() { Id = m.Id, Codigo = m.Codigo, Nombre = m.Nombre, Descripcion = m.Descripcion, DerechoInscripcion = Datos.TarifaInscripcion(convocatoriaId, m.Id) ?? 0m, Activo = m.Activo }; errorCodigo = null; abierto = true; }
     private void Cerrar() => abierto = false;
 
     private void Guardar()
@@ -75,7 +84,7 @@
             errorCodigo = "Ya existe una modalidad con ese código.";
             return;
         }
-        Datos.GuardarModalidad(modelo);
+        Datos.GuardarModalidad(modelo, convocatoriaId);
         abierto = false;
         Avisos.Exito("Modalidad guardada");
     }

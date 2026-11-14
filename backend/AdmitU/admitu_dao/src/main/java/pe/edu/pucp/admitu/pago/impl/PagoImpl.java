@@ -33,7 +33,7 @@ public class PagoImpl implements PagoDAO {
                 return pago.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR PAGO: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR PAGO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -51,7 +51,7 @@ public class PagoImpl implements PagoDAO {
             return cs.executeUpdate();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR PAGO: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR PAGO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -64,7 +64,7 @@ public class PagoImpl implements PagoDAO {
             cs.setInt("_id", idPago);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR PAGO: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR PAGO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -93,7 +93,7 @@ public class PagoImpl implements PagoDAO {
             }
             return null;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR PAGO: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR PAGO: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -110,7 +110,7 @@ public class PagoImpl implements PagoDAO {
             }
             return lista;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR PAGOS: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR PAGOS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

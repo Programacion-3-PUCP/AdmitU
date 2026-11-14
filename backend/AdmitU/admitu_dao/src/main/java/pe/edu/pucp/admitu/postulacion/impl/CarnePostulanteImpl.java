@@ -32,7 +32,7 @@ public class CarnePostulanteImpl implements CarnePostulanteDAO {
                 return carne.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR CARNE POSTULANTE: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR CARNE POSTULANTE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -52,7 +52,7 @@ public class CarnePostulanteImpl implements CarnePostulanteDAO {
             cs.setString("_aula_examen", carne.getAulaExamen());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR CARNE POSTULANTE: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR CARNE POSTULANTE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -65,7 +65,7 @@ public class CarnePostulanteImpl implements CarnePostulanteDAO {
             cs.setInt("_id", idCarne);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR CARNE POSTULANTE: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR CARNE POSTULANTE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -96,7 +96,7 @@ public class CarnePostulanteImpl implements CarnePostulanteDAO {
             }
             return carne;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR CARNE POSTULANTE: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR CARNE POSTULANTE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -113,7 +113,7 @@ public class CarnePostulanteImpl implements CarnePostulanteDAO {
             }
             return carnes;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR CARNES POSTULANTE: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR CARNES POSTULANTE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

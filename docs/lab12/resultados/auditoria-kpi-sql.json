@@ -1,0 +1,929 @@
+{
+  "environment": "Codex Cloud propio; no WSL/AWS",
+  "business_writes": false,
+  "cases": [
+    {
+      "case": "SQL/REST convocatoria 1",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 1,
+        "sql": [
+          17,
+          17,
+          14,
+          0,
+          0,
+          12,
+          12
+        ],
+        "rest": [
+          17,
+          17,
+          14,
+          0,
+          0,
+          12,
+          12
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 2",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 2,
+        "sql": [
+          73,
+          70,
+          58,
+          0,
+          0,
+          24,
+          34
+        ],
+        "rest": [
+          73,
+          70,
+          58,
+          0,
+          0,
+          24,
+          34
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 3",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 3,
+        "sql": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 4",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 4,
+        "sql": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 5",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 5,
+        "sql": [
+          2,
+          2,
+          1,
+          1,
+          1,
+          0,
+          0
+        ],
+        "rest": [
+          2,
+          2,
+          1,
+          1,
+          1,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 6",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 6,
+        "sql": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 7",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 7,
+        "sql": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 8",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 8,
+        "sql": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 9",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 9,
+        "sql": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 10",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 10,
+        "sql": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 11",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 11,
+        "sql": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 24",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 24,
+        "sql": [
+          2,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          2,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 25",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 25,
+        "sql": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 26",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 26,
+        "sql": [
+          3,
+          3,
+          2,
+          1,
+          1,
+          1,
+          1
+        ],
+        "rest": [
+          3,
+          3,
+          2,
+          1,
+          1,
+          1,
+          1
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 27",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 27,
+        "sql": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 28",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 28,
+        "sql": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "SQL/REST convocatoria 29",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 29,
+        "sql": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "rest": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "columns": [
+          "Registradas",
+          "Enviadas",
+          "Pago validado",
+          "Documentos completos",
+          "Expediente apto",
+          "Con carné",
+          "Estados favorables inconsistentes"
+        ]
+      }
+    },
+    {
+      "case": "ArchivoActivo viene de SQL para todos los documentos",
+      "status": "PASS",
+      "detail": {
+        "documentos": 372,
+        "con_bytes": 8,
+        "without_client_flags": true
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 3",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 3,
+        "sql": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "ui": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "recaudacion_sql": "0.00",
+        "recaudacion_ui": "0.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 0
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 5",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 5,
+        "sql": [
+          2,
+          2,
+          1,
+          1,
+          1,
+          0
+        ],
+        "ui": [
+          2,
+          2,
+          1,
+          1,
+          1,
+          0
+        ],
+        "recaudacion_sql": "100.00",
+        "recaudacion_ui": "100.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 0
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 8",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 8,
+        "sql": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "ui": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "recaudacion_sql": "0.00",
+        "recaudacion_ui": "0.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 0
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 24",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 24,
+        "sql": [
+          2,
+          2,
+          0,
+          0,
+          0,
+          0
+        ],
+        "ui": [
+          2,
+          2,
+          0,
+          0,
+          0,
+          0
+        ],
+        "recaudacion_sql": "0.00",
+        "recaudacion_ui": "0.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 0
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 26",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 26,
+        "sql": [
+          3,
+          3,
+          2,
+          1,
+          1,
+          1
+        ],
+        "ui": [
+          3,
+          3,
+          2,
+          1,
+          1,
+          1
+        ],
+        "recaudacion_sql": "200.00",
+        "recaudacion_ui": "200.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 1
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 28",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 28,
+        "sql": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "ui": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "recaudacion_sql": "0.00",
+        "recaudacion_ui": "0.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 0
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 7",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 7,
+        "sql": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "ui": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "recaudacion_sql": "0.00",
+        "recaudacion_ui": "0.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 0
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 9",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 9,
+        "sql": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "ui": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "recaudacion_sql": "0.00",
+        "recaudacion_ui": "0.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 0
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 10",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 10,
+        "sql": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "ui": [
+          1,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "recaudacion_sql": "0.00",
+        "recaudacion_ui": "0.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 0
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 11",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 11,
+        "sql": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "ui": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "recaudacion_sql": "0.00",
+        "recaudacion_ui": "0.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 0
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 2",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 2,
+        "sql": [
+          73,
+          70,
+          58,
+          0,
+          0,
+          24
+        ],
+        "ui": [
+          73,
+          70,
+          58,
+          0,
+          0,
+          24
+        ],
+        "recaudacion_sql": "30230.00",
+        "recaudacion_ui": "30230.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 34
+      }
+    },
+    {
+      "case": "SQL/Chromium convocatoria 1",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 1,
+        "sql": [
+          17,
+          17,
+          14,
+          0,
+          0,
+          12
+        ],
+        "ui": [
+          17,
+          17,
+          14,
+          0,
+          0,
+          12
+        ],
+        "recaudacion_sql": "7150.00",
+        "recaudacion_ui": "7150.00",
+        "independent_metrics": true,
+        "inconsistent_states_shown": 12
+      }
+    },
+    {
+      "case": "Carga de evaluadores coincide con asignación persistida",
+      "status": "PASS",
+      "detail": {
+        "convocatorias_con_asignados": [
+          5,
+          24,
+          26
+        ],
+        "assignment_read_back": true
+      }
+    }
+  ]
+}

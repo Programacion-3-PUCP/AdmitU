@@ -24,9 +24,19 @@ public class PostulacionRS {
         return boPostulacion.listarTodos();
     }
 
+    @GET
+    @Path("listarResumenesGlobales")
+    public List<pe.edu.pucp.admitu.postulacion.ExpedienteResumen> listarResumenesGlobales() {
+        pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRoles(seguridad,"admin","evaluador");
+        pe.edu.pucp.admitu.postulacion.boi.IResumenExpedienteBO resumenes =
+            new pe.edu.pucp.admitu.postulacion.bo.ResumenExpedienteBOImpl();
+        return resumenes.listarGlobales();
+    }
+
     @POST
     @Path("insertarPostulacion")
     public int insertarPostulacion(Postulacion postulacion) {
+        pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRoles(seguridad,"admin");
         return boPostulacion.insertar(postulacion);
     }
 
@@ -39,17 +49,23 @@ public class PostulacionRS {
     @PUT
     @Path("modificarPostulacion")
     public int modificarPostulacion(Postulacion postulacion) {
-        return boPostulacion.modificar(postulacion);
+        if(postulacion==null||postulacion.getEstadoActual()==null)throw new BadRequestException("Estado y postulación requeridos");
+        var actual=pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRevision(seguridad,postulacion.getId());
+        actual.setEstadoActual(postulacion.getEstadoActual());
+        actual.setObservacionGeneral(postulacion.getObservacionGeneral());
+        return boPostulacion.modificar(actual);
     }
 
     @DELETE
     @Path("eliminarPostulacion/{id}")
     public int eliminarPostulacion(@PathParam("id") int idPostulacion) {
+        pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRoles(seguridad,"admin");
         return boPostulacion.eliminar(idPostulacion);
     }
 
     @POST @Path("enviarPostulacion")
     public int enviar(pe.edu.pucp.admitu.postulacion.EnvioPostulacion envio){
+        pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirRoles(seguridad,"postulante");
         if(envio==null||envio.getPostulacion()==null||envio.getPostulacion().getPostulante()==null)throw new BadRequestException("Postulante requerido");
         pe.edu.pucp.admitu.services.seguridad.Seguridad.exigirPropietario(seguridad,envio.getPostulacion().getPostulante().getId());
         return boPostulacion.enviar(envio);

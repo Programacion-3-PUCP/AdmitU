@@ -28,7 +28,7 @@ public class ModalidadImpl implements ModalidadDAO {
                 return modalidad.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -46,7 +46,7 @@ public class ModalidadImpl implements ModalidadDAO {
             cs.setBoolean("_requiere_universidad", modalidad.isRequiereUniversidad());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -59,7 +59,7 @@ public class ModalidadImpl implements ModalidadDAO {
             cs.setInt("_id", idModalidad);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -84,7 +84,7 @@ public class ModalidadImpl implements ModalidadDAO {
             }
             return modalidad;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR MODALIDAD: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR MODALIDAD: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -101,7 +101,7 @@ public class ModalidadImpl implements ModalidadDAO {
             }
             return modalidades;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR MODALIDADES: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR MODALIDADES: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

@@ -23,8 +23,13 @@
         <h1>Crea tu cuenta de postulante</h1>
         <p class="page-sub" style="margin-bottom:22px">Usa tus datos tal como figuran en tu documento de identidad: no podrás cambiarlos después.</p>
 
-        <EditForm Model="modelo" OnValidSubmit="Registrar" class="card card-pad">
+        <EditForm Model="modelo" OnValidSubmit="Registrar" FormName="registro-postulante" class="card card-pad">
             <DataAnnotationsValidator />
+            @if (!interactivo)
+            {
+                <p class="notice" role="status">Preparando formulario…</p>
+            }
+            <fieldset disabled="@(!interactivo || guardando)" style="border:0;margin:0;padding:0;min-width:0">
             <div class="form-grid">
                 <div class="field"><label for="r-nombres">Nombres <span class="req">*</span></label><InputText id="r-nombres" @bind-Value="modelo.Nombres" autocomplete="given-name" /><ValidationMessage For="() => modelo.Nombres" /></div>
                 <div class="field"><label for="r-pat">Apellido paterno <span class="req">*</span></label><InputText id="r-pat" @bind-Value="modelo.ApellidoPaterno" /><ValidationMessage For="() => modelo.ApellidoPaterno" /></div>
@@ -52,18 +57,31 @@
             @if (error is not null) { <p class="validation-message" role="alert" style="margin-top:14px">@error</p> }
             <div class="form-footer">
                 <a class="btn btn-ghost" href="/">Cancelar</a>
-                <button type="submit" class="btn btn-primary" disabled="@guardando"><Icon Name="check" Size="16" />Crear cuenta</button>
+                <button type="submit" class="btn btn-primary" disabled="@(!interactivo || guardando)"><Icon Name="check" Size="16" />Crear cuenta</button>
             </div>
+            </fieldset>
         </EditForm>
     }
 </div>
 
 @code {
-    private DatosPersonales modelo = new() { FechaNacimiento = new DateOnly(2008, 1, 1) };
+    private DatosPersonales modelo = new();
     private Postulante? creado;
     private string? error;
     private string clave = "";
     private bool guardando;
+    private bool interactivo;
+
+    protected override Task OnInitializedAsync() => Datos.InicializarAsync();
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            interactivo = true;
+            StateHasChanged();
+        }
+    }
 
     private async Task Registrar()
     {

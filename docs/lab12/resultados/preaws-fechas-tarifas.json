@@ -1,0 +1,58 @@
+{
+  "entorno": "Cloud; REST y SQL local de ensayo si contraste_sql=true; sin WSL ni AWS",
+  "dia_lima": "2026-11-13",
+  "prefijo_fixtures": "FT86120790",
+  "fixtures": [
+    {
+      "convocatoria": 9,
+      "convocatoria_modalidad": 14,
+      "modalidad": 8,
+      "tarifa": "111.23",
+      "cierre": "2026-11-14",
+      "postulacion": 98,
+      "pago": 107
+    },
+    {
+      "convocatoria": 10,
+      "convocatoria_modalidad": 15,
+      "modalidad": 8,
+      "tarifa": "222.34",
+      "cierre": "2026-11-13",
+      "postulacion": 99,
+      "pago": 108
+    },
+    {
+      "convocatoria": 11,
+      "convocatoria_modalidad": 16,
+      "modalidad": 8,
+      "tarifa": "333.45",
+      "cierre": "2026-11-12"
+    }
+  ],
+  "resultados": [
+    {
+      "caso": "antes del cierre",
+      "estado": "PASS",
+      "http": 200,
+      "tarifa": "111.23",
+      "contraste_sql": true,
+      "seconds": 3.393
+    },
+    {
+      "caso": "día exacto del cierre",
+      "estado": "PASS",
+      "http": 200,
+      "tarifa": "222.34",
+      "contraste_sql": true,
+      "seconds": 2.771
+    },
+    {
+      "caso": "después del cierre",
+      "estado": "PASS",
+      "http": 409,
+      "tarifa": "333.45",
+      "contraste_sql": true,
+      "seconds": 2.913
+    }
+  ]
+}

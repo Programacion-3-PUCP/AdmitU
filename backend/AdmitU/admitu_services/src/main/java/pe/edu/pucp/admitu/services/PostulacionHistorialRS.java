@@ -27,7 +27,7 @@ public class PostulacionHistorialRS {
     @POST
     @Path("insertarPostulacionHistorial")
     public int insertarPostulacionHistorial(PostulacionHistorial historial) {
-        return boHistorial.insertar(historial);
+        throw new ForbiddenException("El historial es de solo lectura");
     }
 
     @GET
@@ -39,12 +39,12 @@ public class PostulacionHistorialRS {
     @PUT
     @Path("modificarPostulacionHistorial")
     public int modificarPostulacionHistorial(PostulacionHistorial historial) {
-        return boHistorial.modificar(historial);
+        throw new ForbiddenException("El historial es de solo lectura");
     }
 
     @DELETE
     @Path("eliminarPostulacionHistorial/{id}")
     public int eliminarPostulacionHistorial(@PathParam("id") int idHistorial) {
-        return boHistorial.eliminar(idHistorial);
+        throw new ForbiddenException("El historial es de solo lectura");
     }
 }

@@ -17,6 +17,7 @@ public class DocumentoPostulacion {
     private TipoArchivo tipoArchivo;
     private long tamanioArchivo;
     private String rutaArchivo;
+    private boolean archivoActivo;
     private LocalDate fechaCarga;
     private EstadoDocumento estadoDocumento;
     private LocalDate fechaEvaluacion;
@@ -107,6 +108,10 @@ public class DocumentoPostulacion {
     public String getRutaArchivo() {
         return rutaArchivo;
     }
+
+    /** Evidencia de bytes persistidos y activos; las operaciones de escritura no aceptan este indicador. */
+    public boolean isArchivoActivo() { return archivoActivo; }
+    public void setArchivoActivo(boolean archivoActivo) { this.archivoActivo = archivoActivo; }
 
     public void setRutaArchivo(String rutaArchivo) {
         this.rutaArchivo = rutaArchivo;

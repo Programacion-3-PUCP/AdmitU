@@ -32,7 +32,7 @@ public class EvaluadorImpl implements EvaluadorDAO {
                 return evaluador.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR EVALUADOR: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR EVALUADOR: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -52,7 +52,7 @@ public class EvaluadorImpl implements EvaluadorDAO {
             cs.setString("_cargo", evaluador.getCargo());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR EVALUADOR: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR EVALUADOR: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -65,7 +65,7 @@ public class EvaluadorImpl implements EvaluadorDAO {
             cs.setInt("_id", idEvaluador);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR EVALUADOR: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR EVALUADOR: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -92,7 +92,7 @@ public class EvaluadorImpl implements EvaluadorDAO {
             }
             return evaluador;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR EVALUADOR: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR EVALUADOR: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -109,7 +109,7 @@ public class EvaluadorImpl implements EvaluadorDAO {
             }
             return evaluadores;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR EVALUADORES: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR EVALUADORES: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

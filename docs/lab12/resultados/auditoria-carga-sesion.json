@@ -1,0 +1,149 @@
+{
+  "entorno": "Cloud; HttpMessageHandler simulado, sin SQL ni GlassFish; no acredita RNF04",
+  "constructor_ms": 254.736,
+  "carga_ms": 472,
+  "peticiones": 18,
+  "maximo_en_vuelo": 6,
+  "resultados": [
+    {
+      "caso": "Constructor sin peticiones HTTP",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "La carga devuelve el control mientras espera E/S",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Una única carga compartida en el scope",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Carga asíncrona completa y vinculada a la identidad autenticada",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Concurrencia acotada y evaluadores no consultados por el postulante",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Scopes con identidades y colecciones separadas",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Avisos temporales no se comparten entre scopes",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Error de red visible y sin datos demostrativos",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: inscripción antes del cierre",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: cierre inclusivo el día límite de Lima",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: inscripción rechazada después del cierre",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: inscripción rechazada antes de apertura",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: borrador sin inscripciones",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: último segundo del día de Lima aunque UTC sea mañana",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02: medianoche de Lima termina inscripción",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H03/H09: carga de fixtures con fechas ausentes",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H03: misma modalidad y dos convocatorias conservan tarifas distintas",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H03: falta de tarifa no inventa S/350 ni costo de otra convocatoria",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H03: resumen presenta la tarifa del par seleccionado",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: ausencia de cronograma no produce fechas ni hitos ficticios",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H02/H09: cierre procede de fecha_fin sin restar quince días ni inventar evaluación",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: antecedente sin archivo/años/fecha conserva ausencia",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: fecha histórica ausente se conserva y DATE no se convierte a 10:00",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: historial muestra fecha sin hora inventada",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: fecha de nacimiento ausente no se sustituye por un cumpleaños ficticio",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: postulación histórica sin fechas conserva NULL",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: documento y observación sin fechas no aparecen cargados hoy",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: pago/voucher sin fecha o archivo conserva ausencia",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: pago vencido no se presenta como generado",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H09: carné sin metadatos no inventa emisión/vigencia/aula",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H01/H17: rechazo REST de edición conserva la observación en memoria",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H01: rechazo REST de aprobación conserva el documento en memoria",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H01: eliminación denegada conserva la observación visible",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H01: rechazo REST de validación conserva pago y voucher en memoria",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "H01: rechazo REST no modifica el voucher ni su motivo en memoria",
+      "resultado": "PASS"
+    }
+  ]
+}

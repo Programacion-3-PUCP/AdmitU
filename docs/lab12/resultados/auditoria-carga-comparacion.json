@@ -1,0 +1,78 @@
+{
+  "base_commit": "2ad401985177e8b26e16db4840c2e9c262cdb2b5",
+  "metodo": "HTTP simulado 30ms; cinco muestras tras una vuelta de calentamiento; no acredita RNF04",
+  "antes": {
+    "entorno": "Cloud, HTTP simulado con 30ms por respuesta; primera vuelta excluida; no prueba SQL/REST real ni RNF04",
+    "resultados": [
+      {
+        "constructor_ms": 661.753,
+        "carga_total_ms": 661.776,
+        "peticiones": 18,
+        "maximo_en_vuelo": 10
+      },
+      {
+        "constructor_ms": 539.72,
+        "carga_total_ms": 539.731,
+        "peticiones": 18,
+        "maximo_en_vuelo": 8
+      },
+      {
+        "constructor_ms": 470.192,
+        "carga_total_ms": 470.2,
+        "peticiones": 18,
+        "maximo_en_vuelo": 11
+      },
+      {
+        "constructor_ms": 374.568,
+        "carga_total_ms": 374.577,
+        "peticiones": 18,
+        "maximo_en_vuelo": 11
+      },
+      {
+        "constructor_ms": 611.008,
+        "carga_total_ms": 611.022,
+        "peticiones": 18,
+        "maximo_en_vuelo": 13
+      }
+    ],
+    "mediana_constructor_ms": 539.72,
+    "mediana_carga_total_ms": 539.731
+  },
+  "despues": {
+    "entorno": "Cloud, HTTP simulado con 30ms por respuesta; primera vuelta excluida; no prueba SQL/REST real ni RNF04",
+    "resultados": [
+      {
+        "constructor_ms": 3.02,
+        "carga_total_ms": 175.052,
+        "peticiones": 18,
+        "maximo_en_vuelo": 6
+      },
+      {
+        "constructor_ms": 0.404,
+        "carga_total_ms": 144.754,
+        "peticiones": 18,
+        "maximo_en_vuelo": 6
+      },
+      {
+        "constructor_ms": 0.697,
+        "carga_total_ms": 185.483,
+        "peticiones": 18,
+        "maximo_en_vuelo": 6
+      },
+      {
+        "constructor_ms": 0.671,
+        "carga_total_ms": 109.416,
+        "peticiones": 18,
+        "maximo_en_vuelo": 6
+      },
+      {
+        "constructor_ms": 1.828,
+        "carga_total_ms": 172.05,
+        "peticiones": 18,
+        "maximo_en_vuelo": 6
+      }
+    ],
+    "mediana_constructor_ms": 0.697,
+    "mediana_carga_total_ms": 172.05
+  }
+}

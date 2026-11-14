@@ -1,0 +1,2440 @@
+{
+  "environment": "Codex Cloud; clon MySQL propio; no WSL/AWS/base original",
+  "identities": {
+    "admin": 1,
+    "evaluadores": 2,
+    "postulantes": 2
+  },
+  "summary": {
+    "cases": 174,
+    "passed": 174,
+    "failed": 0,
+    "negative_http_sql": 74
+  },
+  "snapshot_tables": [
+    "antecedente_academico",
+    "apoderado",
+    "archivo_digital",
+    "carne_postulante",
+    "carrera",
+    "convocatoria",
+    "convocatoria_etapa",
+    "convocatoria_modalidad",
+    "convocatoria_postulante",
+    "documento_observacion",
+    "documento_postulacion",
+    "estado_postulacion",
+    "etapa",
+    "evaluador",
+    "facultad",
+    "institucion_educativa",
+    "modalidad",
+    "notificacion",
+    "oferta_carrera",
+    "pago",
+    "pais",
+    "persona",
+    "postulacion",
+    "postulacion_historial",
+    "postulante",
+    "requisito",
+    "requisito_convocatoria_modalidad",
+    "sede"
+  ],
+  "cases": [
+    {
+      "rf": "RF_04",
+      "case": "CRUD modalidad y reactivación persistente",
+      "status": "PASS",
+      "detail": {
+        "id": 15,
+        "CRUD_reactivacion": true
+      },
+      "seconds": 0.193
+    },
+    {
+      "rf": "RF_06",
+      "case": "CRUD carrera y reactivación persistente",
+      "status": "PASS",
+      "detail": {
+        "id": 25,
+        "CRUD_reactivacion": true
+      },
+      "seconds": 0.151
+    },
+    {
+      "rf": "RF_01",
+      "case": "CRUD convocatoria y baja borrador",
+      "status": "PASS",
+      "detail": {
+        "convocatoria": 36,
+        "borrador_baja": 37
+      },
+      "seconds": 0.116
+    },
+    {
+      "rf": "RF_07",
+      "case": "configurar requisito obligatorio y oferta",
+      "status": "PASS",
+      "detail": {
+        "asociacion": 45
+      },
+      "seconds": 0.124
+    },
+    {
+      "rf": "RF_02",
+      "case": "registro con contraseña y perfil durable",
+      "status": "PASS",
+      "detail": {
+        "persona": 147,
+        "perfil_durable": true
+      },
+      "seconds": 0.38
+    },
+    {
+      "rf": "RNF_05",
+      "case": "rollback envío sin documento obligatorio",
+      "status": "PASS",
+      "detail": {
+        "postulaciones": 0,
+        "pagos": 0
+      },
+      "seconds": 0.106
+    },
+    {
+      "rf": "O3_O7",
+      "case": "dos POST concurrentes una postulación y un pago",
+      "status": "PASS",
+      "detail": {
+        "HTTP": [
+          409,
+          200
+        ],
+        "postulacion": 127,
+        "pagos": 1
+      },
+      "seconds": 0.214
+    },
+    {
+      "rf": "O7",
+      "case": "otra carrera y otro código en misma convocatoria rechazados",
+      "status": "PASS",
+      "detail": {
+        "http": 409,
+        "carrera_y_codigo_distintos": true,
+        "postulaciones": 1,
+        "pagos": 1
+      },
+      "seconds": 0.144
+    },
+    {
+      "case": "Listado admin completo Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fixtures": 2
+      }
+    },
+    {
+      "case": "Listado anonimo Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador1 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 8,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador1 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "antecedentes",
+          "apellidoMaterno",
+          "apellidoPaterno",
+          "correo",
+          "correoValidado",
+          "fechaNacimiento",
+          "id",
+          "nombres",
+          "numeroCarnetConadis",
+          "numeroDocumento",
+          "postulaciones",
+          "telefono",
+          "tieneDiscapacidad",
+          "tipoDocumento"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante1 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "antecedentes",
+          "apellidoMaterno",
+          "apellidoPaterno",
+          "correo",
+          "correoValidado",
+          "fechaNacimiento",
+          "id",
+          "nombres",
+          "numeroCarnetConadis",
+          "numeroDocumento",
+          "postulaciones",
+          "telefono",
+          "tieneDiscapacidad",
+          "tipoDocumento"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular1 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "antecedentes",
+          "apellidoMaterno",
+          "apellidoPaterno",
+          "correo",
+          "correoValidado",
+          "fechaNacimiento",
+          "id",
+          "nombres",
+          "numeroCarnetConadis",
+          "numeroDocumento",
+          "postulaciones",
+          "telefono",
+          "tieneDiscapacidad",
+          "tipoDocumento"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador2 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante2 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular1 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador2 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 4,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador2 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "antecedentes",
+          "apellidoMaterno",
+          "apellidoPaterno",
+          "correo",
+          "correoValidado",
+          "fechaNacimiento",
+          "id",
+          "nombres",
+          "numeroCarnetConadis",
+          "numeroDocumento",
+          "postulaciones",
+          "telefono",
+          "tieneDiscapacidad",
+          "tipoDocumento"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante2 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "antecedentes",
+          "apellidoMaterno",
+          "apellidoPaterno",
+          "correo",
+          "correoValidado",
+          "fechaNacimiento",
+          "id",
+          "nombres",
+          "numeroCarnetConadis",
+          "numeroDocumento",
+          "postulaciones",
+          "telefono",
+          "tieneDiscapacidad",
+          "tipoDocumento"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular2 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "antecedentes",
+          "apellidoMaterno",
+          "apellidoPaterno",
+          "correo",
+          "correoValidado",
+          "fechaNacimiento",
+          "id",
+          "nombres",
+          "numeroCarnetConadis",
+          "numeroDocumento",
+          "postulaciones",
+          "telefono",
+          "tieneDiscapacidad",
+          "tipoDocumento"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador1 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante1 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular2 Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado admin completo AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fixtures": 2
+      }
+    },
+    {
+      "case": "Listado anonimo AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador1 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 4,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador1 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "activo",
+          "anioFin",
+          "anioInicio",
+          "descripcion",
+          "id",
+          "institucion",
+          "postulante"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante1 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "activo",
+          "anioFin",
+          "anioInicio",
+          "descripcion",
+          "id",
+          "institucion",
+          "postulante"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular1 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "activo",
+          "anioFin",
+          "anioInicio",
+          "descripcion",
+          "id",
+          "institucion",
+          "postulante"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador2 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante2 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular1 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador2 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 2,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador2 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "activo",
+          "anioFin",
+          "anioInicio",
+          "descripcion",
+          "id",
+          "institucion",
+          "postulante"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante2 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "activo",
+          "anioFin",
+          "anioInicio",
+          "descripcion",
+          "id",
+          "institucion",
+          "postulante"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular2 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "activo",
+          "anioFin",
+          "anioInicio",
+          "descripcion",
+          "id",
+          "institucion",
+          "postulante"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador1 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante1 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular2 AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado admin completo Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fixtures": 2
+      }
+    },
+    {
+      "case": "Listado anonimo Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador1 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 8,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador1 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "carreraElegida",
+          "codigoInscripcion",
+          "convocatoria",
+          "documentos",
+          "estadoActual",
+          "evaluadorId",
+          "fechaEnvio",
+          "fechaFinalizacion",
+          "fechaRegistro",
+          "historial",
+          "id",
+          "modalidadElegida",
+          "notificaciones",
+          "observacionGeneral",
+          "pagos",
+          "postulante",
+          "sedeId"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante1 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "carreraElegida",
+          "codigoInscripcion",
+          "convocatoria",
+          "documentos",
+          "estadoActual",
+          "evaluadorId",
+          "fechaEnvio",
+          "fechaFinalizacion",
+          "fechaRegistro",
+          "historial",
+          "id",
+          "modalidadElegida",
+          "notificaciones",
+          "observacionGeneral",
+          "pagos",
+          "postulante",
+          "sedeId"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular1 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "carreraElegida",
+          "codigoInscripcion",
+          "convocatoria",
+          "documentos",
+          "estadoActual",
+          "evaluadorId",
+          "fechaEnvio",
+          "fechaFinalizacion",
+          "fechaRegistro",
+          "historial",
+          "id",
+          "modalidadElegida",
+          "notificaciones",
+          "observacionGeneral",
+          "pagos",
+          "postulante",
+          "sedeId"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador2 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante2 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular1 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador2 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 4,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador2 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "carreraElegida",
+          "codigoInscripcion",
+          "convocatoria",
+          "documentos",
+          "estadoActual",
+          "evaluadorId",
+          "fechaEnvio",
+          "fechaFinalizacion",
+          "fechaRegistro",
+          "historial",
+          "id",
+          "modalidadElegida",
+          "notificaciones",
+          "observacionGeneral",
+          "pagos",
+          "postulante",
+          "sedeId"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante2 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "carreraElegida",
+          "codigoInscripcion",
+          "convocatoria",
+          "documentos",
+          "estadoActual",
+          "evaluadorId",
+          "fechaEnvio",
+          "fechaFinalizacion",
+          "fechaRegistro",
+          "historial",
+          "id",
+          "modalidadElegida",
+          "notificaciones",
+          "observacionGeneral",
+          "pagos",
+          "postulante",
+          "sedeId"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular2 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "carreraElegida",
+          "codigoInscripcion",
+          "convocatoria",
+          "documentos",
+          "estadoActual",
+          "evaluadorId",
+          "fechaEnvio",
+          "fechaFinalizacion",
+          "fechaRegistro",
+          "historial",
+          "id",
+          "modalidadElegida",
+          "notificaciones",
+          "observacionGeneral",
+          "pagos",
+          "postulante",
+          "sedeId"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador1 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante1 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular2 Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado admin completo Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fixtures": 2
+      }
+    },
+    {
+      "case": "Listado anonimo Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador1 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 8,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador1 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "codigoPago",
+          "estadoPago",
+          "fechaGeneracion",
+          "fechaPago",
+          "id",
+          "medioPago",
+          "monto",
+          "postulacion",
+          "referenciaPasarela",
+          "rutaVoucher"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante1 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "codigoPago",
+          "estadoPago",
+          "fechaGeneracion",
+          "fechaPago",
+          "id",
+          "medioPago",
+          "monto",
+          "postulacion",
+          "referenciaPasarela",
+          "rutaVoucher"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular1 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "codigoPago",
+          "estadoPago",
+          "fechaGeneracion",
+          "fechaPago",
+          "id",
+          "medioPago",
+          "monto",
+          "postulacion",
+          "referenciaPasarela",
+          "rutaVoucher"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador2 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante2 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular1 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador2 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 4,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador2 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "codigoPago",
+          "estadoPago",
+          "fechaGeneracion",
+          "fechaPago",
+          "id",
+          "medioPago",
+          "monto",
+          "postulacion",
+          "referenciaPasarela",
+          "rutaVoucher"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante2 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "codigoPago",
+          "estadoPago",
+          "fechaGeneracion",
+          "fechaPago",
+          "id",
+          "medioPago",
+          "monto",
+          "postulacion",
+          "referenciaPasarela",
+          "rutaVoucher"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular2 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "codigoPago",
+          "estadoPago",
+          "fechaGeneracion",
+          "fechaPago",
+          "id",
+          "medioPago",
+          "monto",
+          "postulacion",
+          "referenciaPasarela",
+          "rutaVoucher"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador1 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante1 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular2 Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado admin completo DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fixtures": 2
+      }
+    },
+    {
+      "case": "Listado anonimo DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador1 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 11,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador1 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "archivoActivo",
+          "estadoDocumento",
+          "fechaCarga",
+          "fechaEvaluacion",
+          "id",
+          "nombreArchivo",
+          "numeroVersion",
+          "observaciones",
+          "postulacion",
+          "requisitoAplicable",
+          "rutaArchivo",
+          "tamanioArchivo",
+          "tipoArchivo"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante1 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "archivoActivo",
+          "estadoDocumento",
+          "fechaCarga",
+          "fechaEvaluacion",
+          "id",
+          "nombreArchivo",
+          "numeroVersion",
+          "observaciones",
+          "postulacion",
+          "requisitoAplicable",
+          "rutaArchivo",
+          "tamanioArchivo",
+          "tipoArchivo"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular1 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "archivoActivo",
+          "estadoDocumento",
+          "fechaCarga",
+          "fechaEvaluacion",
+          "id",
+          "nombreArchivo",
+          "numeroVersion",
+          "observaciones",
+          "postulacion",
+          "requisitoAplicable",
+          "rutaArchivo",
+          "tamanioArchivo",
+          "tipoArchivo"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador2 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante2 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular1 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador2 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 4,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador2 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "archivoActivo",
+          "estadoDocumento",
+          "fechaCarga",
+          "fechaEvaluacion",
+          "id",
+          "nombreArchivo",
+          "numeroVersion",
+          "observaciones",
+          "postulacion",
+          "requisitoAplicable",
+          "rutaArchivo",
+          "tamanioArchivo",
+          "tipoArchivo"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante2 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "archivoActivo",
+          "estadoDocumento",
+          "fechaCarga",
+          "fechaEvaluacion",
+          "id",
+          "nombreArchivo",
+          "numeroVersion",
+          "observaciones",
+          "postulacion",
+          "requisitoAplicable",
+          "rutaArchivo",
+          "tamanioArchivo",
+          "tipoArchivo"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular2 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "archivoActivo",
+          "estadoDocumento",
+          "fechaCarga",
+          "fechaEvaluacion",
+          "id",
+          "nombreArchivo",
+          "numeroVersion",
+          "observaciones",
+          "postulacion",
+          "requisitoAplicable",
+          "rutaArchivo",
+          "tamanioArchivo",
+          "tipoArchivo"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador1 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante1 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular2 DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado admin completo DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fixtures": 2
+      }
+    },
+    {
+      "case": "Listado anonimo DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador1 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 7,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador1 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "descripcion",
+          "documento",
+          "estadoObservacion",
+          "evaluador",
+          "fechaObservacion",
+          "id",
+          "tipoObservacion"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante1 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "descripcion",
+          "documento",
+          "estadoObservacion",
+          "evaluador",
+          "fechaObservacion",
+          "id",
+          "tipoObservacion"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular1 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "descripcion",
+          "documento",
+          "estadoObservacion",
+          "evaluador",
+          "fechaObservacion",
+          "id",
+          "tipoObservacion"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador2 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante2 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular1 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador2 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 2,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador2 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "descripcion",
+          "documento",
+          "estadoObservacion",
+          "evaluador",
+          "fechaObservacion",
+          "id",
+          "tipoObservacion"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante2 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "descripcion",
+          "documento",
+          "estadoObservacion",
+          "evaluador",
+          "fechaObservacion",
+          "id",
+          "tipoObservacion"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular2 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "descripcion",
+          "documento",
+          "estadoObservacion",
+          "evaluador",
+          "fechaObservacion",
+          "id",
+          "tipoObservacion"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador1 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante1 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular2 DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado admin completo PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fixtures": 2
+      }
+    },
+    {
+      "case": "Listado anonimo PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador1 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 28,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador1 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "estadoActual",
+          "fechaCambio",
+          "id",
+          "motivoCambio",
+          "postulacion",
+          "responsableCambio"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante1 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "estadoActual",
+          "fechaCambio",
+          "id",
+          "motivoCambio",
+          "postulacion",
+          "responsableCambio"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular1 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "estadoActual",
+          "fechaCambio",
+          "id",
+          "motivoCambio",
+          "postulacion",
+          "responsableCambio"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador2 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante2 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular1 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador2 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 10,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador2 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "estadoActual",
+          "fechaCambio",
+          "id",
+          "motivoCambio",
+          "postulacion",
+          "responsableCambio"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante2 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "estadoActual",
+          "fechaCambio",
+          "id",
+          "motivoCambio",
+          "postulacion",
+          "responsableCambio"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular2 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "estadoActual",
+          "fechaCambio",
+          "id",
+          "motivoCambio",
+          "postulacion",
+          "responsableCambio"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador1 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante1 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular2 PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado admin completo CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fixtures": 2
+      }
+    },
+    {
+      "case": "Listado anonimo CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador1 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 6,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador1 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "aulaExamen",
+          "codigoCarne",
+          "fechaFinVigencia",
+          "fechaGeneracion",
+          "fechaInicioVigencia",
+          "id",
+          "postulacion",
+          "sede"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante1 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "aulaExamen",
+          "codigoCarne",
+          "fechaFinVigencia",
+          "fechaGeneracion",
+          "fechaInicioVigencia",
+          "id",
+          "postulacion",
+          "sede"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular1 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "aulaExamen",
+          "codigoCarne",
+          "fechaFinVigencia",
+          "fechaGeneracion",
+          "fechaInicioVigencia",
+          "id",
+          "postulacion",
+          "sede"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador2 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante2 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular1 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listado asignado evaluador2 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "rows": 2,
+        "sql_scope_exact": true,
+        "foreign_private_values_absent": true
+      }
+    },
+    {
+      "case": "ID asignado evaluador2 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "aulaExamen",
+          "codigoCarne",
+          "fechaFinVigencia",
+          "fechaGeneracion",
+          "fechaInicioVigencia",
+          "id",
+          "postulacion",
+          "sede"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID propio postulante2 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "aulaExamen",
+          "codigoCarne",
+          "fechaFinVigencia",
+          "fechaGeneracion",
+          "fechaInicioVigencia",
+          "id",
+          "postulacion",
+          "sede"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID admin titular2 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "aulaExamen",
+          "codigoCarne",
+          "fechaFinVigencia",
+          "fechaGeneracion",
+          "fechaInicioVigencia",
+          "id",
+          "postulacion",
+          "sede"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "ID ajeno evaluador1 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID ajeno postulante1 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "ID anonimo titular2 CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Resumen global DTO admin",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "expedientes": 110,
+        "both_assignment_summaries": true,
+        "expediente_keys_allowlist": [
+          "carreraElegidaId",
+          "codigoInscripcion",
+          "convocatoriaId",
+          "estadoActualId",
+          "evaluadorId",
+          "fechaEnvio",
+          "fechaFinalizacion",
+          "fechaRegistro",
+          "id",
+          "modalidadElegidaId",
+          "observaciones"
+        ],
+        "observacion_keys_allowlist": [
+          "estadoObservacion",
+          "evaluadorId",
+          "fechaObservacion",
+          "fechaSubsanacion",
+          "id",
+          "postulacionId",
+          "requisitoAplicableId",
+          "tipoObservacion"
+        ],
+        "private_values_absent": true,
+        "no_nested_domain_entities": true
+      }
+    },
+    {
+      "case": "Resumen global DTO evaluador",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "expedientes": 110,
+        "both_assignment_summaries": true,
+        "expediente_keys_allowlist": [
+          "carreraElegidaId",
+          "codigoInscripcion",
+          "convocatoriaId",
+          "estadoActualId",
+          "evaluadorId",
+          "fechaEnvio",
+          "fechaFinalizacion",
+          "fechaRegistro",
+          "id",
+          "modalidadElegidaId",
+          "observaciones"
+        ],
+        "observacion_keys_allowlist": [
+          "estadoObservacion",
+          "evaluadorId",
+          "fechaObservacion",
+          "fechaSubsanacion",
+          "id",
+          "postulacionId",
+          "requisitoAplicableId",
+          "tipoObservacion"
+        ],
+        "private_values_absent": true,
+        "no_nested_domain_entities": true
+      }
+    },
+    {
+      "case": "Resumen global DTO evaluador2",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "expedientes": 110,
+        "both_assignment_summaries": true,
+        "expediente_keys_allowlist": [
+          "carreraElegidaId",
+          "codigoInscripcion",
+          "convocatoriaId",
+          "estadoActualId",
+          "evaluadorId",
+          "fechaEnvio",
+          "fechaFinalizacion",
+          "fechaRegistro",
+          "id",
+          "modalidadElegidaId",
+          "observaciones"
+        ],
+        "observacion_keys_allowlist": [
+          "estadoObservacion",
+          "evaluadorId",
+          "fechaObservacion",
+          "fechaSubsanacion",
+          "id",
+          "postulacionId",
+          "requisitoAplicableId",
+          "tipoObservacion"
+        ],
+        "private_values_absent": true,
+        "no_nested_domain_entities": true
+      }
+    },
+    {
+      "case": "Resumen global anonimo",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Resumen global postulante1",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Evaluador propio 1",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "own_evaluator_only": true
+      }
+    },
+    {
+      "case": "Evaluador no consulta otro evaluador 1",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Resumen global postulante2",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Evaluador propio 2",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "own_evaluator_only": true
+      }
+    },
+    {
+      "case": "Evaluador no consulta otro evaluador 2",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "sql_after": "6a3bca4181f77078034b6d1d7de2a470e010c255c6d40f0d663c89597eeadbcd",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Mismo titular no habilita pago de otro expediente sin asignar",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "0d8f92c9fef5ce4b869fcf6194633a46b79db275c909fa7cd7a638c708bc1300",
+        "sql_after": "0d8f92c9fef5ce4b869fcf6194633a46b79db275c909fa7cd7a638c708bc1300",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Mismo titular no habilita expediente sin asignar",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "0d8f92c9fef5ce4b869fcf6194633a46b79db275c909fa7cd7a638c708bc1300",
+        "sql_after": "0d8f92c9fef5ce4b869fcf6194633a46b79db275c909fa7cd7a638c708bc1300",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Listas no amplian alcance por compartir titular",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "same_owner_does_not_expand_expediente_scope": true,
+        "assigned_profile_remains_accessible": true
+      }
+    },
+    {
+      "case": "PDF evaluador1 sin texto titular2",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "bytes": 20744,
+        "role_scope": "asignacion_actual",
+        "private_text_not_published": true
+      }
+    },
+    {
+      "case": "PDF evaluador2 sin texto titular1",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "bytes": 21071,
+        "role_scope": "asignacion_actual",
+        "private_text_not_published": true
+      }
+    },
+    {
+      "case": "PDF admin conserva ambos titulares",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "bytes": 21140,
+        "role_scope": "admin_global",
+        "private_text_not_published": true
+      }
+    },
+    {
+      "case": "PDF observado anonimo denegado",
+      "status": "PASS",
+      "detail": {
+        "http": 401,
+        "sql_before": "0d8f92c9fef5ce4b869fcf6194633a46b79db275c909fa7cd7a638c708bc1300",
+        "sql_after": "0d8f92c9fef5ce4b869fcf6194633a46b79db275c909fa7cd7a638c708bc1300",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "PDF observado postulante1 denegado",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "0d8f92c9fef5ce4b869fcf6194633a46b79db275c909fa7cd7a638c708bc1300",
+        "sql_after": "0d8f92c9fef5ce4b869fcf6194633a46b79db275c909fa7cd7a638c708bc1300",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "PDF observado postulante2 denegado",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "0d8f92c9fef5ce4b869fcf6194633a46b79db275c909fa7cd7a638c708bc1300",
+        "sql_after": "0d8f92c9fef5ce4b869fcf6194633a46b79db275c909fa7cd7a638c708bc1300",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Revocacion ID Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "sql_after": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Nuevo asignado ID Postulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "antecedentes",
+          "apellidoMaterno",
+          "apellidoPaterno",
+          "correo",
+          "correoValidado",
+          "fechaNacimiento",
+          "id",
+          "nombres",
+          "numeroCarnetConadis",
+          "numeroDocumento",
+          "postulaciones",
+          "telefono",
+          "tieneDiscapacidad",
+          "tipoDocumento"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "Revocacion ID AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "sql_after": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Nuevo asignado ID AntecedenteAcademico",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "activo",
+          "anioFin",
+          "anioInicio",
+          "descripcion",
+          "id",
+          "institucion",
+          "postulante"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "Revocacion ID Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "sql_after": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Nuevo asignado ID Postulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "carreraElegida",
+          "codigoInscripcion",
+          "convocatoria",
+          "documentos",
+          "estadoActual",
+          "evaluadorId",
+          "fechaEnvio",
+          "fechaFinalizacion",
+          "fechaRegistro",
+          "historial",
+          "id",
+          "modalidadElegida",
+          "notificaciones",
+          "observacionGeneral",
+          "pagos",
+          "postulante",
+          "sedeId"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "Revocacion ID Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "sql_after": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Nuevo asignado ID Pago",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "codigoPago",
+          "estadoPago",
+          "fechaGeneracion",
+          "fechaPago",
+          "id",
+          "medioPago",
+          "monto",
+          "postulacion",
+          "referenciaPasarela",
+          "rutaVoucher"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "Revocacion ID DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "sql_after": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Nuevo asignado ID DocumentoPostulacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "archivoActivo",
+          "estadoDocumento",
+          "fechaCarga",
+          "fechaEvaluacion",
+          "id",
+          "nombreArchivo",
+          "numeroVersion",
+          "observaciones",
+          "postulacion",
+          "requisitoAplicable",
+          "rutaArchivo",
+          "tamanioArchivo",
+          "tipoArchivo"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "Revocacion ID DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "sql_after": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Nuevo asignado ID DocumentoObservacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "descripcion",
+          "documento",
+          "estadoObservacion",
+          "evaluador",
+          "fechaObservacion",
+          "id",
+          "tipoObservacion"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "Revocacion ID PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "sql_after": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Nuevo asignado ID PostulacionHistorial",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "estadoActual",
+          "fechaCambio",
+          "id",
+          "motivoCambio",
+          "postulacion",
+          "responsableCambio"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "Revocacion ID CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 403,
+        "sql_before": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "sql_after": "4abc76376c5bff5f6f7971160b5e01a7b8e44a17f8e667ef1713c44b63f4fe10",
+        "unchanged": true
+      }
+    },
+    {
+      "case": "Nuevo asignado ID CarnePostulante",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "fields": [
+          "aulaExamen",
+          "codigoCarne",
+          "fechaFinVigencia",
+          "fechaGeneracion",
+          "fechaInicioVigencia",
+          "id",
+          "postulacion",
+          "sede"
+        ],
+        "private_values_not_published": true
+      }
+    },
+    {
+      "case": "Resumen global persiste sin asignacion",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "expedientes": 111,
+        "both_assignment_summaries": true,
+        "expediente_keys_allowlist": [
+          "carreraElegidaId",
+          "codigoInscripcion",
+          "convocatoriaId",
+          "estadoActualId",
+          "evaluadorId",
+          "fechaEnvio",
+          "fechaFinalizacion",
+          "fechaRegistro",
+          "id",
+          "modalidadElegidaId",
+          "observaciones"
+        ],
+        "observacion_keys_allowlist": [
+          "estadoObservacion",
+          "evaluadorId",
+          "fechaObservacion",
+          "fechaSubsanacion",
+          "id",
+          "postulacionId",
+          "requisitoAplicableId",
+          "tipoObservacion"
+        ],
+        "private_values_absent": true,
+        "no_nested_domain_entities": true
+      }
+    },
+    {
+      "case": "PDF revocado no contiene ambos titulares",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "bytes": 19486,
+        "role_scope": "asignacion_actual",
+        "private_text_not_published": true
+      }
+    },
+    {
+      "case": "PDF nuevo asignado contiene ambos titulares",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "bytes": 21150,
+        "role_scope": "asignacion_actual",
+        "private_text_not_published": true
+      }
+    }
+  ]
+}

@@ -8,7 +8,7 @@
 
 <PageHeader Titulo="Nueva postulación" Subtitulo="@(conv is null ? "" : $"{conv.Nombre} · completa los cuatro pasos; puedes volver atrás para corregir.")" Migas="@(["Mi postulación", "Nueva"])" Enlaces="@(["/postulante/mi-postulacion"])" />
 
-@if (conv is null || conv.Estado != EstadoConvocatoria.Publicada)
+@if (conv is null || !Datos.InscripcionesAbiertas(conv))
 {
     <section class="card"><EmptyState Icono="calendar" Titulo="Inscripciones cerradas" Mensaje="Esta convocatoria no está recibiendo postulaciones.">
         <a class="btn btn-primary empty-cta" href="/postulante/convocatorias">Ver convocatorias</a>
@@ -95,7 +95,7 @@ else
                     <div><span>Sede</span><strong>@Datos.Sede(sedeId)?.Nombre</strong></div>
                     <div><span>Documentos</span><strong>@archivos.Count de @requisitos.Count</strong></div>
                 </div>
-                <div class="pay-total"><span>Derecho de inscripción<br /><small>Pago por transferencia</small></span><strong>@Formato.Soles(modalidad?.DerechoInscripcion ?? 0)</strong></div>
+                <div class="pay-total"><span>Derecho de inscripción<br /><small>Pago por transferencia</small></span><strong>@Datos.TarifaInscripcionTexto(conv.Id, modalidadId)</strong></div>
             </div>
             <label class="switch" style="margin-top:20px">
                 <input type="checkbox" @bind="acepta" />

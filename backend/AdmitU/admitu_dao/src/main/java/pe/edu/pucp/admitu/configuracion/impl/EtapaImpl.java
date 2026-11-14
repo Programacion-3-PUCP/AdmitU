@@ -28,7 +28,7 @@ public class EtapaImpl implements EtapaDAO {
                 return etapa.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR ETAPA: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR ETAPA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -46,7 +46,7 @@ public class EtapaImpl implements EtapaDAO {
             cs.setString("_descripcion", etapa.getDescripcion());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR ETAPA: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR ETAPA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -59,7 +59,7 @@ public class EtapaImpl implements EtapaDAO {
             cs.setInt("_id", idEtapa);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR ETAPA: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR ETAPA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -86,7 +86,7 @@ public class EtapaImpl implements EtapaDAO {
             }
             return etapa;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR ETAPA: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR ETAPA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -103,7 +103,7 @@ public class EtapaImpl implements EtapaDAO {
             }
             return etapas;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR ETAPAS: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR ETAPAS: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

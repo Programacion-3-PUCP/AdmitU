@@ -19,7 +19,7 @@
     <Encabezado><th>Fecha</th><th>Postulación</th><th>Estado anterior</th><th>Estado nuevo</th><th>Responsable</th><th>Motivo</th></Encabezado>
     <Fila Context="m">
         <tr>
-            <td>@Formato.FechaHora(m.Fecha)</td>
+            <td>@Formato.Fecha(m.Fecha)</td>
             <td><a class="mono" href="/admin/postulaciones/@m.PostulacionId">@Datos.Postulacion(m.PostulacionId)?.Codigo</a><span class="cell-sub">@Datos.PersonaDePostulacion(m.PostulacionId)?.NombreCompleto</span></td>
             <td>@(m.Anterior is { } a ? a.Etiqueta() : "—")</td>
             <td><StatusBadge Texto="@m.Nuevo.Etiqueta()" Tono="@m.Nuevo.Tono()" /></td>

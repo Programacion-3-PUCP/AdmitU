@@ -10,7 +10,7 @@
     <Encabezado><th>Fecha</th><th>Postulación</th><th>Postulante</th><th>Decisión</th><th>Comentario</th><th class="th-actions">Acciones</th></Encabezado>
     <Fila Context="m">
         <tr>
-            <td>@Formato.FechaHora(m.Fecha)</td>
+            <td>@Formato.Fecha(m.Fecha)</td>
             <td><span class="mono">@Datos.Postulacion(m.PostulacionId)?.Codigo</span></td>
             <td>@Datos.PersonaDePostulacion(m.PostulacionId)?.NombreCompleto</td>
             <td><StatusBadge Texto="@m.Nuevo.Etiqueta()" Tono="@m.Nuevo.Tono()" /></td>
@@ -27,7 +27,9 @@
     {
         var yo = Datos.EvaluadorActual;
         decisiones = Datos.Historial
-            .Where(m => m.Responsable == yo.Nombre && m.Nuevo is EstadoPostulacion.Apta or EstadoPostulacion.NoApta or EstadoPostulacion.Observada)
+            .Where(m => (m.Responsable == yo.Nombre
+                || m.Responsable.StartsWith($"evaluador:{yo.Id} cuenta:", StringComparison.Ordinal))
+                && m.Nuevo is EstadoPostulacion.Apta or EstadoPostulacion.NoApta or EstadoPostulacion.Observada)
             .OrderByDescending(m => m.Fecha).ToList();
     }
 }

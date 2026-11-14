@@ -25,7 +25,7 @@ public class OfertaCarreraImpl implements OfertaCarreraDAO {
                 return oferta.getId();
             }
         } catch (Exception ex) {
-            System.out.println("ERROR AL INSERTAR OFERTA CARRERA: " + ex.getMessage());
+            System.err.println("ERROR AL INSERTAR OFERTA CARRERA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -41,7 +41,7 @@ public class OfertaCarreraImpl implements OfertaCarreraDAO {
             cs.setInt("_cantidad_vacantes", oferta.getCantidadVacantes());
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL MODIFICAR OFERTA CARRERA: " + ex.getMessage());
+            System.err.println("ERROR AL MODIFICAR OFERTA CARRERA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -54,7 +54,7 @@ public class OfertaCarreraImpl implements OfertaCarreraDAO {
             cs.setInt("_id", idOferta);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.out.println("ERROR AL ELIMINAR OFERTA CARRERA: " + ex.getMessage());
+            System.err.println("ERROR AL ELIMINAR OFERTA CARRERA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -85,7 +85,7 @@ public class OfertaCarreraImpl implements OfertaCarreraDAO {
             }
             return oferta;
         } catch (Exception ex) {
-            System.out.println("ERROR AL BUSCAR OFERTA CARRERA: " + ex.getMessage());
+            System.err.println("ERROR AL BUSCAR OFERTA CARRERA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }
@@ -102,7 +102,7 @@ public class OfertaCarreraImpl implements OfertaCarreraDAO {
             }
             return ofertas;
         } catch (Exception ex) {
-            System.out.println("ERROR AL LISTAR OFERTAS CARRERA: " + ex.getMessage());
+            System.err.println("ERROR AL LISTAR OFERTAS CARRERA: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
             throw new RuntimeException(ex);
         }
     }

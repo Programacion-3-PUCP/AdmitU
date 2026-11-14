@@ -1,0 +1,62 @@
+{
+  "entorno": "Cloud; modelos reales C# .NET 10, sin WSL ni AWS",
+  "total": 14,
+  "resultados": [
+    {
+      "caso": "Un documento aprobado no satisface un segundo requisito obligatorio",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "El nombre y la ruta hist\u00F3ricos no prueban bytes activos",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Todos los requisitos obligatorios con bytes activos aprobados",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Un requisito opcional pendiente no bloquea la regla SQL",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Un archivo de otra postulaci\u00F3n no completa el expediente",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Los bytes de un documento observado no equivalen a aprobaci\u00F3n",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Desactivar el cat\u00E1logo no anula una asociaci\u00F3n obligatoria vigente en SQL",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "El requisito de otra convocatoria no cambia el resultado",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Una modalidad sin requisitos obligatorios satisface la guarda SQL",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "APTA, FINALIZADA y ADMITIDA son estados favorables",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "NO_ADMITIDA, NO_APTA y ANULADA quedan excluidas de aptos",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Un estado sin fecha de env\u00EDo no acredita una postulaci\u00F3n enviada",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "La fecha persistida acredita el env\u00EDo",
+      "resultado": "PASS"
+    },
+    {
+      "caso": "Un borrador nunca cuenta como enviado",
+      "resultado": "PASS"
+    }
+  ]
+}
