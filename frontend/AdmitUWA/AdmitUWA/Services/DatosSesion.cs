@@ -41,6 +41,14 @@ public sealed partial class DatosSesion
     // nunca las listas ni la identidad de otro usuario.
     public Task InicializarAsync() => _inicializacion ??= InicializarSesionAsync();
 
+    public async Task RecargarSesionAsync()
+    {
+        ErrorCarga = null;
+        CargaCompletada = false;
+        _inicializacion = InicializarSesionAsync();
+        await _inicializacion;
+    }
+
     private async Task InicializarSesionAsync()
     {
         try
@@ -234,7 +242,8 @@ public sealed partial class DatosSesion
         foreach (var rcm in rcmDtos)
         {
             var cm = _convModalidades.FirstOrDefault(x => x.Id == rcm.ConvocatoriaModalidad?.Id);
-            var reqBase = rcm.Requisito ?? _requisitosBaseDto.FirstOrDefault(x => x.Id == rcm.Requisito?.Id);
+            var reqBase = _requisitosBaseDto.FirstOrDefault(x => x.Id == rcm.Requisito?.Id) ?? rcm.Requisito;
+            int maxBytes = reqBase?.TamanioMaximoBytes > 0 ? reqBase.TamanioMaximoBytes : 5242880;
             Requisitos.Add(new RequisitoAplicable
             {
                 Id = rcm.Id,
@@ -244,6 +253,7 @@ public sealed partial class DatosSesion
                 ModalidadId = cm?.Modalidad?.Id ?? 1,
                 Nombre = reqBase?.Nombre ?? "Documento requerido",
                 Formato = MapFormatoArchivo(reqBase?.TipoArchivoRequerido),
+                MaximoMb = Math.Max(1, (int)Math.Ceiling(maxBytes / (1024.0 * 1024.0))),
                 Obligatorio = rcm.Obligatorio,
                 OrdenPresentacion = rcm.OrdenPresentacion ?? 1,
                 Activo = reqBase?.Activo ?? true
@@ -702,9 +712,10 @@ public sealed partial class DatosSesion
                 FechaNacimiento = nuevo.FechaNacimiento,
                 TieneDiscapacidad = nuevo.TieneDiscapacidad,
                 NumeroCarnetConadis = nuevo.CarnetConadis,
-                CorreoValidado = false
+                CorreoValidado = true
             };
             nuevo.Id = _api.RegistrarCuentaAsync(dto, clave).GetAwaiter().GetResult();
+            nuevo.CorreoValidado = true;
         }
         if (nuevo.Id <= 0) nuevo.Id = SiguienteId(Postulantes, x => x.Id);
         Postulantes.Add(nuevo);
@@ -1158,7 +1169,10 @@ public sealed partial class DatosSesion
         if (_api is null || r.RequisitoId <= 0) throw new InvalidOperationException("Requisito no disponible");
         if (activo) _api.Reactivar("RequisitoRS", r.RequisitoId);
         else if (!_api.Eliminar("RequisitoRS", r.RequisitoId)) throw new InvalidOperationException("No se pudo dar de baja");
-        r.Activo = activo;
+        foreach (var item in Requisitos.Where(x => x.RequisitoId == r.RequisitoId))
+            item.Activo = activo;
+        foreach (var dto in _requisitosBaseDto.Where(x => x.Id == r.RequisitoId))
+            dto.Activo = activo;
         Avisar();
     }
 
@@ -1194,7 +1208,7 @@ public sealed partial class DatosSesion
     }
 
     // ---- Evaluadores --------------------------------------------------------
-    public void GuardarEvaluador(Evaluador modelo)
+    public void GuardarEvaluador(Evaluador modelo, string? clave = null)
     {
         var partes = modelo.Nombre.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var nombres = partes.Length > 0 ? partes[0] : modelo.Nombre.Trim();
@@ -1204,22 +1218,36 @@ public sealed partial class DatosSesion
         if (modelo.Id == 0)
         {
             if (string.IsNullOrWhiteSpace(modelo.NumeroDocumento))
-                modelo.NumeroDocumento = $"{30000000 + Random.Shared.Next(1000, 9999)}";
+                throw new InvalidOperationException("El número de documento del evaluador es obligatorio.");
+
+            modelo.NumeroDocumento = modelo.NumeroDocumento.Trim();
+            modelo.Correo = modelo.Correo.Trim();
+            modelo.Especialidad = modelo.Especialidad.Trim();
+            modelo.Telefono = modelo.Telefono.Trim();
+
             if (_api is not null)
             {
-                var creado = _api.Insertar("EvaluadorRS", new EvaluadorDto
+                var dto = new EvaluadorDto
                 {
                     Nombres = nombres,
                     ApellidoPaterno = paterno,
                     ApellidoMaterno = materno,
-                    Correo = modelo.Correo.Trim(),
+                    Correo = modelo.Correo,
                     TipoDocumento = string.IsNullOrWhiteSpace(modelo.TipoDocumento) ? "DNI" : modelo.TipoDocumento,
-                    NumeroDocumento = modelo.NumeroDocumento.Trim(),
-                    Telefono = string.IsNullOrWhiteSpace(modelo.Telefono) ? "955000111" : modelo.Telefono.Trim(),
-                    Cargo = modelo.Especialidad.Trim(),
+                    NumeroDocumento = modelo.NumeroDocumento,
+                    Telefono = string.IsNullOrWhiteSpace(modelo.Telefono) ? null : modelo.Telefono,
+                    Cargo = modelo.Especialidad,
                     Activo = true
-                });
-                if (creado is not null) modelo.Id = creado.Id;
+                };
+                if (!string.IsNullOrWhiteSpace(clave))
+                {
+                    modelo.Id = _api.RegistrarEvaluadorAsync(dto, clave).GetAwaiter().GetResult();
+                }
+                else
+                {
+                    var creado = _api.Insertar("EvaluadorRS", dto);
+                    if (creado is not null) modelo.Id = creado.Id;
+                }
             }
             if (modelo.Id <= 0) modelo.Id = SiguienteId(Evaluadores, x => x.Id);
             Evaluadores.Add(modelo);

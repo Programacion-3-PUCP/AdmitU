@@ -3,34 +3,189 @@
 @inject AdmitURestClient Api
 @inject DatosSesion Datos
 @inject ToastService Avisos
+
 <PageTitle>Mis vouchers · AdmitU</PageTitle>
 <PageHeader Titulo="Mis vouchers" Subtitulo="Adjunta la transferencia al pago existente. Los comprobantes aprobados quedan bloqueados." Migas="@(["Mis vouchers"])" />
-@if(error is not null){<p class="validation-message" role="alert">@error</p>}
-@if(pagos.Count==0){<section class="card card-pad"><p>El pago se genera una sola vez al enviar la postulación.</p></section>}
-@foreach(var p in pagos){
- var pago=p;var archivo=archivos.FirstOrDefault(x=>x.Tipo=="VOUCHER"&&x.ReferenciaId==p.Id);
- <section class="card card-pad"><h2>@p.CodigoPago</h2><p>Importe: <strong>@Formato.Soles((decimal)p.Monto)</strong> · Estado: @p.EstadoPago</p>
- @if(archivo is not null){<p>@archivo.Nombre · Operación @p.ReferenciaPasarela</p><ArchivoVista ArchivoId="archivo.Id" Mime="@archivo.Mime" Nombre="@archivo.Nombre" />}
- @if(p.EstadoPago=="APROBADO"){<p class="inline-note is-success">Aprobado el @Formato.Fecha(p.FechaPago). El voucher está bloqueado contra modificaciones.</p>}
- else if(p.EstadoPago is "GENERADO" or "PENDIENTE" or "RECHAZADO"){
-  <button class="btn btn-primary" disabled="@ocupado" @onclick="()=>Abrir(pago)">@(archivo is null?"Registrar voucher":"Modificar voucher")</button>
-  @if(archivo is not null){<button class="btn btn-ghost" disabled="@ocupado" @onclick="()=>porEliminar=archivo">Retirar voucher</button>}
- }
- </section>
+
+@if (error is not null)
+{
+    <p class="validation-message" role="alert">@error</p>
 }
-@if(seleccionado is not null){
- <section class="card card-pad"><h2>Voucher de @seleccionado.CodigoPago</h2>
- <div class="field"><label for="voucher-operacion">Número de operación</label><input id="voucher-operacion" @bind="operacion" maxlength="30" disabled="@ocupado" /></div>
- <div class="field"><label for="voucher-monto">Importe fijado por modalidad</label><input id="voucher-monto" value="@seleccionado.Monto" readonly /></div>
- <ZonaCarga Etiqueta="Adjuntar voucher PDF, JPG o PNG" Formato="FormatoArchivo.Cualquiera" Deshabilitado="@ocupado" OnContenido="a=>seleccion=a" />
- <button class="btn btn-primary" disabled="@(ocupado||seleccion is null)" @onclick="Guardar">Enviar voucher</button><button class="btn btn-ghost" disabled="@ocupado" @onclick="()=>seleccionado=null">Cancelar</button></section>
+@if (pagos.Count == 0)
+{
+    <section class="card card-pad"><p>El pago se genera una sola vez al enviar la postulación.</p></section>
 }
-<ConfirmDialog Abierto="@(porEliminar is not null)" Titulo="Retirar voucher" Mensaje="Se retirará el archivo y el pago volverá a generado. Un aprobado no puede retirarse." TextoConfirmar="Retirar" OnCancelar="()=>porEliminar=null" OnConfirmar="Eliminar" />
+@foreach (var p in pagos)
+{
+    var pago = p;
+    var archivo = archivos.FirstOrDefault(x => x.Tipo == "VOUCHER" && x.ReferenciaId == p.Id);
+    <section class="card card-pad stack" style="margin-bottom:16px">
+        <div>
+            <h2>@p.CodigoPago</h2>
+            <p>Importe: <strong>@Formato.Soles((decimal)p.Monto)</strong> · Estado: <strong>@p.EstadoPago</strong></p>
+        </div>
+        @if (archivo is not null)
+        {
+            <div>
+                <p><strong>@archivo.Nombre</strong> · Operación @(string.IsNullOrWhiteSpace(p.ReferenciaPasarela) ? "—" : p.ReferenciaPasarela)</p>
+                <div style="margin-top:8px">
+                    <ArchivoVista ArchivoId="archivo.Id" Mime="@archivo.Mime" Nombre="@archivo.Nombre" Sha256="@archivo.Sha256" />
+                </div>
+            </div>
+        }
+        @if (p.EstadoPago == "APROBADO")
+        {
+            <p class="inline-note is-success">Aprobado el @Formato.Fecha(p.FechaPago). El voucher está bloqueado contra modificaciones.</p>
+        }
+        else if (p.EstadoPago is "GENERADO" or "PENDIENTE" or "RECHAZADO")
+        {
+            <div class="row-actions" style="justify-content:flex-start;flex-wrap:wrap">
+                <button type="button" class="btn btn-primary" disabled="@ocupado" @onclick="() => Abrir(pago)">@(archivo is null ? "Registrar voucher" : "Modificar voucher")</button>
+                @if (archivo is not null)
+                {
+                    <button type="button" class="btn btn-ghost" disabled="@ocupado" @onclick="() => porEliminar = archivo">Retirar voucher</button>
+                }
+            </div>
+        }
+    </section>
+}
+
+@if (seleccionado is not null)
+{
+    <section class="card card-pad stack">
+        <h2>Voucher de @seleccionado.CodigoPago</h2>
+        <div class="form-grid">
+            <div class="field">
+                <label for="voucher-operacion">Número de operación <span class="req">*</span></label>
+                <input id="voucher-operacion" @bind="operacion" @bind:event="oninput" maxlength="30" disabled="@ocupado" placeholder="Ej. OP-2026-00981" />
+            </div>
+            <div class="field">
+                <label for="voucher-monto">Importe fijado por modalidad</label>
+                <input id="voucher-monto" value="@Formato.Soles((decimal)seleccionado.Monto)" readonly />
+            </div>
+        </div>
+        <ZonaCarga Etiqueta="Adjuntar voucher PDF, JPG o PNG" Formato="FormatoArchivo.Cualquiera" Deshabilitado="@ocupado"
+                   Valor="@(seleccion?.Nombre)" OnContenido="a => seleccion = a" />
+        <div class="row-actions" style="justify-content:flex-start">
+            <button type="button" class="btn btn-primary" disabled="@(ocupado || seleccion is null || string.IsNullOrWhiteSpace(operacion))" @onclick="Guardar">Enviar voucher</button>
+            <button type="button" class="btn btn-ghost" disabled="@ocupado" @onclick="() => seleccionado = null">Cancelar</button>
+        </div>
+    </section>
+}
+
+<ConfirmDialog Abierto="@(porEliminar is not null)" Titulo="Retirar voucher" Mensaje="Se retirará el archivo y el pago volverá a generado. Un aprobado no puede retirarse." TextoConfirmar="Retirar" OnCancelar="() => porEliminar = null" OnConfirmar="Eliminar" />
+
 @code {
- private List<PagoDto> pagos=[];private List<ArchivoDigitalDto> archivos=[];private PagoDto? seleccionado;private ArchivoSeleccionado? seleccion;private ArchivoDigitalDto? porEliminar;private string operacion="";private bool ocupado;private string? error;
- protected override async Task OnInitializedAsync()=>await Cargar();
- private async Task Cargar(){try{pagos=Api.ListarTodos<PagoDto>("PagoRS");archivos=await Api.ListarArchivosAsync(Datos.PostulanteActualId);}catch(Exception){error="No se pudieron cargar tus pagos y comprobantes.";}}
- private void Abrir(PagoDto p){seleccionado=p;operacion=p.ReferenciaPasarela??"";seleccion=null;}
- private async Task Guardar(){if(ocupado||seleccion is null||seleccionado is null)return;ocupado=true;error=null;try{var f=seleccion;await Api.GuardarArchivoAsync(new(){Tipo="VOUCHER",PostulanteId=Datos.PostulanteActualId,ReferenciaId=seleccionado.Id,Nombre=f.Nombre,Mime=f.Mime,ContenidoBase64=f.ContenidoBase64,CodigoOperacion=operacion,Monto=(decimal)seleccionado.Monto,FechaRegistro=Datos.Hoy},"guardarVoucher");await Datos.CargarDesdeBackendAsync();await Cargar();seleccionado=null;Avisos.Exito("Voucher guardado; pendiente de validación");}catch(Exception ex){error=ex.Message;}finally{ocupado=false;}}
- private async Task Eliminar(){if(porEliminar is null||ocupado)return;ocupado=true;try{await Api.EliminarArchivoAsync(porEliminar.Id);await Datos.CargarDesdeBackendAsync();await Cargar();porEliminar=null;}catch(Exception ex){error=ex.Message;}finally{ocupado=false;}}
+    private List<PagoDto> pagos = [];
+    private List<ArchivoDigitalDto> archivos = [];
+    private PagoDto? seleccionado;
+    private ArchivoSeleccionado? seleccion;
+    private ArchivoDigitalDto? porEliminar;
+    private string operacion = "";
+    private bool ocupado;
+    private string? error;
+
+    protected override async Task OnInitializedAsync() => await Cargar();
+
+    private async Task Cargar()
+    {
+        try
+        {
+            pagos = await Api.ListarTodosAsync<PagoDto>("PagoRS");
+            archivos = await Api.ListarArchivosAsync(Datos.PostulanteActualId);
+        }
+        catch (Exception)
+        {
+            error = "No se pudieron cargar tus pagos y comprobantes.";
+        }
+    }
+
+    private void Abrir(PagoDto p)
+    {
+        seleccionado = p;
+        operacion = p.ReferenciaPasarela ?? "";
+        seleccion = null;
+        error = null;
+    }
+
+    private async Task Guardar()
+    {
+        if (ocupado || seleccion is null || seleccionado is null) return;
+        if (string.IsNullOrWhiteSpace(operacion))
+        {
+            error = "Ingresa el número de operación del comprobante.";
+            return;
+        }
+        ocupado = true;
+        error = null;
+        try
+        {
+            var f = seleccion;
+            await Api.GuardarArchivoAsync(new()
+            {
+                Tipo = "VOUCHER",
+                PostulanteId = Datos.PostulanteActualId,
+                ReferenciaId = seleccionado.Id,
+                Nombre = f.Nombre,
+                Mime = f.Mime,
+                ContenidoBase64 = f.ContenidoBase64,
+                CodigoOperacion = operacion.Trim(),
+                Monto = (decimal)seleccionado.Monto,
+                FechaRegistro = Datos.Hoy
+            }, "guardarVoucher");
+
+            seleccionado = null;
+            seleccion = null;
+            Avisos.Exito("Voucher guardado; pendiente de validación");
+
+            try
+            {
+                await Datos.CargarDesdeBackendAsync();
+            }
+            catch (Exception)
+            {
+                // El voucher ya quedó persistido; no mostrar falso error 500 si la sincronización global tarda.
+            }
+            await Cargar();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            ocupado = false;
+        }
+    }
+
+    private async Task Eliminar()
+    {
+        if (porEliminar is null || ocupado) return;
+        var objetivo = porEliminar;
+        ocupado = true;
+        error = null;
+        try
+        {
+            await Api.EliminarArchivoAsync(objetivo.Id);
+            porEliminar = null;
+            Avisos.Exito("Voucher retirado");
+            try
+            {
+                await Datos.CargarDesdeBackendAsync();
+            }
+            catch (Exception)
+            {
+            }
+            await Cargar();
+        }
+        catch (Exception ex)
+        {
+            porEliminar = null;
+            error = ex.Message;
+        }
+        finally
+        {
+            ocupado = false;
+        }
+    }
 }

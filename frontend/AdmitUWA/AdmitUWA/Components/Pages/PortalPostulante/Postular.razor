@@ -79,7 +79,7 @@ else
                     var requisito = r;
                     <div class="field">
                         <span class="label">@requisito.Nombre @if (requisito.Obligatorio) { <span class="req">*</span> }</span>
-                        <ZonaCarga Etiqueta="@($"Subir {requisito.Nombre.ToLowerInvariant()}")" Formato="requisito.Formato" Valor="@(archivos.GetValueOrDefault(requisito.Id)?.Nombre)" OnContenido="archivo => Cargado(requisito, archivo)" />
+                        <ZonaCarga Etiqueta="@($"Subir {requisito.Nombre.ToLowerInvariant()}")" Formato="requisito.Formato" MaximoMb="@requisito.MaximoMb" Valor="@(archivos.GetValueOrDefault(requisito.Id)?.Nombre)" OnContenido="archivo => Cargado(requisito, archivo)" />
                     </div>
                 }
             </div>
@@ -190,11 +190,20 @@ else
         if (!acepta) { error = "Debes aceptar la declaración para enviar tu postulación."; return; }
         if (enviando) return;
         enviando = true;
-        try {
-        var p = await Datos.EnviarNuevaPostulacionAsync(conv!, carreraId, modalidadId, sedeId, archivos);
-        Avisos.Exito($"Postulación {p.Codigo} enviada. Ahora adjunta el voucher de pago.");
-        Navegacion.NavigateTo("/postulante/vouchers");
-        } catch { error = "No se pudo enviar. Verifica los documentos y que no exista una postulación previa; vuelve a intentar."; }
+        try
+        {
+            var p = await Datos.EnviarNuevaPostulacionAsync(conv!, carreraId, modalidadId, sedeId, archivos);
+            Avisos.Exito($"Postulación {p.Codigo} enviada. Ahora adjunta el voucher de pago.");
+            Navegacion.NavigateTo("/postulante/vouchers");
+        }
+        catch (InvalidOperationException ex) when (!string.IsNullOrWhiteSpace(ex.Message))
+        {
+            error = ex.Message;
+        }
+        catch
+        {
+            error = "No se pudo enviar. Verifica los documentos y que no exista una postulación previa; vuelve a intentar.";
+        }
         finally { enviando = false; }
     }
 }

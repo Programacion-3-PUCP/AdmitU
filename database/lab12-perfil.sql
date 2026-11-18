@@ -7,16 +7,28 @@ BEGIN
  IF _fecha_nac > DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='La fecha de nacimiento no puede ser futura'; END IF;
  IF _discapacidad AND (_conadis IS NULL OR TRIM(_conadis)='') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Indique el carné CONADIS'; END IF;
  CALL INSERTAR_POSTULANTE(_id,_nombres,_ape_paterno,_ape_materno,_correo,_tipo_doc,_num_doc,_telefono,_fecha_nac);
- UPDATE postulante SET tiene_discapacidad=_discapacidad, numero_carnet_conadis=IF(_discapacidad,_conadis,NULL) WHERE persona_id=_id;
+ UPDATE postulante
+ SET tiene_discapacidad = _discapacidad,
+     numero_carnet_conadis = IF(_discapacidad, _conadis, NULL),
+     correo_validado = TRUE,
+     fecha_validacion_correo = DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR)
+ WHERE persona_id = _id;
 END$$
 DROP PROCEDURE IF EXISTS MODIFICAR_POSTULANTE_PERFIL$$
 CREATE PROCEDURE MODIFICAR_POSTULANTE_PERFIL(IN _id INT, IN _nombres VARCHAR(100), IN _ape_paterno VARCHAR(100), IN _ape_materno VARCHAR(100), IN _correo VARCHAR(150), IN _telefono VARCHAR(20), IN _fecha_nac DATE, IN _discapacidad BOOLEAN, IN _conadis VARCHAR(30))
 BEGIN
+ DECLARE _correo_anterior VARCHAR(150) DEFAULT NULL;
  IF _fecha_nac > DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='La fecha de nacimiento no puede ser futura'; END IF;
  IF _discapacidad AND (_conadis IS NULL OR TRIM(_conadis)='') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Indique el carné CONADIS'; END IF;
  IF NOT EXISTS(SELECT 1 FROM postulante WHERE persona_id=_id) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Postulante inexistente'; END IF;
+ SELECT correo INTO _correo_anterior FROM persona WHERE id=_id;
  CALL MODIFICAR_POSTULANTE(_id,_nombres,_ape_paterno,_ape_materno,_correo,_telefono,_fecha_nac);
- UPDATE postulante SET tiene_discapacidad=_discapacidad, numero_carnet_conadis=IF(_discapacidad,_conadis,NULL) WHERE persona_id=_id;
+ UPDATE postulante
+ SET tiene_discapacidad = _discapacidad,
+     numero_carnet_conadis = IF(_discapacidad, _conadis, NULL),
+     correo_validado = IF(LOWER(TRIM(_correo)) = LOWER(TRIM(COALESCE(_correo_anterior, ''))), TRUE, FALSE),
+     fecha_validacion_correo = IF(LOWER(TRIM(_correo)) = LOWER(TRIM(COALESCE(_correo_anterior, ''))), COALESCE(fecha_validacion_correo, DATE(UTC_TIMESTAMP() - INTERVAL 5 HOUR)), NULL)
+ WHERE persona_id = _id;
 END$$
 DROP PROCEDURE IF EXISTS LISTAR_POSTULANTE_X_ID$$
 CREATE PROCEDURE LISTAR_POSTULANTE_X_ID(IN _id INT)

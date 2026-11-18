@@ -1,0 +1,8 @@
+# Plantilla de configuración de conexión MySQL (estilo curso 1INF30).
+# Copiar este archivo como db.properties en este mismo directorio (ignorado por Git)
+# antes de compilar con Maven o desplegar en GlassFish.
+db.hostname=MYSQL_HOST
+db.user=REEMPLAZAR_USUARIO
+db.password=REEMPLAZAR_CLAVE
+db.port=3306
+db.database=admitu_db

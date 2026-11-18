@@ -13,8 +13,10 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='postulacion' AND column_name='sede_id') THEN ALTER TABLE postulacion ADD COLUMN sede_id INT NULL, ADD CONSTRAINT fk_post_sede FOREIGN KEY(sede_id) REFERENCES sede(id);END IF;
  IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='postulacion' AND column_name='evaluador_id') THEN ALTER TABLE postulacion ADD COLUMN evaluador_id INT NULL, ADD CONSTRAINT fk_post_eval FOREIGN KEY(evaluador_id) REFERENCES evaluador(persona_id);END IF;
 END$$
-CALL LAB12_PREPARAR_REGLAS()$$
-DROP PROCEDURE LAB12_PREPARAR_REGLAS$$
+DELIMITER ;
+CALL LAB12_PREPARAR_REGLAS();
+DROP PROCEDURE IF EXISTS LAB12_PREPARAR_REGLAS;
+DELIMITER $$
 DROP PROCEDURE IF EXISTS INSERTAR_POSTULACION$$
 CREATE PROCEDURE INSERTAR_POSTULACION(OUT _id INT,IN _postulante_id INT,IN _convocatoria_id INT,IN _modalidad_id INT,IN _oferta_id INT,IN _estado_id INT,IN _codigo VARCHAR(30),IN _observacion VARCHAR(255))
 BEGIN

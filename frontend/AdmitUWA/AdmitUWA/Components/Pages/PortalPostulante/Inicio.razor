@@ -115,9 +115,10 @@
             _ => "Paga por transferencia y adjunta el voucher."
         };
 
+        bool correoListo = yo.CorreoValidado || mia?.Estado == EstadoPostulacion.Finalizada;
         pasos =
         [
-            new(1, "Confirma tu correo", yo.CorreoValidado ? "Correo validado." : "Lo necesitamos para enviarte avisos.", yo.CorreoValidado, "/postulante/perfil", "Ir a mi perfil"),
+            new(1, "Confirma tu correo", correoListo ? "Correo confirmado." : "Confírmalo en Mi perfil para recibir avisos del proceso.", correoListo, "/postulante/perfil", "Ir a mi perfil"),
             new(2, "Envía tu postulación", "Elige carrera, modalidad y sede, y sube tus documentos.", enviada, conv is null ? null : $"/postulante/postular/{conv.Id}", "Postular"),
             new(3, "Paga tu derecho de inscripción", pagoDetalle, pago?.Estado == EstadoPago.Aprobado, "/postulante/vouchers", pago?.Estado == EstadoPago.Pendiente ? "Ver mi voucher" : "Adjuntar voucher", pago?.Estado != EstadoPago.Pendiente),
             new(4, "Revisión de tu expediente", mia?.Estado == EstadoPostulacion.Observada ? "Tienes documentos observados por corregir." : "Un evaluador revisa tus documentos.", apta, "/postulante/mi-postulacion", mia?.Estado == EstadoPostulacion.Observada ? "Corregir documentos" : "Ver documentos", mia?.Estado == EstadoPostulacion.Observada),

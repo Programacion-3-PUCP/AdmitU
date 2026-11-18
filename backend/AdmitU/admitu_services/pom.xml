@@ -15,6 +15,13 @@
     <name>admitu_services Jakarta EE 10 REST</name>
 
     <dependencies>
+        <!-- Source: https://mvnrepository.com/artifact/jakarta.ws.rs/jakarta.ws.rs-api -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>5.0.0-M1</version>
+            <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-api</artifactId>

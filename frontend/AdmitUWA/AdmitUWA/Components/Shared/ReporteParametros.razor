@@ -19,8 +19,8 @@
         </div>
         @if (ConFechas)
         {
-            <div class="field"><label for="rp-desde">@EtiquetaDesde</label><input id="rp-desde" type="date" @bind="desde" /></div>
-            <div class="field"><label for="rp-hasta">Hasta</label><input id="rp-hasta" type="date" @bind="hasta" /></div>
+            <div class="field"><label for="rp-desde">@EtiquetaDesde</label><input id="rp-desde" type="date" @bind="desde" max="@Datos.Hoy.ToString("yyyy-MM-dd")" /></div>
+            <div class="field"><label for="rp-hasta">Hasta</label><input id="rp-hasta" type="date" @bind="hasta" max="@Datos.Hoy.ToString("yyyy-MM-dd")" /></div>
         }
     </div>
     @if (error is not null) { <p class="validation-message" role="alert" style="margin-top:12px">@error</p> }
@@ -52,6 +52,11 @@
 
     private async Task Aplicar()
     {
+        if ((desde is not null && desde > Datos.Hoy) || (hasta is not null && hasta > Datos.Hoy))
+        {
+            error = "No se permiten fechas futuras respecto a la fecha actual.";
+            return;
+        }
         if (desde is not null && hasta is not null && desde > hasta)
         {
             error = "La fecha inicial no puede ser posterior a la final.";

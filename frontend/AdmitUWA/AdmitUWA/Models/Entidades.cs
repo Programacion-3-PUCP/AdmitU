@@ -129,6 +129,7 @@ public class RequisitoAplicable
     [StringLength(120, ErrorMessage = "El nombre admite como máximo {1} caracteres.")]
     public string Nombre { get; set; } = "";
     public FormatoArchivo Formato { get; set; } = FormatoArchivo.Pdf;
+    public int MaximoMb { get; set; } = 5;
     public bool Obligatorio { get; set; } = true;
     public bool Activo { get; set; } = true;
 }
@@ -279,9 +280,9 @@ public class Evaluador
     public string TipoDocumento { get; set; } = "DNI";
     [Required(ErrorMessage = "Ingrese el número de documento.")]
     [StringLength(20, ErrorMessage = "El documento admite como máximo {1} caracteres.")]
-    public string NumeroDocumento { get; set; } = "40009988";
+    public string NumeroDocumento { get; set; } = "";
     [StringLength(20, ErrorMessage = "El teléfono admite como máximo {1} caracteres.")]
-    public string Telefono { get; set; } = "987654321";
+    public string Telefono { get; set; } = "";
     [Required(ErrorMessage = "Ingrese el correo.")]
     [EmailAddress(ErrorMessage = "Ingrese un correo válido.")]
     public string Correo { get; set; } = "";

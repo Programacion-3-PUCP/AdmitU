@@ -43,7 +43,7 @@
                 </div>
                 <div class="field"><label for="r-num">Número de documento <span class="req">*</span></label><InputText id="r-num" @bind-Value="modelo.NumeroDocumento" /><ValidationMessage For="() => modelo.NumeroDocumento" /></div>
                 <div class="field"><label for="r-correo">Correo electrónico <span class="req">*</span></label><InputText id="r-correo" type="email" @bind-Value="modelo.Correo" autocomplete="email" /><ValidationMessage For="() => modelo.Correo" /></div>
-                <div class="field"><label for="r-clave">Contraseña (12 a 128 caracteres)</label><input id="r-clave" type="password" @bind="clave" minlength="12" maxlength="128" required autocomplete="new-password" /></div>
+                <div class="field"><label for="r-clave">Contraseña (12 a 128 caracteres) <span class="req">*</span></label><input id="r-clave" type="password" @bind="clave" minlength="12" maxlength="128" required autocomplete="new-password" /></div>
                 <div class="field"><label for="r-tel">Teléfono</label><InputText id="r-tel" type="tel" @bind-Value="modelo.Telefono" placeholder="987 654 321" /><ValidationMessage For="() => modelo.Telefono" /></div>
                 <label class="switch full">
                     <InputCheckbox @bind-Value="modelo.TieneDiscapacidad" />
@@ -110,7 +110,15 @@
             TieneDiscapacidad = modelo.TieneDiscapacidad, CarnetConadis = modelo.TieneDiscapacidad ? modelo.CarnetConadis?.Trim() : null
         }, clave));
         error = null;
-        } catch (Exception) { error = "No se pudo registrar la cuenta. Comprueba el documento y correo; pueden estar registrados."; }
+        }
+        catch (InvalidOperationException ex) when (!string.IsNullOrWhiteSpace(ex.Message))
+        {
+            error = ex.Message;
+        }
+        catch (Exception)
+        {
+            error = "No se pudo registrar la cuenta. Comprueba el documento y correo; pueden estar registrados.";
+        }
         finally { guardando = false; }
     }
 }

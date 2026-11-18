@@ -3,22 +3,130 @@
 @inject AdmitURestClient Api
 @inject DatosSesion Datos
 @inject ToastService Avisos
+
 <PageTitle>Documentos personales · AdmitU</PageTitle>
 <PageHeader Titulo="Documentos personales" Subtitulo="DNI y fotografía JPG/PNG, conservados en tu expediente." Migas="@(["Documentos personales"])" />
-@if(error is not null){<p class="validation-message" role="alert">@error</p>}
-<div class="grid-eq">
-@foreach(var tipo in new[]{"DNI","FOTOGRAFIA"}){
- var t=tipo;var actual=archivos.FirstOrDefault(a=>a.Tipo==t);
- <section class="card card-pad"><h2>@(t=="DNI"?"Documento de identidad":"Fotografía")</h2><p>JPG o PNG, máximo 5 MB. El servidor comprueba la firma del archivo.</p>
- @if(actual is not null){<p>@actual.Nombre · @Formato.Fecha(actual.FechaRegistro)</p><ArchivoVista ArchivoId="actual.Id" Mime="@actual.Mime" Nombre="@actual.Nombre" /><button class="btn btn-ghost" disabled="@ocupado" @onclick="()=>porEliminar=actual">Eliminar</button>}
- <ZonaCarga Etiqueta="Seleccionar archivo" Formato="FormatoArchivo.Imagen" Deshabilitado="@ocupado" OnContenido="a=>seleccion[t]=a" />
- <button class="btn btn-primary" disabled="@(ocupado||seleccion.GetValueOrDefault(t) is null)" @onclick="()=>Guardar(t)">Guardar</button></section>
+
+@if (error is not null)
+{
+    <p class="validation-message" role="alert">@error</p>
 }
+
+<div class="grid-eq">
+    @foreach (var tipo in new[] { "DNI", "FOTOGRAFIA" })
+    {
+        var t = tipo;
+        var actual = archivos.FirstOrDefault(a => a.Tipo == t);
+        <section class="card card-pad stack">
+            <div>
+                <h2>@(t == "DNI" ? "Documento de identidad" : "Fotografía")</h2>
+                <p class="page-sub">JPG o PNG, máximo 5 MB. El servidor comprueba la firma binaria del archivo.</p>
+            </div>
+            @if (actual is not null)
+            {
+                <div>
+                    <p><strong>@actual.Nombre</strong> · @Formato.Fecha(actual.FechaRegistro)</p>
+                    <div class="row-actions" style="margin-top:8px;justify-content:flex-start;flex-wrap:wrap">
+                        <ArchivoVista ArchivoId="actual.Id" Mime="@actual.Mime" Nombre="@actual.Nombre" Sha256="@actual.Sha256" />
+                        <button type="button" class="btn btn-ghost btn-sm" disabled="@ocupado" @onclick="() => porEliminar = actual">Eliminar</button>
+                    </div>
+                </div>
+            }
+            <ZonaCarga Etiqueta="Seleccionar archivo" Formato="FormatoArchivo.Imagen" Deshabilitado="@ocupado"
+                       Valor="@(seleccion.GetValueOrDefault(t)?.Nombre)" OnContenido="a => seleccion[t] = a" />
+            <div class="row-actions" style="justify-content:flex-start">
+                <button type="button" class="btn btn-primary" disabled="@(ocupado || seleccion.GetValueOrDefault(t) is null)" @onclick="() => Guardar(t)">Guardar</button>
+            </div>
+        </section>
+    }
 </div>
-<ConfirmDialog Abierto="@(porEliminar is not null)" Titulo="Eliminar archivo" Mensaje="Se dará de baja el archivo seleccionado." TextoConfirmar="Eliminar" OnCancelar="()=>porEliminar=null" OnConfirmar="Eliminar" />
+
+<ConfirmDialog Abierto="@(porEliminar is not null)" Titulo="Eliminar archivo" Mensaje="Se dará de baja el archivo seleccionado." TextoConfirmar="Eliminar" OnCancelar="() => porEliminar = null" OnConfirmar="Eliminar" />
+
 @code {
- private List<ArchivoDigitalDto> archivos=[];private Dictionary<string,ArchivoSeleccionado?> seleccion=[];private bool ocupado;private string? error;private ArchivoDigitalDto? porEliminar;
- protected override async Task OnInitializedAsync(){try{archivos=await Api.ListarArchivosAsync(Datos.PostulanteActualId);}catch(Exception){error="No se pudieron cargar tus archivos.";}}
- private async Task Guardar(string tipo){if(ocupado||seleccion.GetValueOrDefault(tipo) is not{}f)return;ocupado=true;error=null;try{await Api.GuardarArchivoAsync(new(){PostulanteId=Datos.PostulanteActualId,Tipo=tipo,Nombre=f.Nombre,Mime=f.Mime,ContenidoBase64=f.ContenidoBase64,FechaRegistro=Datos.Hoy});archivos=await Api.ListarArchivosAsync(Datos.PostulanteActualId);seleccion[tipo]=null;Avisos.Exito("Archivo guardado de forma permanente");}catch(Exception ex){error=ex.Message;}finally{ocupado=false;}}
- private async Task Eliminar(){if(porEliminar is null||ocupado)return;ocupado=true;try{await Api.EliminarArchivoAsync(porEliminar.Id);archivos=await Api.ListarArchivosAsync(Datos.PostulanteActualId);porEliminar=null;}catch(Exception ex){error=ex.Message;}finally{ocupado=false;}}
+    private List<ArchivoDigitalDto> archivos = [];
+    private readonly Dictionary<string, ArchivoSeleccionado?> seleccion = [];
+    private bool ocupado;
+    private string? error;
+    private ArchivoDigitalDto? porEliminar;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            archivos = await Api.ListarArchivosAsync(Datos.PostulanteActualId);
+        }
+        catch (Exception)
+        {
+            error = "No se pudieron cargar tus archivos.";
+        }
+    }
+
+    private async Task Guardar(string tipo)
+    {
+        if (ocupado || seleccion.GetValueOrDefault(tipo) is not { } f) return;
+        ocupado = true;
+        error = null;
+        try
+        {
+            await Api.GuardarArchivoAsync(new()
+            {
+                PostulanteId = Datos.PostulanteActualId,
+                Tipo = tipo,
+                Nombre = f.Nombre,
+                Mime = f.Mime,
+                ContenidoBase64 = f.ContenidoBase64,
+                FechaRegistro = Datos.Hoy
+            });
+            seleccion[tipo] = null;
+            Avisos.Exito("Archivo guardado de forma permanente");
+            try
+            {
+                archivos = await Api.ListarArchivosAsync(Datos.PostulanteActualId);
+            }
+            catch (Exception)
+            {
+                // El archivo ya fue persistido; evitar enmascararlo si la recarga falla.
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            ocupado = false;
+        }
+    }
+
+    private async Task Eliminar()
+    {
+        if (porEliminar is null || ocupado) return;
+        var objetivo = porEliminar;
+        ocupado = true;
+        error = null;
+        try
+        {
+            await Api.EliminarArchivoAsync(objetivo.Id);
+            porEliminar = null;
+            Avisos.Exito("Archivo eliminado");
+            try
+            {
+                archivos = await Api.ListarArchivosAsync(Datos.PostulanteActualId);
+            }
+            catch (Exception)
+            {
+                archivos.RemoveAll(x => x.Id == objetivo.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            porEliminar = null;
+            error = ex.Message;
+        }
+        finally
+        {
+            ocupado = false;
+        }
+    }
 }

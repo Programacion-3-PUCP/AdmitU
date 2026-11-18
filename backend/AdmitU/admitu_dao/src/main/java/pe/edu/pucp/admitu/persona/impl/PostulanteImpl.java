@@ -34,7 +34,7 @@ public class PostulanteImpl implements PostulanteDAO {
                 return post.getId();
             }
         } catch (Exception ex) {
-            System.err.println("ERROR AL INSERTAR POSTULANTE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
+            System.out.println("ERROR AL INSERTAR POSTULANTE: " + ex.getMessage());
             throw new RuntimeException(ex);
         }
     }
@@ -57,7 +57,7 @@ public class PostulanteImpl implements PostulanteDAO {
             return cs.executeUpdate();
             }
         } catch (Exception ex) {
-            System.err.println("ERROR AL MODIFICAR POSTULANTE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
+            System.out.println("ERROR AL MODIFICAR POSTULANTE: " + ex.getMessage());
             throw new RuntimeException(ex);
         }
     }
@@ -70,7 +70,7 @@ public class PostulanteImpl implements PostulanteDAO {
             cs.setInt("_id", idPostulante);
             return cs.executeUpdate();
         } catch (Exception ex) {
-            System.err.println("ERROR AL ELIMINAR POSTULANTE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
+            System.out.println("ERROR AL ELIMINAR POSTULANTE: " + ex.getMessage());
             throw new RuntimeException(ex);
         }
     }
@@ -98,7 +98,7 @@ public class PostulanteImpl implements PostulanteDAO {
             }
             return post;
         } catch (Exception ex) {
-            System.err.println("ERROR AL BUSCAR POSTULANTE: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
+            System.out.println("ERROR AL BUSCAR POSTULANTE: " + ex.getMessage());
             throw new RuntimeException(ex);
         }
     }
@@ -125,7 +125,7 @@ public class PostulanteImpl implements PostulanteDAO {
             }
             return lista;
         } catch (Exception ex) {
-            System.err.println("ERROR AL LISTAR POSTULANTES: " + pe.edu.pucp.admitu.config.Diagnostico.resumen(ex));
+            System.out.println("ERROR AL LISTAR POSTULANTES: " + ex.getMessage());
             throw new RuntimeException(ex);
         }
     }

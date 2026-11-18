@@ -1,4 +1,5 @@
 @page "/evaluador/observaciones"
+@using System.Globalization
 @inject DatosSesion Datos
 @inject ToastService Avisos
 @using AdmitUWA.Services.REST
@@ -251,8 +252,16 @@ else
     }
 
     private int Conteo(EstadoObservacion? filtro = null) => alcance == "todos"
-        ? global_.Count(o => filtro is null || o.Estado == filtro)
-        : base_.Count(o => filtro is null || o.Estado == filtro);
+        ? global_.Count(o => (filtro is null || o.Estado == filtro) && (tipo == "" || o.Tipo.ToString() == tipo))
+        : base_.Count(o => (filtro is null || o.Estado == filtro) && (tipo == "" || o.Tipo.ToString() == tipo));
+
+    private static bool ContieneSinTildes(string? texto, string? busqueda)
+    {
+        if (string.IsNullOrWhiteSpace(busqueda)) return true;
+        if (string.IsNullOrWhiteSpace(texto)) return false;
+        return CultureInfo.InvariantCulture.CompareInfo.IndexOf(
+            texto, busqueda.Trim(), CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0;
+    }
 
     private string CarreraGlobal(FilaResumen o) => Datos.Carrera(Datos.Ofertas.FirstOrDefault(x => x.Id == o.Expediente.CarreraElegidaId)?.CarreraId ?? 0)?.Nombre ?? "No registrada";
     private string RequisitoGlobal(FilaResumen o) => Datos.Requisitos.FirstOrDefault(r => r.Id == o.Observacion.RequisitoAplicableId)?.Nombre ?? "No registrado";
@@ -267,9 +276,9 @@ else
         Datos.PostulacionesDeConvocatoria(convSeleccionadaId)
             .Where(p => p.EvaluadorId == Datos.EvaluadorActualId)
             .Where(p => string.IsNullOrWhiteSpace(filtroExpediente)
-                || p.Codigo.Contains(filtroExpediente, StringComparison.OrdinalIgnoreCase)
-                || (Datos.PersonaDe(p)?.NombreCompleto.Contains(filtroExpediente, StringComparison.OrdinalIgnoreCase) ?? false)
-                || (Datos.PersonaDe(p)?.NumeroDocumento.Contains(filtroExpediente, StringComparison.OrdinalIgnoreCase) ?? false));
+                || ContieneSinTildes(p.Codigo, filtroExpediente)
+                || ContieneSinTildes(Datos.PersonaDe(p)?.NombreCompleto, filtroExpediente)
+                || ContieneSinTildes(Datos.PersonaDe(p)?.NumeroDocumento, filtroExpediente));
 
     private IEnumerable<Documento> DocumentosFiltrados =>
         postSeleccionadaId == 0 ? [] : Datos.DocumentosDe(postSeleccionadaId);

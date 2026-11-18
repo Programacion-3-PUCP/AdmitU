@@ -22,7 +22,16 @@ else
                     <ChildContent>
                         @if (Datos.ErrorCarga is not null)
                         {
-                            <section class="card card-pad" role="alert"><h1>No pudimos cargar los datos</h1><p>@Datos.ErrorCarga</p><a class="btn btn-primary" href="@Navegacion.Uri" data-enhance-nav="false">Recargar</a><a class="btn btn-ghost" href="/">Volver a ingresar</a></section>
+                            <section class="card card-pad stack" role="alert">
+                                <div>
+                                    <h1>No pudimos cargar los datos</h1>
+                                    <p>@Datos.ErrorCarga</p>
+                                </div>
+                                <div class="row-actions" style="justify-content:flex-start">
+                                    <button type="button" class="btn btn-primary" disabled="@recargando" @onclick="Recargar">@(recargando ? "Recargando…" : "Recargar")</button>
+                                    <a class="btn btn-ghost" href="/">Volver a ingresar</a>
+                                </div>
+                            </section>
                         }
                         else { @ChildContent }
                     </ChildContent>
@@ -56,6 +65,7 @@ else
     private AreaInfo area = default!;
     private ErrorBoundary? limite;
     private bool menuAbierto;
+    private bool recargando;
 
     protected override async Task OnInitializedAsync()
     {
@@ -63,6 +73,21 @@ else
         Datos.Cambio += AlCambiarDatos;
         await Datos.InicializarAsync();
         area = Areas.Crear(Clave, Datos);
+    }
+
+    private async Task Recargar()
+    {
+        if (recargando) return;
+        recargando = true;
+        try
+        {
+            await Datos.RecargarSesionAsync();
+            area = Areas.Crear(Clave, Datos);
+        }
+        finally
+        {
+            recargando = false;
+        }
     }
 
     protected override void OnParametersSet()

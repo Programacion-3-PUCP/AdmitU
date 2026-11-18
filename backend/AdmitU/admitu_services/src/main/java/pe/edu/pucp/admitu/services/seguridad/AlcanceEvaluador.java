@@ -1,53 +1,114 @@
 package pe.edu.pucp.admitu.services.seguridad;
 
 import jakarta.ws.rs.ForbiddenException;
-import java.util.*;
-import java.util.stream.Collectors;
-import pe.edu.pucp.admitu.postulacion.bo.*;
-import pe.edu.pucp.admitu.persona.bo.AntecedenteAcademicoBOImpl;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import pe.edu.pucp.admitu.pago.Pago;
 import pe.edu.pucp.admitu.pago.bo.PagoBOImpl;
+import pe.edu.pucp.admitu.persona.AntecedenteAcademico;
+import pe.edu.pucp.admitu.persona.bo.AntecedenteAcademicoBOImpl;
+import pe.edu.pucp.admitu.postulacion.CarnePostulante;
+import pe.edu.pucp.admitu.postulacion.DocumentoObservacion;
+import pe.edu.pucp.admitu.postulacion.DocumentoPostulacion;
+import pe.edu.pucp.admitu.postulacion.Postulacion;
+import pe.edu.pucp.admitu.postulacion.PostulacionHistorial;
+import pe.edu.pucp.admitu.postulacion.bo.CarnePostulanteBOImpl;
+import pe.edu.pucp.admitu.postulacion.bo.DocumentoObservacionBOImpl;
+import pe.edu.pucp.admitu.postulacion.bo.DocumentoPostulacionBOImpl;
+import pe.edu.pucp.admitu.postulacion.bo.PostulacionBOImpl;
+import pe.edu.pucp.admitu.postulacion.bo.PostulacionHistorialBOImpl;
 
-/** Alcance de lectura calculado por petición a partir de la asignación actual. */
-public final class AlcanceEvaluador {
-    private AlcanceEvaluador() { }
+public class AlcanceEvaluador {
+
+    private AlcanceEvaluador() {
+    }
 
     public static Set<Integer> idsAutorizados(String recurso, int evaluadorId) {
-        if (recurso.equals("EvaluadorRS")) return Set.of(evaluadorId);
-        var asignadas = new PostulacionBOImpl().listarTodos().stream()
-            .filter(p -> Integer.valueOf(evaluadorId).equals(p.getEvaluadorId())).toList();
-        Set<Integer> expedientes = asignadas.stream().map(p -> p.getId()).collect(Collectors.toSet());
-        if (recurso.equals("PostulacionRS")) return expedientes;
-        Set<Integer> propietarios = asignadas.stream().filter(p -> p.getPostulante() != null)
-            .map(p -> p.getPostulante().getId()).collect(Collectors.toSet());
-        if (recurso.equals("PostulanteRS")) return propietarios;
-        if (expedientes.isEmpty()) return Set.of();
-        return switch (recurso) {
-            case "AntecedenteAcademicoRS" -> new AntecedenteAcademicoBOImpl().listarTodos().stream()
-                .filter(a -> a.getPostulante() != null && propietarios.contains(a.getPostulante().getId()))
-                .map(a -> a.getId()).collect(Collectors.toSet());
-            case "PagoRS" -> new PagoBOImpl().listarTodos().stream()
-                .filter(p -> p.getPostulacion() != null && expedientes.contains(p.getPostulacion().getId()))
-                .map(p -> p.getId()).collect(Collectors.toSet());
-            case "DocumentoPostulacionRS" -> documentos(expedientes);
-            case "DocumentoObservacionRS" -> {
-                var documentos = documentos(expedientes);
-                yield new DocumentoObservacionBOImpl().listarTodos().stream()
-                    .filter(o -> o.getDocumento() != null && documentos.contains(o.getDocumento().getId()))
-                    .map(o -> o.getId()).collect(Collectors.toSet());
+        Set<Integer> resultado = new HashSet<>();
+        if ("EvaluadorRS".equals(recurso)) {
+            resultado.add(evaluadorId);
+            return resultado;
+        }
+
+        List<Postulacion> asignadas = new ArrayList<>();
+        Set<Integer> expedientes = new HashSet<>();
+        Set<Integer> propietarios = new HashSet<>();
+        for (Postulacion p : new PostulacionBOImpl().listarTodos()) {
+            if (Integer.valueOf(evaluadorId).equals(p.getEvaluadorId())) {
+                asignadas.add(p);
+                expedientes.add(p.getId());
+                if (p.getPostulante() != null) {
+                    propietarios.add(p.getPostulante().getId());
+                }
             }
-            case "PostulacionHistorialRS" -> new PostulacionHistorialBOImpl().listarTodos().stream()
-                .filter(h -> h.getPostulacion() != null && expedientes.contains(h.getPostulacion().getId()))
-                .map(h -> h.getId()).collect(Collectors.toSet());
-            case "CarnePostulanteRS" -> new CarnePostulanteBOImpl().listarTodos().stream()
-                .filter(c -> c.getPostulacion() != null && expedientes.contains(c.getPostulacion().getId()))
-                .map(c -> c.getId()).collect(Collectors.toSet());
-            default -> throw new ForbiddenException("Recurso fuera del ámbito de evaluación");
-        };
+        }
+
+        if ("PostulacionRS".equals(recurso)) {
+            return expedientes;
+        }
+        if ("PostulanteRS".equals(recurso)) {
+            return propietarios;
+        }
+        if (expedientes.isEmpty()) {
+            return resultado;
+        }
+
+        if ("AntecedenteAcademicoRS".equals(recurso)) {
+            for (AntecedenteAcademico a : new AntecedenteAcademicoBOImpl().listarTodos()) {
+                if (a.getPostulante() != null && propietarios.contains(a.getPostulante().getId())) {
+                    resultado.add(a.getId());
+                }
+            }
+            return resultado;
+        }
+        if ("PagoRS".equals(recurso)) {
+            for (Pago p : new PagoBOImpl().listarTodos()) {
+                if (p.getPostulacion() != null && expedientes.contains(p.getPostulacion().getId())) {
+                    resultado.add(p.getId());
+                }
+            }
+            return resultado;
+        }
+        if ("DocumentoPostulacionRS".equals(recurso)) {
+            return documentos(expedientes);
+        }
+        if ("DocumentoObservacionRS".equals(recurso)) {
+            Set<Integer> docs = documentos(expedientes);
+            for (DocumentoObservacion o : new DocumentoObservacionBOImpl().listarTodos()) {
+                if (o.getDocumento() != null && docs.contains(o.getDocumento().getId())) {
+                    resultado.add(o.getId());
+                }
+            }
+            return resultado;
+        }
+        if ("PostulacionHistorialRS".equals(recurso)) {
+            for (PostulacionHistorial h : new PostulacionHistorialBOImpl().listarTodos()) {
+                if (h.getPostulacion() != null && expedientes.contains(h.getPostulacion().getId())) {
+                    resultado.add(h.getId());
+                }
+            }
+            return resultado;
+        }
+        if ("CarnePostulanteRS".equals(recurso)) {
+            for (CarnePostulante c : new CarnePostulanteBOImpl().listarTodos()) {
+                if (c.getPostulacion() != null && expedientes.contains(c.getPostulacion().getId())) {
+                    resultado.add(c.getId());
+                }
+            }
+            return resultado;
+        }
+        throw new ForbiddenException("Recurso fuera del ámbito de evaluación");
     }
 
     private static Set<Integer> documentos(Set<Integer> expedientes) {
-        return new DocumentoPostulacionBOImpl().listarTodos().stream()
-            .filter(d -> d.getPostulacion() != null && expedientes.contains(d.getPostulacion().getId()))
-            .map(d -> d.getId()).collect(Collectors.toSet());
+        Set<Integer> docs = new HashSet<>();
+        for (DocumentoPostulacion d : new DocumentoPostulacionBOImpl().listarTodos()) {
+            if (d.getPostulacion() != null && expedientes.contains(d.getPostulacion().getId())) {
+                docs.add(d.getId());
+            }
+        }
+        return docs;
     }
 }

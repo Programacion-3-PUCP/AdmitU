@@ -1,16 +1,281 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ReporteIngresos" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="786" leftMargin="28" rightMargin="28" topMargin="24" bottomMargin="24" whenNoDataType="AllSectionsNoDetail">
-<style name="Base" isDefault="true" fontName="DejaVu Sans" fontSize="9"/>
-<parameter name="FILTROS" class="java.lang.String"/>
-<field name="convocatoria_id" class="java.lang.Long"/>
-<field name="convocatoria" class="java.lang.String"/>
-<field name="modalidad" class="java.lang.String"/>
-<field name="cantidad" class="java.lang.Long"/>
-<field name="total" class="java.math.BigDecimal"/>
-<variable name="TOTAL" class="java.math.BigDecimal" calculation="Sum"><variableExpression><![CDATA[$F{total}]]></variableExpression><initialValueExpression><![CDATA[java.math.BigDecimal.ZERO]]></initialValueExpression></variable>
-<group name="Convocatoria"><groupExpression><![CDATA[$F{convocatoria_id}]]></groupExpression><groupHeader><band height="25"><textField textAdjust="StretchHeight" isBlankWhenNull="true"><reportElement x="0" y="3" width="786" height="22"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{convocatoria}]]></textFieldExpression></textField></band></groupHeader></group>
-<title><band height="96"><staticText><reportElement x="0" y="0" width="786" height="27"/><textElement><font size="18"/></textElement><text><![CDATA[AdmitU | Ingresos por vouchers aprobados]]></text></staticText><textField textAdjust="StretchHeight" isBlankWhenNull="true"><reportElement x="0" y="32" width="786" height="22"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$P{FILTROS}]]></textFieldExpression></textField><staticText><reportElement x="0" y="59" width="786" height="30"/><textElement><font size="9"/></textElement><text><![CDATA[Fecha del filtro: pago.fecha_pago. Importes en soles.]]></text></staticText></band></title>
-<columnHeader><band height="26"><staticText><reportElement x="0" y="0" width="450" height="24"/><textElement><font size="10"/></textElement><text><![CDATA[Modalidad]]></text></staticText><staticText><reportElement x="450" y="0" width="100" height="24"/><textElement><font size="10"/></textElement><text><![CDATA[Vouchers]]></text></staticText><staticText><reportElement x="550" y="0" width="180" height="24"/><textElement><font size="10"/></textElement><text><![CDATA[Monto S/]]></text></staticText></band></columnHeader>
-<detail><band height="30"><textField textAdjust="StretchHeight" isBlankWhenNull="true"><reportElement x="0" y="0" width="450" height="28"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{modalidad}]]></textFieldExpression></textField><textField textAdjust="StretchHeight" isBlankWhenNull="true"><reportElement x="450" y="0" width="100" height="28"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{cantidad}]]></textFieldExpression></textField><textField textAdjust="StretchHeight" isBlankWhenNull="true" pattern="#,##0.00"><reportElement x="550" y="0" width="180" height="28"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{total}]]></textFieldExpression></textField></band></detail>
-<pageFooter><band height="20"><textField textAdjust="StretchHeight" isBlankWhenNull="true"><reportElement x="0" y="0" width="150" height="18"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA["Página " + $V{PAGE_NUMBER}]]></textFieldExpression></textField><textField textAdjust="StretchHeight" isBlankWhenNull="true"><reportElement x="560" y="0" width="226" height="18"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[java.time.ZonedDateTime.now(java.time.ZoneId.of("America/Lima")).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))]]></textFieldExpression></textField></band></pageFooter>
-<summary><band height="35"><staticText><reportElement x="400" y="5" width="170" height="25"/><textElement><font size="11"/></textElement><text><![CDATA[Total validado S/]]></text></staticText><textField textAdjust="StretchHeight" isBlankWhenNull="true" pattern="#,##0.00"><reportElement x="570" y="5" width="180" height="25"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$V{TOTAL}]]></textFieldExpression></textField></band></summary></jasperReport>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="ReporteIngresos"
+              pageWidth="842"
+              pageHeight="595"
+              orientation="Landscape"
+              columnWidth="786"
+              leftMargin="28"
+              rightMargin="28"
+              topMargin="24"
+              bottomMargin="24"
+              whenNoDataType="AllSectionsNoDetail">
+    <style name="Base" isDefault="true" fontName="DejaVu Sans" fontSize="9"/>
+
+    <subDataset name="ChartSerie1">
+        <field name="serie" class="java.lang.String"/>
+        <field name="etiqueta" class="java.lang.String"/>
+        <field name="valor" class="java.lang.Number"/>
+    </subDataset>
+    <subDataset name="ChartSerie2">
+        <field name="serie" class="java.lang.String"/>
+        <field name="etiqueta" class="java.lang.String"/>
+        <field name="valor" class="java.lang.Number"/>
+    </subDataset>
+
+    <parameter name="FILTROS" class="java.lang.String"/>
+    <parameter name="CHART_SERIE_1" class="java.util.Collection" isForPrompting="false"/>
+    <parameter name="CHART_SERIE_2" class="java.util.Collection" isForPrompting="false"/>
+
+    <field name="convocatoria_id" class="java.lang.Long"/>
+    <field name="convocatoria" class="java.lang.String"/>
+    <field name="modalidad" class="java.lang.String"/>
+    <field name="cantidad" class="java.lang.Long"/>
+    <field name="total" class="java.math.BigDecimal"/>
+
+    <variable name="SUBTOTAL_CONV" class="java.math.BigDecimal" resetType="Group" resetGroup="Convocatoria" calculation="Sum">
+        <variableExpression><![CDATA[$F{total}]]></variableExpression>
+        <initialValueExpression><![CDATA[java.math.BigDecimal.ZERO]]></initialValueExpression>
+    </variable>
+    <variable name="TOTAL" class="java.math.BigDecimal" calculation="Sum">
+        <variableExpression><![CDATA[$F{total}]]></variableExpression>
+        <initialValueExpression><![CDATA[java.math.BigDecimal.ZERO]]></initialValueExpression>
+    </variable>
+
+    <group name="Convocatoria">
+        <groupExpression><![CDATA[$F{convocatoria_id}]]></groupExpression>
+        <groupHeader>
+            <band height="24">
+                <textField textAdjust="StretchHeight" isBlankWhenNull="true">
+                    <reportElement mode="Opaque" backcolor="#EEF2F8" x="0" y="2" width="786" height="20"/>
+                    <textElement verticalAlignment="Middle">
+                        <font size="9" isBold="true"/>
+                    </textElement>
+                    <textFieldExpression><![CDATA["  " + $F{convocatoria}]]></textFieldExpression>
+                </textField>
+            </band>
+        </groupHeader>
+        <groupFooter>
+            <band height="22">
+                <staticText>
+                    <reportElement x="350" y="2" width="200" height="18"/>
+                    <textElement textAlignment="Right" verticalAlignment="Middle">
+                        <font size="9" isBold="true"/>
+                    </textElement>
+                    <text><![CDATA[Subtotal convocatoria S/  ]]></text>
+                </staticText>
+                <textField textAdjust="StretchHeight" isBlankWhenNull="true" pattern="#,##0.00">
+                    <reportElement x="550" y="2" width="180" height="18"/>
+                    <textElement verticalAlignment="Middle">
+                        <font size="9" isBold="true"/>
+                    </textElement>
+                    <textFieldExpression><![CDATA[$V{SUBTOTAL_CONV}]]></textFieldExpression>
+                </textField>
+            </band>
+        </groupFooter>
+    </group>
+
+    <title>
+        <band height="86">
+            <staticText>
+                <reportElement x="0" y="0" width="786" height="26" forecolor="#16325C"/>
+                <textElement>
+                    <font size="17" isBold="true"/>
+                </textElement>
+                <text><![CDATA[AdmitU | Ingresos por vouchers aprobados]]></text>
+            </staticText>
+            <textField textAdjust="StretchHeight" isBlankWhenNull="true">
+                <reportElement x="0" y="30" width="786" height="22"/>
+                <textElement>
+                    <font size="9" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{FILTROS}]]></textFieldExpression>
+            </textField>
+            <staticText>
+                <reportElement x="0" y="55" width="786" height="24" forecolor="#526077"/>
+                <textElement>
+                    <font size="8"/>
+                </textElement>
+                <text><![CDATA[Fuente: pagos en estado APROBADO en MySQL. Filtro temporal: pago.fecha_pago. Importes expresados en soles (S/).]]></text>
+            </staticText>
+        </band>
+    </title>
+
+    <columnHeader>
+        <band height="26">
+            <staticText>
+                <reportElement mode="Opaque" backcolor="#16325C" forecolor="#FFFFFF" x="0" y="0" width="450" height="24"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="9" isBold="true"/>
+                </textElement>
+                <text><![CDATA[  Modalidad]]></text>
+            </staticText>
+            <staticText>
+                <reportElement mode="Opaque" backcolor="#16325C" forecolor="#FFFFFF" x="450" y="0" width="100" height="24"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="9" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Vouchers]]></text>
+            </staticText>
+            <staticText>
+                <reportElement mode="Opaque" backcolor="#16325C" forecolor="#FFFFFF" x="550" y="0" width="236" height="24"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="9" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Monto S/]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="24">
+            <textField textAdjust="StretchHeight" isBlankWhenNull="true">
+                <reportElement x="0" y="2" width="450" height="20"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="9"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{modalidad}]]></textFieldExpression>
+            </textField>
+            <textField textAdjust="StretchHeight" isBlankWhenNull="true">
+                <reportElement x="450" y="2" width="100" height="20"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="9"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{cantidad}]]></textFieldExpression>
+            </textField>
+            <textField textAdjust="StretchHeight" isBlankWhenNull="true" pattern="#,##0.00">
+                <reportElement x="550" y="2" width="236" height="20"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="9"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{total}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="20">
+            <textField textAdjust="StretchHeight" isBlankWhenNull="true">
+                <reportElement x="0" y="0" width="150" height="18"/>
+                <textElement>
+                    <font size="8"/>
+                </textElement>
+                <textFieldExpression><![CDATA["Página " + $V{PAGE_NUMBER}]]></textFieldExpression>
+            </textField>
+            <textField textAdjust="StretchHeight" isBlankWhenNull="true">
+                <reportElement x="560" y="0" width="226" height="18"/>
+                <textElement textAlignment="Right">
+                    <font size="8"/>
+                </textElement>
+                <textFieldExpression><![CDATA[java.time.ZonedDateTime.now(java.time.ZoneId.of("America/Lima")).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+
+    <summary>
+        <band height="245">
+            <staticText>
+                <reportElement x="0" y="4" width="390" height="22" forecolor="#6B7280">
+                    <printWhenExpression><![CDATA[$V{REPORT_COUNT} == 0]]></printWhenExpression>
+                </reportElement>
+                <textElement verticalAlignment="Middle">
+                    <font size="9" isItalic="true"/>
+                </textElement>
+                <text><![CDATA[Sin pagos aprobados para los filtros seleccionados.]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="400" y="4" width="170" height="24"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="11" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Total validado S/]]></text>
+            </staticText>
+            <textField textAdjust="StretchHeight" isBlankWhenNull="true" pattern="#,##0.00">
+                <reportElement x="570" y="4" width="216" height="24"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="10" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$V{TOTAL}]]></textFieldExpression>
+            </textField>
+
+            <barChart>
+                <chart isShowLegend="false" evaluationTime="Report">
+                    <reportElement x="0" y="36" width="385" height="200" isRemoveLineWhenBlank="true">
+                        <printWhenExpression><![CDATA[$P{CHART_SERIE_1} != null && !$P{CHART_SERIE_1}.isEmpty()]]></printWhenExpression>
+                    </reportElement>
+                    <chartTitle>
+                        <font size="10" isBold="true"/>
+                        <titleExpression><![CDATA["Monto aprobado (S/) por modalidad"]]></titleExpression>
+                    </chartTitle>
+                    <chartSubtitle/>
+                    <chartLegend position="Bottom"/>
+                </chart>
+                <categoryDataset>
+                    <dataset>
+                        <datasetRun subDataset="ChartSerie1">
+                            <dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRMapCollectionDataSource($P{CHART_SERIE_1})]]></dataSourceExpression>
+                        </datasetRun>
+                    </dataset>
+                    <categorySeries>
+                        <seriesExpression><![CDATA[$F{serie}]]></seriesExpression>
+                        <categoryExpression><![CDATA[$F{etiqueta}]]></categoryExpression>
+                        <valueExpression><![CDATA[$F{valor}]]></valueExpression>
+                    </categorySeries>
+                </categoryDataset>
+                <barPlot isShowLabels="true" isShowTickLabels="true" isShowTickMarks="true">
+                    <plot labelRotation="-20.0"/>
+                    <itemLabel>
+                        <font size="7"/>
+                    </itemLabel>
+                    <categoryAxisFormat labelRotation="-20.0">
+                        <axisFormat>
+                            <tickLabelFont>
+                                <font size="7"/>
+                            </tickLabelFont>
+                        </axisFormat>
+                    </categoryAxisFormat>
+                    <valueAxisFormat>
+                        <axisFormat>
+                            <tickLabelFont>
+                                <font size="8"/>
+                            </tickLabelFont>
+                        </axisFormat>
+                    </valueAxisFormat>
+                </barPlot>
+            </barChart>
+
+            <pieChart>
+                <chart isShowLegend="true" evaluationTime="Report">
+                    <reportElement x="401" y="36" width="385" height="200" isRemoveLineWhenBlank="true">
+                        <printWhenExpression><![CDATA[$P{CHART_SERIE_2} != null && !$P{CHART_SERIE_2}.isEmpty()]]></printWhenExpression>
+                    </reportElement>
+                    <chartTitle>
+                        <font size="10" isBold="true"/>
+                        <titleExpression><![CDATA["Distribución porcentual por modalidad"]]></titleExpression>
+                    </chartTitle>
+                    <chartSubtitle/>
+                    <chartLegend position="Bottom">
+                        <font size="8"/>
+                    </chartLegend>
+                </chart>
+                <pieDataset>
+                    <dataset>
+                        <datasetRun subDataset="ChartSerie2">
+                            <dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRMapCollectionDataSource($P{CHART_SERIE_2})]]></dataSourceExpression>
+                        </datasetRun>
+                    </dataset>
+                    <keyExpression><![CDATA[$F{etiqueta}]]></keyExpression>
+                    <valueExpression><![CDATA[$F{valor}]]></valueExpression>
+                </pieDataset>
+                <piePlot isShowLabels="true" labelFormat="{0} ({2})">
+                    <plot/>
+                    <itemLabel>
+                        <font size="7"/>
+                    </itemLabel>
+                </piePlot>
+            </pieChart>
+        </band>
+    </summary>
+</jasperReport>

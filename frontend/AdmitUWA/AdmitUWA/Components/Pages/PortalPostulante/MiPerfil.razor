@@ -14,8 +14,12 @@
             <Avatar Nombre="@($"{modelo.Nombres} {modelo.ApellidoPaterno}")" Tamano="lg" />
             <div>
                 <h2>@modelo.Nombres @modelo.ApellidoPaterno @modelo.ApellidoMaterno</h2>
-                <div class="feed-tags">
+                <div class="feed-tags" style="align-items:center">
                     <StatusBadge Texto="@(yo.CorreoValidado ? "Correo validado" : "Correo sin validar")" Tono="@(yo.CorreoValidado ? "success" : "warning")" />
+                    @if (!yo.CorreoValidado)
+                    {
+                        <button type="button" class="btn btn-ghost btn-sm" @onclick="ConfirmarCorreo">Confirmar correo</button>
+                    }
                 </div>
             </div>
         </div>
@@ -83,6 +87,13 @@
     {
         yo = Datos.PostulanteActual;
         modelo = DatosPersonales.Desde(yo);
+    }
+
+    private void ConfirmarCorreo()
+    {
+        yo.CorreoValidado = true;
+        Datos.GuardarPerfilPostulante(yo);
+        Avisos.Exito("Correo electrónico confirmado");
     }
 
     private void Guardar()

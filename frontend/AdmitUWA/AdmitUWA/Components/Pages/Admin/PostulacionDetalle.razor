@@ -53,7 +53,10 @@ else
                             <li>
                                 <span class="file-icon">@d.Tipo</span>
                                 <div class="file-meta"><strong>@d.Requisito</strong><small>@d.Archivo · versión @d.Version · @Formato.Fecha(d.FechaCarga)@(d.Comentario is null ? "" : $" · {d.Comentario}")</small></div>
-                                <StatusBadge Texto="@d.Estado.Etiqueta()" Tono="@d.Estado.Tono()" />
+                                <span class="row-actions">
+                                    <ArchivoAsociadoVista PostulanteId="@p.PostulanteId" Tipo="DOCUMENTO" ReferenciaId="@d.Id" />
+                                    <StatusBadge Texto="@d.Estado.Etiqueta()" Tono="@d.Estado.Tono()" />
+                                </span>
                             </li>
                         }
                     </ul>
@@ -119,6 +122,9 @@ else
                         <div><span>Monto</span><strong>@Formato.Soles(pago.Monto)</strong></div>
                         <div><span>Estado</span><StatusBadge Texto="@pago.Estado.Etiqueta()" Tono="@pago.Estado.Tono()" /></div>
                         <div><span>Validado</span><strong>@Formato.Fecha(pago.FechaAprobacion)</strong></div>
+                    </div>
+                    <div style="margin-top:12px">
+                        <ArchivoAsociadoVista PostulanteId="@p.PostulanteId" Tipo="VOUCHER" ReferenciaId="@pago.Id" />
                     </div>
                 }
             </section>
